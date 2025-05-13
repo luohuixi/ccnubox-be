@@ -37,8 +37,8 @@ func (lm *LoggerMiddleware) MiddlewareFunc() gin.HandlerFunc {
 		lm.prometheus.ActiveConnections.WithLabelValues(path).Inc()
 		defer func() {
 			//打点路由特殊化处理这里还没有想到更好的方案,先这样吧
-			if path == "/api/v1/metrics/:eventName" {
-				path = "/api/v1/metrics/" + ctx.Param("eventName")
+			if path == "/api/v1/metrics/:type/:name" {
+				path = "/api/v1/metrics/" + ctx.Param("eventName") + "/" + ctx.Param("name")
 			}
 			// 记录响应信息
 			lm.prometheus.ActiveConnections.WithLabelValues(path).Dec()
