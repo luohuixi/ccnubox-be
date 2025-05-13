@@ -2310,9 +2310,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/metrics/:eventName": {
+        "/metrics/:type/:name": {
             "post": {
-                "description": "用于打点的路由,如果是不经过后端的服务但是需要打点的话,可以使用这个路由自动记录(例如:/metrics/kstack)表示跳转访问课栈,使用这一路由必须携带Auth请求头",
+                "description": "用于打点的路由,如果是不经过后端的服务但是需要打点的话,可以使用这个路由自动记录(例如:/metrics/banner/xxx)表示跳转banner的xxx页面,使用这一路由必须携带Auth请求头",
                 "tags": [
                     "metrics"
                 ],
