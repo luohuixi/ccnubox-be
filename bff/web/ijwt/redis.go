@@ -96,7 +96,7 @@ func (r *RedisJWTHandler) setRefreshToken(ctx *gin.Context, cp ClaimParams) erro
 func (r *RedisJWTHandler) SetJWTToken(ctx *gin.Context, cp ClaimParams) error {
 	uc := UserClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 1)), //一天过期一次
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 1)), //一小时过期一次
 		},
 		StudentId: cp.StudentId,
 		Password:  cp.Password,
@@ -121,9 +121,9 @@ func (r *RedisJWTHandler) CheckSession(ctx *gin.Context, ssid string) (bool, err
 // NewRedisJWTHandler 创建并返回一个新的 RedisJWTHandler 实例
 func NewRedisJWTHandler(cmd redis.Cmdable, jwtKey string, rcJWTKey string) Handler {
 	return &RedisJWTHandler{
-		cmd:           cmd,                    //redis实体
-		signingMethod: jwt.SigningMethodHS256, //签名的加密方式
-		rcExpiration:  time.Hour * 24 * 7,     //设置为一周之后过期
+		cmd:           cmd,                     //redis实体
+		signingMethod: jwt.SigningMethodHS256,  //签名的加密方式
+		rcExpiration:  time.Hour * 24 * 30 * 6, //设置为六个月之后过期
 		jwtKey:        []byte(jwtKey),
 		rcJWTKey:      []byte(rcJWTKey),
 	}

@@ -16,6 +16,7 @@ type LoginMiddleware struct {
 	ijwt.Handler
 }
 
+// TODO 登陆中间件是从课栈抄的,有很多东西没有清理
 func NewLoginMiddleWare(hdl ijwt.Handler) *LoginMiddleware {
 	s := set.NewMapSet[string](3)
 	s.Add("/evaluations/list/all")
