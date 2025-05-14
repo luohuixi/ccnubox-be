@@ -73,7 +73,7 @@ func (c *Crawler) GetClassInfosForUndergraduate(ctx context.Context, r model.Get
 	}
 	defer resp.Body.Close()
 
-	c.log.Infof("发请求耗时%v", time.Since(sendReqStart))
+	c.log.Infof("Craw class [%v,%v,%v] cost %v", r.StuID, r.Year, r.Semester, time.Since(sendReqStart))
 
 	// 读取 Body 到字节数组
 	bodyBytes, err := io.ReadAll(resp.Body)
