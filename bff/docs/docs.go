@@ -2317,6 +2317,17 @@ const docTemplate = `{
                     "metrics"
                 ],
                 "summary": "用于打点的路由",
+                "parameters": [
+                    {
+                        "description": "打点附带的信息,将会计入日志",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/metrics.MetricsReq"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "成功",
@@ -3953,6 +3964,19 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "metrics.MetricsReq": {
+            "type": "object",
+            "properties": {
+                "level": {
+                    "description": "错误等级,分为info,error,warn,debug四个等级",
+                    "type": "string"
+                },
+                "msg": {
+                    "description": "错误信息",
                     "type": "string"
                 }
             }
