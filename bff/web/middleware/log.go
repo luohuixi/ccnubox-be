@@ -38,8 +38,9 @@ func (lm *LoggerMiddleware) MiddlewareFunc() gin.HandlerFunc {
 		defer func() {
 			//打点路由特殊化处理这里还没有想到更好的方案,先这样吧
 			if path == "/api/v1/metrics/:type/:name" {
-				path = "/api/v1/metrics/" + ctx.Param("eventName") + "/" + ctx.Param("name")
+				path = "/api/v1/metrics/" + ctx.Param("type") + "/" + ctx.Param("name")
 			}
+
 			// 记录响应信息
 			lm.prometheus.ActiveConnections.WithLabelValues(path).Dec()
 			status := ctx.Writer.Status()
@@ -89,7 +90,7 @@ func (lm *LoggerMiddleware) logUnexpectedError(err error, ctx *gin.Context) {
 }
 
 func (lm *LoggerMiddleware) commonInfo(ctx *gin.Context) {
-	lm.log.Info("意外错误类型",
+	lm.log.Info("请求正常",
 		logger.String("timestamp", time.Now().Format(time.RFC3339)),
 		logger.String("ip", ctx.ClientIP()),
 		logger.String("path", ctx.Request.URL.Path),

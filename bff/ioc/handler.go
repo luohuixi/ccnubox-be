@@ -213,6 +213,6 @@ func InitTubeHandler(putPolicy storage.PutPolicy, mac *qbox.Mac) *tube.TubeHandl
 	return tube.NewTubeHandler(putPolicy, mac, viper.GetString("oss.domainName"))
 }
 
-func InitMetricsHandel() *metrics.MetricsHandler {
-	return metrics.NewMetricsHandler()
+func InitMetricsHandel(l logger.Logger) *metrics.MetricsHandler {
+	return metrics.NewMetricsHandler(l)
 }
