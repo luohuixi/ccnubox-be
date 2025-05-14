@@ -65,7 +65,10 @@ func NewClassUsecase(classRepo ClassRepoProxy, crawler ClassCrawler,
 func (cluc *ClassUsecase) GetClasses(ctx context.Context, stuID, year, semester string, refresh bool) ([]*model.Class, *time.Time, error) {
 	var classInfos []*model.ClassInfo
 
+	var wg sync.WaitGroup
+
 	waitCrawTime := cluc.waitCrawTime
+	forceNoRefresh := false //强制不刷新
 
 Local: //从本地获取数据
 
@@ -90,12 +93,15 @@ Local: //从本地获取数据
 		}
 	}
 
-	var wg sync.WaitGroup
+	//强制不刷新,返回结果
+	if forceNoRefresh {
+		goto wrapRes
+	}
 
 	if refresh || err != nil {
 
 		refreshLog, searchRefreshErr := cluc.refreshLogRepo.SearchRefreshLog(ctx, stuID, year, semester)
-
+		//如果没有报错,说明有记录
 		if searchRefreshErr == nil {
 			if refreshLog != nil {
 				//如果是ready,说明前不久已经爬取过,并且已经更新到数据库了,这里直接返回查询数据库的结果即可
@@ -118,17 +124,9 @@ Local: //从本地获取数据
 						goto wrapRes
 					}
 					//如果有结果,说明爬取完成了,我们再走一遍数据库
-					//同时把refresh设置为false,防止再走爬虫
+					//同时把forceNoRefresh设置为true,防止再走爬虫
 					if refreshLog.IsReady() {
-						if refresh {
-							refresh = false
-						} else {
-							//因为refresh=false,
-							//走到这里说明,本地查询课表失败...条件还是很苛刻的
-							//直接返回结果即可
-							goto wrapRes
-						}
-
+						forceNoRefresh = true
 						goto Local
 					}
 				}
@@ -152,13 +150,17 @@ Local: //从本地获取数据
 		var crawLock sync.Mutex
 
 		go func() {
+			//保证wg.Done()只会执行一次
 			var once sync.Once
 			done := func() {
 				once.Do(func() {
 					wg.Done()
 				})
 			}
+
+			// 保证在主协程最多等待waitCrawTime
 			time.AfterFunc(waitCrawTime, done)
+
 			defer done()
 
 			crawClassInfos_, crawScs, crawErr := cluc.getCourseFromCrawler(context.Background(), stuID, year, semester)
@@ -177,19 +179,17 @@ Local: //从本地获取数据
 			// 释放锁
 			crawLock.Unlock()
 
-			go func() {
-				_, jxbIDs := convertToClass(crawClassInfos)
-				saveErr := cluc.classRepo.SaveClass(context.Background(), stuID, year, semester, crawClassInfos_, crawScs)
-				//更新log状态
-				if saveErr != nil {
-					_ = cluc.refreshLogRepo.UpdateRefreshLogStatus(context.Background(), logID, model.Failed)
-					_ = cluc.sendRetryMsg(stuID, year, semester)
-				} else {
-					_ = cluc.refreshLogRepo.UpdateRefreshLogStatus(context.Background(), logID, model.Ready)
-				}
+			_, jxbIDs := convertToClass(crawClassInfos)
+			saveErr := cluc.classRepo.SaveClass(context.Background(), stuID, year, semester, crawClassInfos_, crawScs)
+			//更新log状态
+			if saveErr != nil {
+				_ = cluc.refreshLogRepo.UpdateRefreshLogStatus(context.Background(), logID, model.Failed)
+				_ = cluc.sendRetryMsg(stuID, year, semester)
+			} else {
+				_ = cluc.refreshLogRepo.UpdateRefreshLogStatus(context.Background(), logID, model.Ready)
+			}
 
-				_ = cluc.jxbRepo.SaveJxb(context.Background(), stuID, jxbIDs)
-			}()
+			_ = cluc.jxbRepo.SaveJxb(context.Background(), stuID, jxbIDs)
 		}()
 
 		var addedClassInfos []*model.ClassInfo
@@ -402,7 +402,7 @@ func (cluc *ClassUsecase) getCourseFromCrawler(ctx context.Context, stuID string
 		return nil, nil, err
 	}
 
-	cluc.log.Infof("获取cookie (stu_id:%v) 从其他服务中,花费了 %v", stuID, time.Since(getCookieStart))
+	cluc.log.Infof("Get cookie (stu_id:%v) from other service,cost %v", stuID, time.Since(getCookieStart))
 
 	var stu Student
 	if tool.CheckIsUndergraduate(stuID) { //针对是否是本科生，进行分类
