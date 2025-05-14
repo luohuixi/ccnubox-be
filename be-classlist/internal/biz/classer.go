@@ -177,19 +177,17 @@ Local: //从本地获取数据
 			// 释放锁
 			crawLock.Unlock()
 
-			go func() {
-				_, jxbIDs := convertToClass(crawClassInfos)
-				saveErr := cluc.classRepo.SaveClass(context.Background(), stuID, year, semester, crawClassInfos_, crawScs)
-				//更新log状态
-				if saveErr != nil {
-					_ = cluc.refreshLogRepo.UpdateRefreshLogStatus(context.Background(), logID, model.Failed)
-					_ = cluc.sendRetryMsg(stuID, year, semester)
-				} else {
-					_ = cluc.refreshLogRepo.UpdateRefreshLogStatus(context.Background(), logID, model.Ready)
-				}
+			_, jxbIDs := convertToClass(crawClassInfos)
+			saveErr := cluc.classRepo.SaveClass(context.Background(), stuID, year, semester, crawClassInfos_, crawScs)
+			//更新log状态
+			if saveErr != nil {
+				_ = cluc.refreshLogRepo.UpdateRefreshLogStatus(context.Background(), logID, model.Failed)
+				_ = cluc.sendRetryMsg(stuID, year, semester)
+			} else {
+				_ = cluc.refreshLogRepo.UpdateRefreshLogStatus(context.Background(), logID, model.Ready)
+			}
 
-				_ = cluc.jxbRepo.SaveJxb(context.Background(), stuID, jxbIDs)
-			}()
+			_ = cluc.jxbRepo.SaveJxb(context.Background(), stuID, jxbIDs)
 		}()
 
 		var addedClassInfos []*model.ClassInfo
