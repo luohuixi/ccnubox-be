@@ -65,6 +65,8 @@ func NewClassUsecase(classRepo ClassRepoProxy, crawler ClassCrawler,
 func (cluc *ClassUsecase) GetClasses(ctx context.Context, stuID, year, semester string, refresh bool) ([]*model.Class, *time.Time, error) {
 	var classInfos []*model.ClassInfo
 
+	waitCrawTime := cluc.waitCrawTime
+
 Local: //从本地获取数据
 
 	localResp, err := cluc.classRepo.GetClassesFromLocal(ctx, model.GetClassesFromLocalReq{
@@ -78,6 +80,13 @@ Local: //从本地获取数据
 			classInfos = localResp.ClassInfos
 		} else {
 			err = errors.New("failed to find data in the database")
+		}
+	} else {
+		//这个情况就是从数据库中查询失败了
+		//我们只处理数据库中没有数据的情况
+		//此时大概率是第一次请求,我们要将等待时间调长
+		if errors.Is(err, errcode.ErrClassNotFound) {
+			waitCrawTime = max(waitCrawTime, 7*time.Second+500*time.Millisecond)
 		}
 	}
 
@@ -149,7 +158,7 @@ Local: //从本地获取数据
 					wg.Done()
 				})
 			}
-			time.AfterFunc(cluc.waitCrawTime, done)
+			time.AfterFunc(waitCrawTime, done)
 			defer done()
 
 			crawClassInfos_, crawScs, crawErr := cluc.getCourseFromCrawler(context.Background(), stuID, year, semester)

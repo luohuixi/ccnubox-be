@@ -3,6 +3,7 @@ package data
 import (
 	"context"
 	"errors"
+	"sync"
 	"time"
 
 	"github.com/IBM/sarama"
@@ -58,6 +59,7 @@ type delaySendHandler struct {
 	kp        sarama.SyncProducer
 	delayTime time.Duration
 	log       *log.Helper
+	sync.Once
 }
 
 func newDelaySendHandler(topic string, kpb *KafkaProducerBuilder, delayTime time.Duration, logger *log.Helper) (*delaySendHandler, error) {
@@ -74,12 +76,16 @@ func newDelaySendHandler(topic string, kpb *KafkaProducerBuilder, delayTime time
 }
 
 func (c *delaySendHandler) Setup(sarama.ConsumerGroupSession) error {
-	c.log.Infof("delay send handler setup")
+	c.Do(func() {
+		c.log.Infof("delay send handler setup")
+	})
 	return nil
 }
 
 func (c *delaySendHandler) Cleanup(sarama.ConsumerGroupSession) error {
-	c.log.Infof("delay send handler cleanup")
+	c.Do(func() {
+		c.log.Infof("delay send handler cleanup")
+	})
 	return nil
 }
 
