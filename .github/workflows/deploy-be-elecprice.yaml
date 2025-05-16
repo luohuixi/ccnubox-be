@@ -44,7 +44,7 @@ jobs:
       - name: SSH into server and deploy
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.DEV_SERVER_USER }}@${{ secrets.DEV_SERVER }} << EOF
-            cd ~/ccnubox_v1
+            cd ~/ccnubox_v3
             docker rm -f ${SERVICE_NAME}
             docker rmi -f ${{ secrets.IMAGE_REPO }}/${SERVICE_NAME}:v1
             docker compose up -d ${SERVICE_NAME}
