@@ -1,8 +1,9 @@
 package errs
 
 import (
-	"github.com/asynccnu/ccnubox-be/bff/pkg/errorx"
 	"net/http"
+
+	"github.com/asynccnu/ccnubox-be/bff/pkg/errorx"
 )
 
 // TODO 细化错误码,根据错误类型区分不同的错误码
@@ -22,7 +23,7 @@ const (
 	ERROR_TYPE_ERROR_CODE
 	TYPE_CHANGE_ERROR_CODE
 	LOGIN_BY_CCNU_ERROR_CODE
-	USER_SID_Or_PASSPORD_ERROR_CODE
+	USER_SID_OR_PASSPORD_ERROR_CODE
 )
 
 // Banner
@@ -264,7 +265,7 @@ var (
 	}
 
 	USER_SID_Or_PASSPORD_ERROR = func(err error) error {
-		return errorx.New(http.StatusUnauthorized, USER_SID_Or_PASSPORD_ERROR_CODE, "账号或者密码错误!", "user", err)
+		return errorx.New(http.StatusUnauthorized, USER_SID_OR_PASSPORD_ERROR_CODE, "账号或者密码错误!", "user", err)
 	}
 )
 
