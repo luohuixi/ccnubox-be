@@ -726,7 +726,7 @@ definitions:
   grade.GetGradeByTermReq:
     properties:
       kcxzmcs:
-        description: 课程种类筛选,有如下类型:专业主干课程,通识选修课,通识必修课,个性发展课程,通识核心课等
+        description: 课程种类筛选,有如下类型:专业主干课程,通识选修课,通识必修课,个性发展课程,通识核心课,教师教育选修,教师教育必修,大学英语分级教育等
         items:
           type: string
         type: array
