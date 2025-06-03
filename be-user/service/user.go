@@ -9,6 +9,7 @@ import (
 	"github.com/asynccnu/ccnubox-be/be-user/pkg/logger"
 	"github.com/asynccnu/ccnubox-be/be-user/repository/cache"
 	"github.com/asynccnu/ccnubox-be/be-user/repository/dao"
+	"github.com/asynccnu/ccnubox-be/be-user/tool"
 	"golang.org/x/sync/singleflight"
 	"gorm.io/gorm"
 	"net/http"
@@ -163,11 +164,13 @@ func (s *userService) getNewCookie(ctx context.Context, studentId string) (strin
 		return "", DECRYPT_ERROR(err)
 	}
 
-	//尝试获取cookie
-	resp, err := s.ccnu.GetCCNUCookie(ctx, &ccnuv1.GetCCNUCookieRequest{
-		StudentId: user.StudentId,
-		Password:  decryptPassword,
+	resp, err := tool.Retry(func() (*ccnuv1.GetCCNUCookieResponse, error) {
+		return s.ccnu.GetCCNUCookie(ctx, &ccnuv1.GetCCNUCookieRequest{
+			StudentId: user.StudentId,
+			Password:  decryptPassword,
+		})
 	})
+
 	if err != nil {
 		return "", CCNU_GETCOOKIE_ERROR(err)
 	}
