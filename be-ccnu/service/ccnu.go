@@ -36,28 +36,28 @@ func (c *ccnuService) GetCCNUCookie(ctx context.Context, studentId string, passw
 	//初始化client
 	client := c.client()
 
-	params, err := tool.MustRetry(func() (*accountRequestParams, error) {
+	params, err := tool.Retry(func() (*accountRequestParams, error) {
 		return c.makeAccountPreflightRequest(client)
 	})
 	if err != nil {
 		return "", err
 	}
 
-	client, err = tool.MustRetry(func() (*http.Client, error) {
+	client, err = tool.Retry(func() (*http.Client, error) {
 		return c.loginClient(ctx, client, studentId, password, params)
 	})
 	if err != nil {
 		return "", err
 	}
 
-	client, err = tool.MustRetry(func() (*http.Client, error) {
+	client, err = tool.Retry(func() (*http.Client, error) {
 		return c.xkLoginClient(client)
 	})
 	if err != nil {
 		return "", err
 	}
 
-	cookie, err := tool.MustRetry(func() (string, error) {
+	cookie, err := tool.Retry(func() (string, error) {
 		return c.getBKSCookie(client)
 	})
 	if err != nil {
@@ -70,14 +70,14 @@ func (c *ccnuService) GetCCNUCookie(ctx context.Context, studentId string, passw
 func (c *ccnuService) Login(ctx context.Context, studentId string, password string) (bool, error) {
 	client := c.client()
 
-	params, err := tool.MustRetry(func() (*accountRequestParams, error) {
+	params, err := tool.Retry(func() (*accountRequestParams, error) {
 		return c.makeAccountPreflightRequest(client)
 	})
 	if err != nil {
 		return false, err
 	}
 
-	client, err = tool.MustRetry(func() (*http.Client, error) {
+	client, err = tool.Retry(func() (*http.Client, error) {
 		return c.loginClient(ctx, client, studentId, password, params)
 	})
 
