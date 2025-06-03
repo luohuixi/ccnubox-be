@@ -6,6 +6,7 @@ import (
 	"fmt"
 	ccnuv1 "github.com/asynccnu/ccnubox-be/be-api/gen/proto/ccnu/v1"
 	"github.com/asynccnu/ccnubox-be/be-ccnu/pkg/errorx"
+	"github.com/asynccnu/ccnubox-be/be-ccnu/tool"
 	"io"
 	"net"
 	"net/http"
@@ -35,26 +36,30 @@ func (c *ccnuService) GetCCNUCookie(ctx context.Context, studentId string, passw
 	//初始化client
 	client := c.client()
 
-	//从ccnu主页获取相关参数
-	params, err := c.makeAccountPreflightRequest(client)
+	params, err := tool.MustRetry(func() (*accountRequestParams, error) {
+		return c.makeAccountPreflightRequest(client)
+	})
 	if err != nil {
 		return "", err
 	}
 
-	//登陆ccnu通行证
-	client, err = c.loginClient(ctx, client, studentId, password, params)
+	client, err = tool.MustRetry(func() (*http.Client, error) {
+		return c.loginClient(ctx, client, studentId, password, params)
+	})
 	if err != nil {
 		return "", err
 	}
 
-	//登陆本科生院
-	client, err = c.xkLoginClient(client)
+	client, err = tool.MustRetry(func() (*http.Client, error) {
+		return c.xkLoginClient(client)
+	})
 	if err != nil {
 		return "", err
 	}
 
-	//解析获取cookie
-	cookie, err := c.getBKSCookie(client)
+	cookie, err := tool.MustRetry(func() (string, error) {
+		return c.getBKSCookie(client)
+	})
 	if err != nil {
 		return "", err
 	}
@@ -64,13 +69,18 @@ func (c *ccnuService) GetCCNUCookie(ctx context.Context, studentId string, passw
 
 func (c *ccnuService) Login(ctx context.Context, studentId string, password string) (bool, error) {
 	client := c.client()
-	//从ccnu主页获取相关参数
-	params, err := c.makeAccountPreflightRequest(client)
+
+	params, err := tool.MustRetry(func() (*accountRequestParams, error) {
+		return c.makeAccountPreflightRequest(client)
+	})
 	if err != nil {
 		return false, err
 	}
 
-	client, err = c.loginClient(ctx, client, studentId, password, params)
+	client, err = tool.MustRetry(func() (*http.Client, error) {
+		return c.loginClient(ctx, client, studentId, password, params)
+	})
+
 	return client != nil, err
 }
 
