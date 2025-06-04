@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/asynccnu/ccnubox-be/be-grade/repository/model"
+	"golang.org/x/sync/errgroup"
 	"io"
 	"net/http"
 	"net/url"
@@ -222,51 +223,39 @@ func getKcxz(ctx context.Context, cookie string, xnm int64, xqm int64, showCount
 	return response.Items, nil
 }
 
-func GetGrade(ctx context.Context, cookie string, xnm int64, xqm int64, showCount int64) ([]model.Grade, error) {
-	var errChan = make(chan error, 2) // 使用带缓冲的通道
-	var detailChan = make(chan []GetDetailItem, 1)
-	var kcxzChan = make(chan []GetKcxzItem, 1)
+func GetGrade(ctx context.Context, cookie string, xnm, xqm, showCount int64) ([]model.Grade, error) {
+	var (
+		detail []GetDetailItem
+		kcxz   []GetKcxzItem
+	)
 
-	go func() {
-		detail, err := getDetail(ctx, cookie, xnm, xqm, showCount)
+	// 创建一个带 cancel 的子 context（自动中断其他 goroutine）
+	g, ctx := errgroup.WithContext(ctx)
 
+	// 获取 detail
+	g.Go(func() error {
+		d, err := getDetail(ctx, cookie, xnm, xqm, showCount)
 		if err != nil {
-			errChan <- err
-			return
+			return err
 		}
-		detailChan <- detail
-	}()
+		detail = d
+		return nil
+	})
 
-	go func() {
-		kcxz, err := getKcxz(ctx, cookie, xnm, xqm, showCount)
+	// 获取 kcxz
+	g.Go(func() error {
+		k, err := getKcxz(ctx, cookie, xnm, xqm, showCount)
 		if err != nil {
-			errChan <- err
-			return
+			return err
 		}
-		kcxzChan <- kcxz
+		kcxz = k
+		return nil
+	})
 
-	}()
-
-	select {
-	case err := <-errChan:
+	// 等待全部 goroutine 结束，任一失败会立即返回
+	if err := g.Wait(); err != nil {
 		return nil, err
-
-	case detail := <-detailChan:
-		select {
-		case kcxz := <-kcxzChan:
-			return aggregateGrades(detail, kcxz), nil
-		case err := <-errChan:
-			return nil, err
-		}
-
-	case kcxz := <-kcxzChan:
-		select {
-		case detail := <-detailChan:
-			return aggregateGrades(detail, kcxz), nil
-		case err := <-errChan:
-			return nil, err
-		}
-
 	}
 
+	return aggregateGrades(detail, kcxz), nil
 }
