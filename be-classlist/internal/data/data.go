@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/IBM/sarama"
 	"github.com/asynccnu/ccnubox-be/be-classlist/internal/conf"
-	"github.com/asynccnu/ccnubox-be/be-classlist/internal/model"
+	"github.com/asynccnu/ccnubox-be/be-classlist/internal/data/do"
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/google/wire"
 	"github.com/redis/go-redis/v9"
@@ -32,7 +32,16 @@ var ProviderSet = wire.NewSet(
 	NewKafkaConsumerBuilder,
 	NewDelayKafkaConfig,
 	NewDelayKafka,
+	NewClassInfoRepo,
+	NewStudentAndCourseRepo,
+	NewClassRepo,
 )
+
+type Transaction interface {
+	// 下面2个方法配合使用，在InTx方法中执行ORM操作的时候需要使用DB方法获取db！
+	InTx(ctx context.Context, fn func(ctx context.Context) error) error
+	DB(ctx context.Context) *gorm.DB
+}
 
 // Data .
 type Data struct {
@@ -81,7 +90,7 @@ func NewDB(c *conf.Data, logfile *os.File, logger log.Logger) *gorm.DB {
 	if err != nil {
 		panic(fmt.Sprintf("connect mysql failed:%v", err))
 	}
-	if err := db.AutoMigrate(&model.ClassInfo{}, &model.StudentCourse{}, &model.Jxb{}, &model.ClassRefreshLog{}); err != nil {
+	if err := db.AutoMigrate(&do.ClassInfo{}, &do.StudentCourse{}, &do.Jxb{}, &do.ClassRefreshLog{}); err != nil {
 		panic(fmt.Sprintf("mysql auto migrate failed:%v", err))
 	}
 

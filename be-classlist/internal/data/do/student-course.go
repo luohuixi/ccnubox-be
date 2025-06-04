@@ -1,8 +1,12 @@
-package model
+package do
 
 import (
 	"gorm.io/gorm"
 	"time"
+)
+
+const (
+	StudentCourseTableName string = "student_course"
 )
 
 type StudentCourse struct {
