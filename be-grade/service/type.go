@@ -18,6 +18,16 @@ func aggregateGrades(detailItems []GetDetailItem, KcxzItems []GetKcxzItem) []mod
 		key := item.JxbID
 		// 如果当前 JxbId 不在 map 中，初始化 Grade 结构体
 		if _, exists := gradeMap[key]; !exists {
+			//进行转换
+			var xqm int64
+			switch item.Xqm {
+			case "3":
+				xqm = 1
+			case "12":
+				xqm = 2
+			case "16":
+				xqm = 3
+			}
 			gradeMap[key] = &model.Grade{
 				Kcxzmc:              item.Kcxzmc,
 				Kclbmc:              item.Kclbmc,
@@ -27,13 +37,12 @@ func aggregateGrades(detailItems []GetDetailItem, KcxzItems []GetKcxzItem) []mod
 				Jd:                  parseFloat32(item.Jd),
 				Kcmc:                item.Kcmc,
 				Xnm:                 parseInt64(item.Xnm),
-				Xqm:                 parseInt64(item.Xqm),
+				Xqm:                 xqm,
 				Xf:                  parseFloat32(item.Xf),
 				Cj:                  parseFloat32(item.Cj),
 				RegularGradePercent: "平时(0%)",
 				FinalGradePercent:   "期末(0%)",
 			}
-
 		}
 	}
 

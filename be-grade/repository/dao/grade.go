@@ -78,14 +78,6 @@ func (d *gradeDAO) BatchInsertOrUpdate(ctx context.Context, grades []model.Grade
 
 	for _, grade := range grades {
 		key := grade.Studentid + grade.JxbId
-		switch grade.Xqm {
-		case 3:
-			grade.Xqm = 1
-		case 12:
-			grade.Xqm = 2
-		case 16:
-			grade.Xqm = 3
-		}
 
 		if existing, exists := existingMap[key]; !exists {
 			toInsert = append(toInsert, grade)
