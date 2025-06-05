@@ -3,22 +3,23 @@ package service
 import (
 	"context"
 	pb "github.com/asynccnu/ccnubox-be/be-api/gen/proto/classlist/v1" //此处改成了be-api中的,方便其他服务调用.
+	"github.com/asynccnu/ccnubox-be/be-classlist/internal/biz"
 	"github.com/asynccnu/ccnubox-be/be-classlist/internal/conf"
 	"github.com/asynccnu/ccnubox-be/be-classlist/internal/errcode"
-	"github.com/asynccnu/ccnubox-be/be-classlist/internal/model"
 	"github.com/asynccnu/ccnubox-be/be-classlist/internal/pkg/tool"
 	"github.com/go-kratos/kratos/v2/log"
+	"github.com/jinzhu/copier"
 	"time"
 )
 
 type ClassListService struct {
 	pb.UnimplementedClasserServer
-	clu       ClassCtrl
+	clu       *biz.ClassUsecase
 	schoolday *conf.SchoolDay
 	log       *log.Helper
 }
 
-func NewClasserService(clu ClassCtrl, day *conf.SchoolDay, logger log.Logger) *ClassListService {
+func NewClasserService(clu *biz.ClassUsecase, day *conf.SchoolDay, logger log.Logger) *ClassListService {
 	return &ClassListService{
 		clu:       clu,
 		log:       log.NewHelper(logger),
@@ -31,12 +32,15 @@ func (s *ClassListService) GetClass(ctx context.Context, req *pb.GetClassRequest
 		return &pb.GetClassResponse{}, errcode.ErrParam
 	}
 	pclasses := make([]*pb.Class, 0)
-	classes, lastTime, err := s.clu.GetClasses(ctx, req.GetStuId(), req.GetYear(), req.GetSemester(), req.GetRefresh())
+	classInfos, lastTime, err := s.clu.GetClasses(ctx, req.GetStuId(), req.GetYear(), req.GetSemester(), req.GetRefresh())
 	if err != nil {
 		return &pb.GetClassResponse{}, err
 	}
-	for _, class := range classes {
-		pinfo := HandleClass(class.Info)
+	for _, classInfo := range classInfos {
+		var pinfo = new(pb.ClassInfo)
+
+		_ = copier.Copy(&pinfo, &classInfo)
+
 		var pclass = &pb.Class{
 			Info: pinfo,
 		}
@@ -59,7 +63,7 @@ func (s *ClassListService) AddClass(ctx context.Context, req *pb.AddClassRequest
 		return &pb.AddClassResponse{}, errcode.ErrParam
 	}
 	weekDur := tool.FormatWeeks(tool.ParseWeeks(req.Weeks))
-	var classInfo = &model.ClassInfo{
+	var classInfo = &biz.ClassInfo{
 		Day:          req.GetDay(),
 		Teacher:      req.GetTeacher(),
 		Where:        req.GetWhere(),
@@ -75,10 +79,12 @@ func (s *ClassListService) AddClass(ctx context.Context, req *pb.AddClassRequest
 	if req.Credit != nil {
 		classInfo.Credit = req.GetCredit()
 	}
-	classInfo.UpdateID()
-	err := s.clu.AddClass(ctx, req.GetStuId(), classInfo)
-	if err != nil {
 
+	classInfo.UpdateID()
+
+	err := s.clu.AddClass(ctx, req.GetStuId(), classInfo)
+
+	if err != nil {
 		return &pb.AddClassResponse{}, err
 	}
 
@@ -152,7 +158,7 @@ func (s *ClassListService) UpdateClass(ctx context.Context, req *pb.UpdateClassR
 	}
 
 	oldclassInfo.UpdateID()
-	newSc := &model.StudentCourse{
+	newSc := &biz.StudentCourse{
 		StuID:           req.GetStuId(),
 		ClaID:           oldclassInfo.ID,
 		Year:            oldclassInfo.Year,
@@ -161,7 +167,6 @@ func (s *ClassListService) UpdateClass(ctx context.Context, req *pb.UpdateClassR
 	}
 	err = s.clu.UpdateClass(ctx, req.GetStuId(), req.GetYear(), req.GetSemester(), oldclassInfo, newSc, req.GetClassId())
 	if err != nil {
-
 		return &pb.UpdateClassResponse{
 			Msg: "修改失败",
 		}, err
@@ -181,7 +186,10 @@ func (s *ClassListService) GetRecycleBinClassInfos(ctx context.Context, req *pb.
 	}
 	pbClassInfos := make([]*pb.ClassInfo, 0)
 	for _, classInfo := range classInfos {
-		pbClassInfos = append(pbClassInfos, HandleClass(classInfo))
+		var pbClassInfo = new(pb.ClassInfo)
+		_ = copier.Copy(&pbClassInfo, &classInfo)
+
+		pbClassInfos = append(pbClassInfos, pbClassInfo)
 	}
 	return &pb.GetRecycleBinClassResponse{
 		ClassInfos: pbClassInfos,
@@ -229,7 +237,10 @@ func (s *ClassListService) GetAllClassInfo(ctx context.Context, req *pb.GetAllCl
 	}
 	pbClassInfos := make([]*pb.ClassInfo, 0)
 	for _, classInfo := range classInfos {
-		pbClassInfos = append(pbClassInfos, HandleClass(classInfo))
+		var pbClassInfo = new(pb.ClassInfo)
+		_ = copier.Copy(&pbClassInfo, &classInfo)
+
+		pbClassInfos = append(pbClassInfos, pbClassInfo)
 	}
 	return &pb.GetAllClassInfoResponse{
 		ClassInfos: pbClassInfos,
@@ -242,22 +253,6 @@ func (s *ClassListService) GetSchoolDay(ctx context.Context, req *pb.GetSchoolDa
 		HolidayTime: s.schoolday.HolidayTime,
 		SchoolTime:  s.schoolday.SchoolTime,
 	}, nil
-}
-
-func HandleClass(info *model.ClassInfo) *pb.ClassInfo {
-	return &pb.ClassInfo{
-		Day:          info.Day,
-		Teacher:      info.Teacher,
-		Where:        info.Where,
-		ClassWhen:    info.ClassWhen,
-		WeekDuration: info.WeekDuration,
-		Classname:    info.Classname,
-		Credit:       info.Credit,
-		Weeks:        info.Weeks,
-		Id:           info.ID,
-		Semester:     info.Semester,
-		Year:         info.Year,
-	}
 }
 
 func convertToShanghaiTimeStamp(t time.Time) int64 {

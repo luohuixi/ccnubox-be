@@ -1,0 +1,327 @@
+package data
+
+import (
+	"context"
+	"fmt"
+	"github.com/asynccnu/ccnubox-be/be-classlist/internal/biz"
+	"github.com/asynccnu/ccnubox-be/be-classlist/internal/data/do"
+	"github.com/asynccnu/ccnubox-be/be-classlist/internal/errcode"
+	"github.com/go-kratos/kratos/v2/log"
+	"github.com/jinzhu/copier"
+	"time"
+)
+
+// MaxNum 每个学期最多允许添加的课程数量
+const MaxNum = 20
+
+type ClassInfoRepo struct {
+	DB    *ClassInfoDBRepo
+	Cache *ClassInfoCacheRepo
+}
+
+func NewClassInfoRepo(DB *ClassInfoDBRepo, Cache *ClassInfoCacheRepo) *ClassInfoRepo {
+	return &ClassInfoRepo{
+		DB:    DB,
+		Cache: Cache,
+	}
+}
+
+type StudentAndCourseRepo struct {
+	DB    *StudentAndCourseDBRepo
+	Cache *StudentAndCourseCacheRepo
+}
+
+func NewStudentAndCourseRepo(DB *StudentAndCourseDBRepo, Cache *StudentAndCourseCacheRepo) *StudentAndCourseRepo {
+	return &StudentAndCourseRepo{
+		DB:    DB,
+		Cache: Cache,
+	}
+}
+
+type ClassRepo struct {
+	ClaRepo *ClassInfoRepo
+	Sac     *StudentAndCourseRepo
+	TxCtrl  Transaction //控制事务的开启
+	log     *log.Helper
+}
+
+func NewClassRepo(ClaRepo *ClassInfoRepo, TxCtrl Transaction, Sac *StudentAndCourseRepo, logger log.Logger) *ClassRepo {
+	return &ClassRepo{
+		ClaRepo: ClaRepo,
+		Sac:     Sac,
+		log:     log.NewHelper(logger),
+		TxCtrl:  TxCtrl,
+	}
+}
+
+// GetClassesFromLocal 从本地获取课程
+func (cla ClassRepo) GetClassesFromLocal(ctx context.Context, stuID, year, semester string) ([]*biz.ClassInfo, error) {
+	var (
+		cacheGet = true
+		key      = cla.Sac.Cache.GenerateClassInfosKey(stuID, year, semester)
+	)
+
+	classInfos, err := cla.ClaRepo.Cache.GetClassInfosFromCache(ctx, key)
+	//如果err!=nil(err==redis.Nil)说明该ID第一次进入（redis中没有这个KEY），且未经过数据库，则允许其查数据库，所以要设置cacheGet=false
+	//如果err==nil说明其至少经过数据库了，redis中有这个KEY,但可能值为NULL，如果不为NULL，就说明缓存命中了,直接返回没有问题
+	//如果为NULL，就说明数据库中没有的数据，其依然在请求，会影响数据库（缓存穿透），我们依然直接返回
+	//这时我们就需要直接返回redis中的null，即直接返回nil,而不经过数据库
+
+	if err != nil {
+		cacheGet = false
+		cla.log.Warnf("Get Class [%v %v %v] From Cache failed: %v", stuID, year, semester, err)
+	}
+	if !cacheGet {
+		//从数据库中获取
+		classInfos, err = cla.ClaRepo.DB.GetClassInfos(ctx, stuID, year, semester)
+		if err != nil {
+			cla.log.Errorf("Get Class [%v %v %v] From DB failed: %v", stuID, year, semester, err)
+			return nil, errcode.ErrClassFound
+		}
+		go func() {
+			//将课程信息当作整体存入redis
+			//注意:如果未获取到，即classInfos为nil，redis仍然会设置key-value，只不过value为NULL
+			_ = cla.ClaRepo.Cache.AddClaInfosToCache(context.Background(), key, classInfos)
+		}()
+	}
+	//检查classInfos是否为空
+	//如果不为空，直接返回就好
+	//如果为空，则说明没有该数据，需要去查询
+	//如果不添加此条件，即便你redis中有值为NULL的话，也不会返回错误，就导致不会去爬取更新，所以需要该条件
+	//添加该条件，能够让查询数据库的操作效率更高，同时也保证了数据的获取
+	if len(classInfos) == 0 {
+		return nil, errcode.ErrClassNotFound
+	}
+
+	classInfosBiz := make([]*biz.ClassInfo, len(classInfos))
+	_ = copier.Copy(&classInfosBiz, &classInfos)
+
+	return classInfosBiz, nil
+}
+
+func (cla ClassRepo) GetSpecificClassInfo(ctx context.Context, classID string) (*biz.ClassInfo, error) {
+	classInfo, err := cla.ClaRepo.DB.GetClassInfoFromDB(ctx, classID)
+	if err != nil || classInfo == nil {
+		return nil, errcode.ErrClassNotFound
+	}
+
+	//将do.ClassInfo转换为biz.ClassInfo
+	classInfoBiz := new(biz.ClassInfo)
+	_ = copier.Copy(&classInfoBiz, &classInfo)
+	return classInfoBiz, nil
+}
+func (cla ClassRepo) AddClass(ctx context.Context, stuID, year, semester string, classInfo *biz.ClassInfo, sc *biz.StudentCourse) error {
+	err := cla.ClaRepo.Cache.DeleteClassInfoFromCache(ctx, cla.Sac.Cache.GenerateClassInfosKey(stuID, year, semester))
+	if err != nil {
+		return err
+	}
+
+	classInfoDo := new(do.ClassInfo)
+
+	scDo := new(do.StudentCourse)
+
+	//将biz.ClassInfo转换为do.ClassInfo
+	_ = copier.Copy(&classInfoDo, &classInfo)
+	//将biz.StudentCourse转换为do.StudentCourse
+	_ = copier.Copy(&scDo, &sc)
+
+	errTx := cla.TxCtrl.InTx(ctx, func(ctx context.Context) error {
+		if err := cla.ClaRepo.DB.AddClassInfoToDB(ctx, classInfoDo); err != nil {
+			return errcode.ErrClassUpdate
+		}
+		// 处理 StudentCourse
+		if err := cla.Sac.DB.SaveStudentAndCourseToDB(ctx, scDo); err != nil {
+			return errcode.ErrClassUpdate
+		}
+		cnt, err := cla.Sac.DB.GetClassNum(ctx, stuID, year, semester, sc.IsManuallyAdded)
+		if err == nil && cnt > MaxNum {
+			return fmt.Errorf("classlist num limit")
+		}
+		return nil
+	})
+	if errTx != nil {
+		cla.log.Errorf("Add Class [%v,%v,%v,%+v,%+v] failed:%v", stuID, year, semester, classInfo, sc, errTx)
+		return errTx
+	}
+	go func() {
+		//延迟双删
+		time.AfterFunc(1*time.Second, func() {
+			_ = cla.ClaRepo.Cache.DeleteClassInfoFromCache(context.Background(), cla.Sac.Cache.GenerateClassInfosKey(stuID, year, semester))
+		})
+	}()
+	return nil
+}
+func (cla ClassRepo) DeleteClass(ctx context.Context, stuID, year, semester string, classID []string) error {
+	//先删除缓存信息
+	err := cla.ClaRepo.Cache.DeleteClassInfoFromCache(ctx, cla.Sac.Cache.GenerateClassInfosKey(stuID, year, semester))
+	if err != nil {
+		cla.log.Errorf("Delete Class [%v,%v,%v,%v] from Cache failed:%v", stuID, year, semester, classID, err)
+		return err
+	}
+	// 获取删除课程手动添加的信息
+	isManuallyAddedCourse := cla.Sac.DB.CheckManualCourseStatus(ctx, stuID, year, semester, classID[0])
+
+	//删除并添加进回收站
+	recycleSetName := cla.Sac.Cache.GenerateClassInfosKey(stuID, year, semester)
+
+	err = cla.Sac.Cache.RecycleClassId(ctx, recycleSetName, classID[0], isManuallyAddedCourse)
+	if err != nil {
+		cla.log.Errorf("Add Class [%v,%v,%v,%v] To RecycleBin failed:%v", stuID, year, semester, classID, err)
+		return err
+	}
+
+	//从数据库中删除对应的关系
+	errTx := cla.TxCtrl.InTx(ctx, func(ctx context.Context) error {
+		err := cla.Sac.DB.DeleteStudentAndCourseInDB(ctx, stuID, year, semester, classID)
+		if err != nil {
+			return fmt.Errorf("error deleting student: %w", err)
+		}
+		return nil
+	})
+	if errTx != nil {
+		cla.log.Errorf("Delete Class [%v,%v,%v,%v] In DB failed:%v", stuID, year, semester, classID, errTx)
+		return errTx
+	}
+	return nil
+}
+func (cla ClassRepo) GetRecycledIds(ctx context.Context, stuID, year, semester string) ([]string, error) {
+	recycleKey := cla.Sac.Cache.GenerateClassInfosKey(stuID, year, semester)
+	classIds, err := cla.Sac.Cache.GetRecycledClassIds(ctx, recycleKey)
+	if err != nil {
+		return nil, err
+	}
+	return classIds, nil
+}
+
+func (cla ClassRepo) IsRecycledCourseManual(ctx context.Context, stuID, year, semester, classID string) bool {
+	recycleKey := cla.Sac.Cache.GenerateClassInfosKey(stuID, year, semester)
+	return cla.Sac.Cache.IsRecycledCourseManual(ctx, recycleKey, classID)
+}
+
+func (cla ClassRepo) CheckClassIdIsInRecycledBin(ctx context.Context, stuID, year, semester, classID string) bool {
+	RecycledBinKey := cla.Sac.Cache.GenerateClassInfosKey(stuID, year, semester)
+	return cla.Sac.Cache.CheckRecycleIdIsExist(ctx, RecycledBinKey, classID)
+}
+func (cla ClassRepo) RemoveClassFromRecycledBin(ctx context.Context, stuID, year, semester, classID string) error {
+	RecycledBinKey := cla.Sac.Cache.GenerateClassInfosKey(stuID, year, semester)
+	return cla.Sac.Cache.RemoveClassFromRecycledBin(ctx, RecycledBinKey, classID)
+}
+func (cla ClassRepo) UpdateClass(ctx context.Context, stuID, year, semester, oldClassID string,
+	newClassInfo *biz.ClassInfo, newSc *biz.StudentCourse) error {
+	err := cla.ClaRepo.Cache.DeleteClassInfoFromCache(ctx, cla.Sac.Cache.GenerateClassInfosKey(stuID, year, semester))
+	if err != nil {
+		return err
+	}
+
+	newClassInfodo := new(do.ClassInfo)
+	newScDo := new(do.StudentCourse)
+
+	_ = copier.Copy(&newClassInfodo, &newClassInfo)
+	_ = copier.Copy(&newScDo, &newSc)
+
+	errTx := cla.TxCtrl.InTx(ctx, func(ctx context.Context) error {
+		//添加新的课程信息
+		err := cla.ClaRepo.DB.AddClassInfoToDB(ctx, newClassInfodo)
+		if err != nil {
+			return errcode.ErrClassUpdate
+		}
+		//删除原本的学生与课程的对应关系
+		err = cla.Sac.DB.DeleteStudentAndCourseInDB(ctx, stuID, year, semester, []string{oldClassID})
+		if err != nil {
+			return errcode.ErrClassUpdate
+		}
+		//添加新的对应关系
+		err = cla.Sac.DB.SaveStudentAndCourseToDB(ctx, newScDo)
+		if err != nil {
+			return errcode.ErrClassUpdate
+		}
+		return nil
+	})
+	if errTx != nil {
+		cla.log.Errorf("Update Class [%v,%v,%v,%v,%+v,%+v] In DB  failed:%v", stuID, year, semester, oldClassID, newClassInfo, newSc, errTx)
+		return errTx
+	}
+
+	go func() {
+		//延迟双删
+		time.AfterFunc(1*time.Second, func() {
+			_ = cla.ClaRepo.Cache.DeleteClassInfoFromCache(context.Background(), cla.Sac.Cache.GenerateClassInfosKey(stuID, year, semester))
+		})
+	}()
+
+	return nil
+}
+
+// SaveClass 保存课程[删除原本的，添加新的，主要是为了防止感知不到原本的和新增的之间有差异]
+func (cla ClassRepo) SaveClass(ctx context.Context, stuID, year, semester string, classInfos []*biz.ClassInfo, scs []*biz.StudentCourse) error {
+	key := cla.Sac.Cache.GenerateClassInfosKey(stuID, year, semester)
+
+	err := cla.ClaRepo.Cache.DeleteClassInfoFromCache(ctx, key)
+	if err != nil {
+		cla.log.Errorf("Delete Class [%+v] from Cache failed:%v", key, err)
+		return err
+	}
+
+	defer func() {
+		//延迟双删
+		time.AfterFunc(1*time.Second, func() {
+			_ = cla.ClaRepo.Cache.DeleteClassInfoFromCache(ctx, key)
+		})
+	}()
+
+	classInfosdo := make([]*do.ClassInfo, len(classInfos))
+	scsdo := make([]*do.StudentCourse, len(scs))
+
+	_ = copier.Copy(&classInfosdo, &classInfos)
+	_ = copier.Copy(&scsdo, &scs)
+
+	err = cla.TxCtrl.InTx(ctx, func(ctx context.Context) error {
+		//删除对应的所有关系[只删除非手动添加的]
+		err := cla.Sac.DB.DeleteStudentAndCourseByTimeFromDB(ctx, stuID, year, semester)
+		if err != nil {
+			return err
+		}
+		//保存课程信息到db
+		err = cla.ClaRepo.DB.SaveClassInfosToDB(ctx, classInfosdo)
+		if err != nil {
+			return err
+		}
+		//保存新的关系
+		err = cla.Sac.DB.SaveManyStudentAndCourseToDB(ctx, scsdo)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		cla.log.Errorf("Save class [%+v] and scs [%v] failed:%v", classInfos, scs, err)
+	}
+	return err
+}
+
+func (cla ClassRepo) CheckSCIdsExist(ctx context.Context, stuID, year, semester, classID string) bool {
+	return cla.Sac.DB.CheckExists(ctx, year, semester, stuID, classID)
+}
+func (cla ClassRepo) GetAllSchoolClassInfos(ctx context.Context, year, semester string, cursor time.Time) []*biz.ClassInfo {
+	classInfos, err := cla.ClaRepo.DB.GetAllClassInfos(ctx, year, semester, cursor)
+	if err != nil {
+		return nil
+	}
+
+	classInfosBiz := make([]*biz.ClassInfo, len(classInfos))
+	_ = copier.Copy(&classInfosBiz, &classInfos)
+
+	return classInfosBiz
+}
+
+func (cla ClassRepo) GetAddedClasses(ctx context.Context, stuID, year, semester string) ([]*biz.ClassInfo, error) {
+	classInfos, err := cla.ClaRepo.DB.GetAddedClassInfos(ctx, stuID, year, semester)
+	if err != nil {
+		return nil, err
+	}
+
+	classInfosBiz := make([]*biz.ClassInfo, len(classInfos))
+	_ = copier.Copy(&classInfosBiz, &classInfos)
+
+	return classInfosBiz, nil
+}

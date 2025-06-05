@@ -3,6 +3,7 @@ package data
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/asynccnu/ccnubox-be/be-classlist/internal/conf"
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/redis/go-redis/v9"
@@ -138,4 +139,12 @@ func (s StudentAndCourseCacheRepo) RecycleClassId(ctx context.Context, recycleBi
 		return err
 	}
 	return nil
+}
+
+func (s StudentAndCourseCacheRepo) GenerateRecycleSetName(stuId, xnm, xqm string) string {
+	return fmt.Sprintf("Recycle:%s:%s:%s", stuId, xnm, xqm)
+}
+
+func (s StudentAndCourseCacheRepo) GenerateClassInfosKey(stuId, xnm, xqm string) string {
+	return fmt.Sprintf("ClassInfos:%s:%s:%s", stuId, xnm, xqm)
 }

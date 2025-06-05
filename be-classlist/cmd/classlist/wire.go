@@ -32,16 +32,11 @@ func wireApp(*conf.Server, *conf.Data, *conf.Registry, *conf.SchoolDay, *os.File
 		client.ProviderSet,
 		newApp,
 		wire.Bind(new(biz.ClassCrawler), new(*crawler.Crawler)),
-		wire.Bind(new(biz.ClassInfoDBRepo), new(*data.ClassInfoDBRepo)),
-		wire.Bind(new(biz.ClassInfoCacheRepo), new(*data.ClassInfoCacheRepo)),
-		wire.Bind(new(biz.StudentAndCourseDBRepo), new(*data.StudentAndCourseDBRepo)),
-		wire.Bind(new(biz.StudentAndCourseCacheRepo), new(*data.StudentAndCourseCacheRepo)),
 		wire.Bind(new(biz.RefreshLogRepo), new(*data.RefreshLogRepo)),
 		wire.Bind(new(biz.DelayQueue), new(*data.DelayKafka)),
-		wire.Bind(new(service.ClassCtrl), new(*biz.ClassUsecase)),
 		wire.Bind(new(biz.CCNUServiceProxy), new(*client.CCNUService)),
-		wire.Bind(new(biz.ClassRepoProxy), new(*biz.ClassRepo)),
+		wire.Bind(new(biz.ClassRepo), new(*data.ClassRepo)),
 		wire.Bind(new(biz.JxbRepo), new(*data.JxbDBRepo)),
-		wire.Bind(new(biz.Transaction), new(*data.Data)),
+		wire.Bind(new(data.Transaction), new(*data.Data)),
 	))
 }
