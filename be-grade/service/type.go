@@ -211,6 +211,11 @@ func aggregateGradeScore(grades []model.Grade) []domain.TypeOfGradeScore {
 
 	// 遍历所有成绩记录
 	for _, grade := range grades {
+
+		if grade.FinalGrade < 60 {
+			continue
+		}
+
 		// 使用课程性质作为 key
 		key := grade.Kcxzmc
 
