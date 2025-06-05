@@ -1,4 +1,4 @@
-package model
+package do
 
 import (
 	"gorm.io/gorm"
@@ -9,6 +9,8 @@ const (
 	Pending = "pending"
 	Ready   = "ready"
 	Failed  = "failed"
+
+	ClassRefreshLogTableName string = "class_refresh_log"
 )
 
 type ClassRefreshLog struct {

@@ -1,10 +1,14 @@
-package model
+package do
 
 import (
 	"encoding/json"
 	"fmt"
 	"gorm.io/gorm"
 	"time"
+)
+
+const (
+	ClassInfoTableName string = "class_info"
 )
 
 type ClassInfo struct {

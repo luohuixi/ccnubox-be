@@ -3,10 +3,10 @@ package data
 import (
 	"context"
 	"errors"
+	"github.com/asynccnu/ccnubox-be/be-classlist/internal/data/do"
 	"time"
 
 	"github.com/asynccnu/ccnubox-be/be-classlist/internal/conf"
-	"github.com/asynccnu/ccnubox-be/be-classlist/internal/model"
 	"gorm.io/gorm"
 )
 
@@ -29,11 +29,11 @@ func NewRefreshLogRepo(db *gorm.DB, cf *conf.Server) *RefreshLogRepo {
 // InsertRefreshLog 插入一条刷新记录
 func (r *RefreshLogRepo) InsertRefreshLog(ctx context.Context, stuID, year, semester string) (uint64, error) {
 
-	refreshLog := model.ClassRefreshLog{
+	refreshLog := do.ClassRefreshLog{
 		StuID:     stuID,
 		Year:      year,
 		Semester:  semester,
-		Status:    model.Pending,
+		Status:    do.Pending,
 		UpdatedAt: time.Now(),
 	}
 
@@ -48,7 +48,7 @@ func (r *RefreshLogRepo) InsertRefreshLog(ctx context.Context, stuID, year, seme
 			UpdatedAt time.Time
 		}
 
-		err := tx.Table(model.ClassRefreshLogTableName).Select("status,updated_at").
+		err := tx.Table(do.ClassRefreshLogTableName).Select("status,updated_at").
 			Where("stu_id = ? and year = ? and semester = ?", stuID, year, semester).
 			Order("updated_at desc").
 			First(&records).Error
@@ -63,7 +63,7 @@ func (r *RefreshLogRepo) InsertRefreshLog(ctx context.Context, stuID, year, seme
 		if records.UpdatedAt.Before(refreshLog.UpdatedAt.Add(-r.refreshInterval)) {
 			return r.createRefreshLog(ctx, tx, &refreshLog)
 		}
-		if records.Status == model.Failed {
+		if records.Status == do.Failed {
 			return r.createRefreshLog(ctx, tx, &refreshLog)
 		}
 		return errors.New("there are pending or ready records recently")
@@ -76,14 +76,14 @@ func (r *RefreshLogRepo) InsertRefreshLog(ctx context.Context, stuID, year, seme
 }
 
 func (r *RefreshLogRepo) UpdateRefreshLogStatus(ctx context.Context, logID uint64, status string) error {
-	return r.db.WithContext(ctx).Table(model.ClassRefreshLogTableName).
+	return r.db.WithContext(ctx).Table(do.ClassRefreshLogTableName).
 		Where("id = ?", logID).Update("status", status).Error
 }
 
 // SearchRefreshLog 查找在refreshInterval时间内的最新的一条记录
-func (r *RefreshLogRepo) SearchRefreshLog(ctx context.Context, stuID, year, semester string) (*model.ClassRefreshLog, error) {
-	var refreshLog model.ClassRefreshLog
-	err := r.db.WithContext(ctx).Table(model.ClassRefreshLogTableName).
+func (r *RefreshLogRepo) SearchRefreshLog(ctx context.Context, stuID, year, semester string) (*do.ClassRefreshLog, error) {
+	var refreshLog do.ClassRefreshLog
+	err := r.db.WithContext(ctx).Table(do.ClassRefreshLogTableName).
 		Where("stu_id = ? and year = ? and semester = ? and updated_at > ?", stuID, year, semester, time.Now().Add(-r.refreshInterval)).
 		Order("updated_at desc").First(&refreshLog).Error
 	if err != nil {
@@ -94,9 +94,9 @@ func (r *RefreshLogRepo) SearchRefreshLog(ctx context.Context, stuID, year, seme
 
 // GetLastRefreshTime 返回最后一次刷新成功的时间
 func (r *RefreshLogRepo) GetLastRefreshTime(ctx context.Context, stuID, year, semester string, beforeTime time.Time) *time.Time {
-	var refreshLog model.ClassRefreshLog
-	err := r.db.WithContext(ctx).Table(model.ClassRefreshLogTableName).
-		Where("stu_id = ? and year = ? and semester = ? and updated_at < ? and status = ?", stuID, year, semester, beforeTime, model.Ready).
+	var refreshLog do.ClassRefreshLog
+	err := r.db.WithContext(ctx).Table(do.ClassRefreshLogTableName).
+		Where("stu_id = ? and year = ? and semester = ? and updated_at < ? and status = ?", stuID, year, semester, beforeTime, do.Ready).
 		Order("updated_at desc").First(&refreshLog).Error
 	if err != nil {
 		return nil
@@ -105,9 +105,9 @@ func (r *RefreshLogRepo) GetLastRefreshTime(ctx context.Context, stuID, year, se
 }
 
 // GetRefreshLogByID  查找指定ID的记录
-func (r *RefreshLogRepo) GetRefreshLogByID(ctx context.Context, logID uint64) (*model.ClassRefreshLog, error) {
-	var refreshLog model.ClassRefreshLog
-	err := r.db.WithContext(ctx).Table(model.ClassRefreshLogTableName).
+func (r *RefreshLogRepo) GetRefreshLogByID(ctx context.Context, logID uint64) (*do.ClassRefreshLog, error) {
+	var refreshLog do.ClassRefreshLog
+	err := r.db.WithContext(ctx).Table(do.ClassRefreshLogTableName).
 		Where("id = ?", logID).First(&refreshLog).Error
 	if err != nil {
 		return nil, err
@@ -115,6 +115,6 @@ func (r *RefreshLogRepo) GetRefreshLogByID(ctx context.Context, logID uint64) (*
 	return &refreshLog, nil
 }
 
-func (r *RefreshLogRepo) createRefreshLog(ctx context.Context, db *gorm.DB, refreshLog *model.ClassRefreshLog) error {
+func (r *RefreshLogRepo) createRefreshLog(ctx context.Context, db *gorm.DB, refreshLog *do.ClassRefreshLog) error {
 	return db.WithContext(ctx).Create(refreshLog).Error
 }

@@ -2,7 +2,7 @@ package data
 
 import (
 	"context"
-	"github.com/asynccnu/ccnubox-be/be-classlist/internal/model"
+	"github.com/asynccnu/ccnubox-be/be-classlist/internal/data/do"
 	"github.com/go-kratos/kratos/v2/log"
 	"gorm.io/gorm/clause"
 )
@@ -24,10 +24,10 @@ func (j *JxbDBRepo) SaveJxb(ctx context.Context, stuID string, jxbID []string) e
 		return nil
 	}
 
-	db := j.data.Mysql.Table(model.JxbTableName).WithContext(ctx)
-	var jxb = make([]model.Jxb, 0, len(jxbID))
+	db := j.data.Mysql.Table(do.JxbTableName).WithContext(ctx)
+	var jxb = make([]do.Jxb, 0, len(jxbID))
 	for _, id := range jxbID {
-		jxb = append(jxb, model.Jxb{
+		jxb = append(jxb, do.Jxb{
 			JxbId: id,
 			StuId: stuID,
 		})
@@ -35,17 +35,17 @@ func (j *JxbDBRepo) SaveJxb(ctx context.Context, stuID string, jxbID []string) e
 
 	err := db.Debug().Clauses(clause.OnConflict{DoNothing: true}).Create(&jxb).Error
 	if err != nil {
-		j.log.Errorf("Mysql:create %v in %s failed: %v", jxb, model.JxbTableName, err)
+		j.log.Errorf("Mysql:create %v in %s failed: %v", jxb, do.JxbTableName, err)
 		return err
 	}
 	return nil
 }
 func (j *JxbDBRepo) FindStuIdsByJxbId(ctx context.Context, jxbId string) ([]string, error) {
 	var stuIds []string
-	err := j.data.Mysql.Table(model.JxbTableName).WithContext(ctx).
+	err := j.data.Mysql.Table(do.JxbTableName).WithContext(ctx).
 		Select("stu_id").Where("jxb_id = ?", jxbId).Find(&stuIds).Error
 	if err != nil {
-		j.log.Errorf("Mysql:find stu_id in %s where (jxb_id = %s) failed: %v", model.JxbTableName, jxbId, err)
+		j.log.Errorf("Mysql:find stu_id in %s where (jxb_id = %s) failed: %v", do.JxbTableName, jxbId, err)
 		return nil, err
 	}
 	return stuIds, nil
