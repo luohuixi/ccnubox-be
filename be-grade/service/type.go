@@ -212,7 +212,7 @@ func aggregateGradeScore(grades []model.Grade) []domain.TypeOfGradeScore {
 	// 遍历所有成绩记录
 	for _, grade := range grades {
 
-		if grade.FinalGrade < 60 {
+		if grade.Cj < 60 {
 			continue
 		}
 
