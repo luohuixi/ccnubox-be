@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/asynccnu/ccnubox-be/be-classlist/internal/biz"
 	"github.com/asynccnu/ccnubox-be/be-classlist/internal/errcode"
-	"github.com/asynccnu/ccnubox-be/be-classlist/internal/model"
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/valyala/fastjson"
 	"io"
@@ -43,14 +43,13 @@ func NewClassCrawler(logger log.Logger) *Crawler {
 }
 
 // GetClassInfoForGraduateStudent 获取研究生课程信息
-func (c *Crawler) GetClassInfoForGraduateStudent(ctx context.Context, r model.GetClassInfoForGraduateStudentReq) (*model.GetClassInfoForGraduateStudentResp, error) {
-	return nil, errors.New("this feature is not yet implemented")
+func (c *Crawler) GetClassInfoForGraduateStudent(ctx context.Context, stuID, year, semester, cookie string) ([]*biz.ClassInfo, []*biz.StudentCourse, error) {
+	return nil, nil, errors.New("this feature is not yet implemented")
 }
 
 // GetClassInfosForUndergraduate  获取本科生课程信息
-func (c *Crawler) GetClassInfosForUndergraduate(ctx context.Context, r model.GetClassInfosForUndergraduateReq) (*model.GetClassInfosForUndergraduateResp, error) {
-	xnm, xqm := r.Year, r.Semester
-	sendReqStart := time.Now()
+func (c *Crawler) GetClassInfosForUndergraduate(ctx context.Context, stuID, year, semester, cookie string) ([]*biz.ClassInfo, []*biz.StudentCourse, error) {
+	xnm, xqm := year, semester
 
 	formdata := fmt.Sprintf("xnm=%s&xqm=%s&kzlx=ck&xsdm=", xnm, semesterMap[xqm])
 
@@ -59,40 +58,35 @@ func (c *Crawler) GetClassInfosForUndergraduate(ctx context.Context, r model.Get
 	req, err := http.NewRequestWithContext(ctx, "POST", "https://xk.ccnu.edu.cn/jwglxt/kbcx/xskbcx_cxXsgrkb.html?gnmkdm=N2151", data)
 	if err != nil {
 		c.log.Errorf("http.NewRequestWithContext err=%v", err)
-		return nil, errcode.ErrCrawler
+		return nil, nil, errcode.ErrCrawler
 	}
 	req.Header = http.Header{
-		"Cookie":       []string{r.Cookie},
+		"Cookie":       []string{cookie},
 		"Content-Type": []string{"application/x-www-form-urlencoded;charset=UTF-8"},
 		"User-Agent":   []string{"Mozilla/5.0"}, // 精简UA
 	}
 	resp, err := c.client.Do(req)
 	if err != nil {
 		c.log.Errorf("client.Do err=%v", err)
-		return nil, errcode.ErrCrawler
+		return nil, nil, errcode.ErrCrawler
 	}
 	defer resp.Body.Close()
-
-	c.log.Infof("Craw class [%v,%v,%v] cost %v", r.StuID, r.Year, r.Semester, time.Since(sendReqStart))
 
 	// 读取 Body 到字节数组
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		c.log.Errorf("failed to read response body: %v", err)
-		return nil, err
+		return nil, nil, err
 	}
-	infos, Scs, err := extractUndergraduateData(bodyBytes, r.StuID, xnm, xqm)
+	infos, Scs, err := extractUndergraduateData(bodyBytes, stuID, xnm, xqm)
 	if err != nil {
 		c.log.Errorf("extractUndergraduateData err=%v", err)
-		return nil, errcode.ErrCrawler
+		return nil, nil, errcode.ErrCrawler
 	}
-	return &model.GetClassInfosForUndergraduateResp{
-		ClassInfos:     infos,
-		StudentCourses: Scs,
-	}, nil
+	return infos, Scs, nil
 }
 
-func extractUndergraduateData(rawJson []byte, stuID, xnm, xqm string) ([]*model.ClassInfo, []*model.StudentCourse, error) {
+func extractUndergraduateData(rawJson []byte, stuID, xnm, xqm string) ([]*biz.ClassInfo, []*biz.StudentCourse, error) {
 	var p fastjson.Parser
 	v, err := p.ParseBytes(rawJson)
 	if err != nil {
@@ -103,14 +97,16 @@ func extractUndergraduateData(rawJson []byte, stuID, xnm, xqm string) ([]*model.
 		return nil, nil, fmt.Errorf("kbList not found or not an array")
 	}
 	length := len(kbList.GetArray())
-	var infos = make([]*model.ClassInfo, 0, length)
-	var Scs = make([]*model.StudentCourse, 0, length)
+
+	infos := make([]*biz.ClassInfo, 0, length)
+	Scs := make([]*biz.StudentCourse, 0, length)
+
 	for _, kb := range kbList.GetArray() {
 		if string(kb.GetStringBytes("sxbj")) != "1" {
 			continue
 		}
 		//课程信息
-		var info = &model.ClassInfo{}
+		var info = &biz.ClassInfo{}
 		info.Day, _ = strconv.ParseInt(string(kb.GetStringBytes("xqj")), 10, 64) //星期几
 		info.Teacher = string(kb.GetStringBytes("xm"))
 		info.Where = string(kb.GetStringBytes("cdmc"))                           //上课地点
@@ -131,7 +127,7 @@ func extractUndergraduateData(rawJson []byte, stuID, xnm, xqm string) ([]*model.
 
 		//-----------------------------------------------------
 		//学生与课程的映射关系
-		Sc := &model.StudentCourse{
+		Sc := &biz.StudentCourse{
 			StuID:           stuID,
 			ClaID:           info.ID,
 			Year:            xnm,

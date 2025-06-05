@@ -10,6 +10,7 @@ import (
 	"github.com/go-kratos/kratos/v2/middleware/recovery"
 	"github.com/go-kratos/kratos/v2/middleware/tracing"
 	"github.com/go-kratos/kratos/v2/transport/grpc"
+	"github.com/pkg/errors"
 	"time"
 )
 
@@ -22,12 +23,11 @@ func NewCCNUService(cs v1.UserServiceClient) *CCNUService {
 }
 
 func (c *CCNUService) GetCookie(ctx context.Context, stuID string) (string, error) {
-
 	resp, err := c.Cs.GetCookie(ctx, &v1.GetCookieRequest{
 		StudentId: stuID,
 	})
 	if err != nil {
-		return "", errcode.ErrCCNULogin
+		return "", errors.Wrap(errcode.ErrCCNULogin, err.Error())
 	}
 	cookie := resp.Cookie
 	return cookie, nil

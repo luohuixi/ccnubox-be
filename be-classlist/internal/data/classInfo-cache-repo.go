@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/asynccnu/ccnubox-be/be-classlist/internal/conf"
-	"github.com/asynccnu/ccnubox-be/be-classlist/internal/model"
+	"github.com/asynccnu/ccnubox-be/be-classlist/internal/data/do"
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/redis/go-redis/v9"
 	"time"
@@ -39,7 +39,7 @@ func NewClassInfoCacheRepo(rdb *redis.Client, cf *conf.Server, logger log.Logger
 }
 
 // AddClaInfosToCache 将整个课表转换成json格式，然后存到缓存中去
-func (c ClassInfoCacheRepo) AddClaInfosToCache(ctx context.Context, key string, classInfos []*model.ClassInfo) error {
+func (c ClassInfoCacheRepo) AddClaInfosToCache(ctx context.Context, key string, classInfos []*do.ClassInfo) error {
 	var (
 		val    string
 		expire time.Duration
@@ -66,8 +66,8 @@ func (c ClassInfoCacheRepo) AddClaInfosToCache(ctx context.Context, key string, 
 	}
 	return nil
 }
-func (c ClassInfoCacheRepo) GetClassInfosFromCache(ctx context.Context, key string) ([]*model.ClassInfo, error) {
-	var classInfos = make([]*model.ClassInfo, 0)
+func (c ClassInfoCacheRepo) GetClassInfosFromCache(ctx context.Context, key string) ([]*do.ClassInfo, error) {
+	var classInfos = make([]*do.ClassInfo, 0)
 	val, err := c.rdb.Get(ctx, key).Result()
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
