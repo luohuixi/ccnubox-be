@@ -52,6 +52,7 @@ func (d *gradeDAO) FindGrades(ctx context.Context, studentId string, Xnm int64, 
 }
 
 func (d *gradeDAO) BatchInsertOrUpdate(ctx context.Context, grades []model.Grade) (affectedGrades []model.Grade, err error) {
+
 	// 构造联合键：student_id + jxb_id
 	ids := make([]string, len(grades))
 	for i, grade := range grades {
