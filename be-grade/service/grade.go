@@ -2,7 +2,9 @@ package service
 
 import (
 	"context"
-	"fmt"
+	"golang.org/x/sync/singleflight"
+	"time"
+
 	gradev1 "github.com/asynccnu/ccnubox-be/be-api/gen/proto/grade/v1"
 	userv1 "github.com/asynccnu/ccnubox-be/be-api/gen/proto/user/v1"
 	"github.com/asynccnu/ccnubox-be/be-grade/domain"
@@ -10,27 +12,25 @@ import (
 	"github.com/asynccnu/ccnubox-be/be-grade/pkg/logger"
 	"github.com/asynccnu/ccnubox-be/be-grade/repository/dao"
 	"github.com/asynccnu/ccnubox-be/be-grade/repository/model"
-	"golang.org/x/sync/singleflight"
-	"time"
 )
 
 var (
-	GET_GRADE_ERROR = func(err error) error {
+	ErrGetGrade = func(err error) error {
 		return errorx.New(gradev1.ErrorGetGradeError("获取成绩失败"), "dao", err)
 	}
 )
 
 type GradeService interface {
 	GetGradeByTerm(ctx context.Context, req *domain.GetGradeByTermReq) ([]domain.Grade, error)
-	GetGradeScore(ctx context.Context, StudentId string) ([]domain.TypeOfGradeScore, error)
+	GetGradeScore(ctx context.Context, studentId string) ([]domain.TypeOfGradeScore, error)
 	GetUpdateScore(ctx context.Context, studentId string) ([]domain.Grade, error)
 }
 
 type gradeService struct {
 	userClient userv1.UserServiceClient
 	gradeDAO   dao.GradeDAO
-	sfGroup    singleflight.Group
 	l          logger.Logger
+	sf         singleflight.Group
 }
 
 func NewGradeService(gradeDAO dao.GradeDAO, l logger.Logger, userClient userv1.UserServiceClient) GradeService {
@@ -38,190 +38,149 @@ func NewGradeService(gradeDAO dao.GradeDAO, l logger.Logger, userClient userv1.U
 }
 
 func (s *gradeService) GetGradeByTerm(ctx context.Context, req *domain.GetGradeByTermReq) ([]domain.Grade, error) {
-
-	if req.Refresh {
-		//如果强制刷新则尝试从ccnu获取数据
-		grades, err := s.getGradeFromCCNU(ctx, req.StudentID)
-		if len(grades) == 0 || err != nil {
-			//记录日志
-			s.l.Info("从ccnu获取成绩失败!", logger.FormatLog("ccnu", err)...)
-			//尝试获取成绩
-			grades, err = s.gradeDAO.FindGrades(context.Background(), req.StudentID, 0, 0)
-			if err != nil {
-				return nil, GET_GRADE_ERROR(err)
-			}
-			return modelConvDomainAndFilter(grades, req.Terms, req.Kcxzmcs), nil
-		}
-
-		// 异步更新成绩
-		go func() {
-			err := s.updateGrades(grades)
-			if err != nil {
-				s.l.Info("更新成绩失败!", logger.FormatLog("ccnu", err)...)
-			}
-		}()
-
-		return modelConvDomainAndFilter(grades, req.Terms, req.Kcxzmcs), nil
+	grades, err := s.getGradeWithSingleFlight(ctx, req.StudentID, req.Refresh)
+	if err != nil {
+		return nil, err
 	}
-
-	//尝试从数据库获取成绩
-	grades, err := s.gradeDAO.FindGrades(ctx, req.StudentID, 0, 0)
-	if len(grades) == 0 || err != nil {
-
-		s.l.Info("从数据库获取成绩失败!", logger.FormatLog("dao", err)...)
-
-		//如果数据库没有查询到则尝试从ccnu获取数据
-		grades, err = s.getGradeFromCCNU(ctx, req.StudentID)
-		if len(grades) == 0 && err != nil {
-			//ccnu这里如果是一些非法数据除非出错了否则不会爆error
-			return nil, GET_GRADE_ERROR(err)
-		}
-
-		err := s.updateGrades(grades)
-		if err != nil {
-			s.l.Info("更新成绩失败!", logger.FormatLog("ccnu", err)...)
-			return modelConvDomainAndFilter(grades, req.Terms, req.Kcxzmcs), nil
-		}
-
-		return modelConvDomainAndFilter(grades, req.Terms, req.Kcxzmcs), nil
-
-	}
-
-	// 异步获取成绩并更新
-	go func() {
-		ctx := context.Background()
-		grades, err = s.getGradeFromCCNU(ctx, req.StudentID)
-		if len(grades) == 0 || err != nil {
-			s.l.Info("从ccnu获取成绩失败!", logger.FormatLog("ccnu", err)...)
-			return
-		}
-
-		err := s.updateGrades(grades)
-		if err != nil {
-			s.l.Info("更新成绩失败!", logger.FormatLog("ccnu", err)...)
-			return
-		}
-	}()
-
 	return modelConvDomainAndFilter(grades, req.Terms, req.Kcxzmcs), nil
-
 }
 
 func (s *gradeService) GetGradeScore(ctx context.Context, studentId string) ([]domain.TypeOfGradeScore, error) {
-
-	grades, err := s.gradeDAO.FindGrades(ctx, studentId, 0, 0)
-	if len(grades) == 0 || err != nil {
-		grades, err = s.getGradeFromCCNU(context.Background(), studentId)
-		if len(grades) == 0 && err != nil {
-			return nil, GET_GRADE_ERROR(err)
-		}
-		err = s.updateGrades(grades)
-		if err != nil {
-			s.l.Info("更新成绩失败!", logger.FormatLog("dao", err)...)
-			return aggregateGradeScore(grades), nil
-		}
-		return aggregateGradeScore(grades), nil
+	grades, err := s.getGradeWithSingleFlight(ctx, studentId, false)
+	if err != nil {
+		return nil, err
 	}
-
-	// 异步回存
-	go func() {
-		grades, err := s.getGradeFromCCNU(context.Background(), studentId)
-		if len(grades) == 0 && err != nil {
-			s.l.Info("获取成绩失败!", logger.FormatLog("ccnu", err)...)
-		}
-		err = s.updateGrades(grades)
-		if err != nil {
-			s.l.Info("更新成绩失败!", logger.FormatLog("dao", err)...)
-			return
-		}
-	}()
-
 	return aggregateGradeScore(grades), nil
 }
 
 func (s *gradeService) GetUpdateScore(ctx context.Context, studentId string) ([]domain.Grade, error) {
-	grades, err := s.getGradeFromCCNU(ctx, studentId)
-	if len(grades) == 0 && err != nil {
-		return nil, GET_GRADE_ERROR(err)
+	grades, err := s.fetchGradesFromRemote(ctx, studentId)
+	if err != nil || len(grades) == 0 {
+		return nil, ErrGetGrade(err)
 	}
 
-	updateGrades, err := s.gradeDAO.BatchInsertOrUpdate(context.Background(), grades)
+	updated, err := s.gradeDAO.BatchInsertOrUpdate(context.Background(), grades)
 	if err != nil {
-		s.l.Warn("异步回填成绩失败!", logger.FormatLog("cache", err)...)
-		return nil, GET_GRADE_ERROR(err)
+		s.l.Warn("更新成绩失败", logger.FormatLog("dao", err)...)
+		return nil, ErrGetGrade(err)
 	}
 
-	for _, updateGrade := range updateGrades {
-		s.l.Info(
-			"更新成绩成功!",
-			logger.String("studentId", updateGrade.Studentid),
-			logger.String("课程名称", updateGrade.Kcmc),
-		)
+	for _, g := range updated {
+		s.l.Info("更新成绩成功", logger.String("studentId", g.Studentid), logger.String("课程", g.Kcmc))
 	}
-
-	return modelConvDomain(updateGrades), nil
+	return modelConvDomain(updated), nil
 }
 
-func (s *gradeService) getGradeFromCCNU(ctx context.Context, studentId string) ([]model.Grade, error) {
-	key := studentId
-	result, err, _ := s.sfGroup.Do(key, func() (interface{}, error) {
-		// 设置30秒超时
-		ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
-		defer cancel()
+func (s *gradeService) getGradeWithSingleFlight(ctx context.Context, studentId string, refresh bool) ([]model.Grade, error) {
+	if refresh {
+		_, grades, err := s.fetchGradesFromRemoteAndUpdate(ctx, studentId, true)
+		if err != nil || len(grades) == 0 {
+			s.l.Warn("从ccnu获取成绩失败!", logger.FormatLog("ccnu", err)...)
+			grades, err = s.gradeDAO.FindGrades(context.Background(), studentId, 0, 0)
+			if err != nil {
+				return nil, ErrGetGrade(err)
+			}
+		}
+		return grades, nil
+	}
 
-		start := time.Now()
+	//从数据库获取数据
+	grades, err := s.gradeDAO.FindGrades(ctx, studentId, 0, 0)
+	if err == nil && len(grades) > 0 {
+		//如果有成绩进行异步更新
+		go func() {
+			_, _, err := s.fetchGradesFromRemoteAndUpdate(context.Background(), studentId, true)
+			if err != nil {
+				s.l.Warn("从ccnu获取成绩失败!", logger.FormatLog("ccnu", err)...)
+			}
+		}()
+		return grades, nil
+	}
 
-		// 获取cookie
-		getCookieResp, err := s.userClient.GetCookie(ctx, &userv1.GetCookieRequest{
-			StudentId: studentId,
-		})
+	//如果没成绩尝试获取最新成绩
+	s.l.Info("数据库中无成绩或查询失败，尝试从ccnu获取", logger.FormatLog("dao", err)...)
+	_, grades, err = s.fetchGradesFromRemoteAndUpdate(ctx, studentId, true)
+	if err != nil {
+		return nil, ErrGetGrade(err)
+	}
+
+	return grades, nil
+}
+
+func (s *gradeService) fetchGradesFromRemote(ctx context.Context, studentId string) ([]model.Grade, error) {
+
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	start := time.Now()
+	cookieResp, err := s.userClient.GetCookie(ctx, &userv1.GetCookieRequest{StudentId: studentId})
+	if err != nil {
+		return nil, err
+	}
+
+	grades, err := GetGrade(ctx, cookieResp.GetCookie(), 0, 0, 300)
+	if err == COOKIE_TIMEOUT {
+		cookieResp, err = s.userClient.GetCookie(ctx, &userv1.GetCookieRequest{StudentId: studentId})
 		if err != nil {
 			return nil, err
 		}
-		s.l.Warn("获取cookie花费时间:", logger.String("花费时间:", time.Since(start).String()))
-
-		// 获取成绩
-		items, err := GetGrade(ctx, getCookieResp.GetCookie(), 0, 0, 300)
-		s.l.Warn("获取成绩花费时间:", logger.String("花费时间:", time.Since(start).String()))
-
-		// 错误处理
-		if err == nil {
-			return items, nil
-		}
-		if err == COOKIE_TIMEOUT {
-			// 重试一次获取cookie和成绩
-			getCookieResp, err = s.userClient.GetCookie(ctx, &userv1.GetCookieRequest{
-				StudentId: studentId,
-			})
-			if err != nil {
-				return nil, err
-			}
-			items, err = GetGrade(ctx, getCookieResp.GetCookie(), 0, 0, 300)
-			return items, err
-		}
-		return nil, err
-	})
-
-	// 类型断言
-	if grades, ok := result.([]model.Grade); ok {
-		return grades, err
+		return GetGrade(ctx, cookieResp.GetCookie(), 0, 0, 300)
 	}
-	return nil, fmt.Errorf("类型断言失败: %v", err)
+
+	s.l.Info("获取成绩耗时", logger.String("耗时", time.Since(start).String()))
+	return grades, err
+
 }
 
-func (s *gradeService) updateGrades(grades []model.Grade) error {
-	updateGrades, err := s.gradeDAO.BatchInsertOrUpdate(context.Background(), grades)
+func (s *gradeService) updateGrades(grades []model.Grade) ([]model.Grade, error) {
+	updated, err := s.gradeDAO.BatchInsertOrUpdate(context.Background(), grades)
 	if err != nil {
-		s.l.Warn("异步回填成绩失败!", logger.FormatLog("cache", err)...)
-		return err
+		return nil, err
+	}
+	for _, g := range updated {
+		s.l.Info("更新成绩成功", logger.String("studentId", g.Studentid), logger.String("课程", g.Kcmc))
+	}
+	return updated, nil
+}
+
+func (s *gradeService) fetchGradesFromRemoteAndUpdate(ctx context.Context, studentId string, isAsyc bool) (updated []model.Grade, grades []model.Grade, err error) {
+	key := studentId
+	type Grades struct {
+		remote []model.Grade
+		update []model.Grade
 	}
 
-	for _, updateGrade := range updateGrades {
-		s.l.Info(
-			"更新成绩成功!",
-			logger.String("studentId", updateGrade.Studentid),
-			logger.String("课程名称", updateGrade.Kcmc),
-		)
+	result, err, _ := s.sf.Do(key, func() (interface{}, error) {
+		var result Grades
+		remote, err := s.fetchGradesFromRemote(ctx, studentId)
+		if err != nil {
+			return nil, err
+		}
+
+		if isAsyc {
+			go func() {
+				_, err := s.updateGrades(remote)
+				if err != nil {
+					s.l.Warn("异步更新成绩失败", logger.FormatLog("dao", err)...)
+				}
+			}()
+			return result, nil
+		}
+
+		result.update, err = s.updateGrades(remote)
+		if err != nil {
+			return result, err
+		}
+
+		return result, nil
+	})
+
+	res, ok := result.(Grades)
+	if !ok {
+		s.l.Error("类型断言失败!", logger.FormatLog("service", err)...)
+
 	}
-	return nil
+
+	return res.update, res.remote, nil
+
 }
