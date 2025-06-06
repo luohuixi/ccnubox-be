@@ -10,6 +10,8 @@ import (
 	"github.com/asynccnu/ccnubox-be/be-classlist/internal/errcode"
 	"github.com/asynccnu/ccnubox-be/be-classlist/internal/pkg/tool"
 	"github.com/go-kratos/kratos/v2/log"
+	"github.com/panjf2000/ants/v2"
+	"math/rand"
 	"sync"
 	"time"
 )
@@ -25,11 +27,23 @@ type ClassUsecase struct {
 	waitCrawTime    time.Duration
 	waitUserSvcTime time.Duration
 	log             *log.Helper
+
+	// gpool 是一个用于处理删除log操作的协程池
+	gpool *ants.Pool
+	// rndPool 用于生成随机数，避免每次都创建新的rand对象,同时保证并发安全
+	rndPool sync.Pool
+}
+
+func (cluc *ClassUsecase) Close() {
+	if cluc.gpool != nil {
+		cluc.gpool.Release()
+		cluc.log.Info("ClassUsecase goroutine pool released")
+	}
 }
 
 func NewClassUsecase(classRepo ClassRepo, crawler ClassCrawler,
 	JxbRepo JxbRepo, Cs CCNUServiceProxy, delayQue DelayQueue, refreshLog RefreshLogRepo,
-	cf *conf.Server, logger log.Logger) *ClassUsecase {
+	cf *conf.Server, logger log.Logger) (*ClassUsecase, func()) {
 
 	waitCrawTime := 1200 * time.Millisecond
 	waitUserSvcTime := 10000 * time.Millisecond
@@ -41,6 +55,8 @@ func NewClassUsecase(classRepo ClassRepo, crawler ClassCrawler,
 		waitUserSvcTime = time.Duration(cf.WaitUserSvcTime) * time.Millisecond
 	}
 
+	p, _ := ants.NewPool(100)
+
 	cluc := &ClassUsecase{
 		classRepo:       classRepo,
 		crawler:         crawler,
@@ -51,6 +67,12 @@ func NewClassUsecase(classRepo ClassRepo, crawler ClassCrawler,
 		waitCrawTime:    waitCrawTime,
 		waitUserSvcTime: waitUserSvcTime,
 		log:             log.NewHelper(logger),
+		gpool:           p,
+		rndPool: sync.Pool{
+			New: func() interface{} {
+				return rand.New(rand.NewSource(time.Now().UnixNano()))
+			},
+		},
 	}
 	// 开启一个协程来处理重试消息
 	go func() {
@@ -59,7 +81,9 @@ func NewClassUsecase(classRepo ClassRepo, crawler ClassCrawler,
 		}
 	}()
 
-	return cluc
+	return cluc, func() {
+		cluc.Close()
+	}
 }
 
 func (cluc *ClassUsecase) GetClasses(ctx context.Context, stuID, year, semester string, refresh bool) ([]*ClassInfo, *time.Time, error) {
@@ -223,6 +247,11 @@ wrapRes: //包装结果
 
 	currentTime := time.Now()
 	lastRefreshTime := cluc.refreshLogRepo.GetLastRefreshTime(ctx, stuID, year, semester, currentTime)
+
+	// 随机执行删除log的操作
+	if cluc.goroutineSafeRandIntn(10)+1 <= 3 {
+		cluc.deleteRedundantLogs(ctx, stuID, year, semester)
+	}
 
 	return classInfos, lastRefreshTime, nil
 }
@@ -460,6 +489,26 @@ func (cluc *ClassUsecase) handleRetryMsg(key, val []byte) {
 	}
 	//更新日志状态
 	_ = cluc.refreshLogRepo.UpdateRefreshLogStatus(context.Background(), logID, do.Ready)
+}
+
+// goroutineSafeRandIntn 用于在多协程环境中安全地生成随机数
+func (cluc *ClassUsecase) goroutineSafeRandIntn(n int) int {
+	r := cluc.rndPool.Get().(*rand.Rand)
+	defer cluc.rndPool.Put(r)
+	return r.Intn(n)
+}
+
+func (cluc *ClassUsecase) deleteRedundantLogs(ctx context.Context, stuID, year, semester string) {
+	taskErr := cluc.gpool.Submit(func() {
+		if deleteErr := cluc.refreshLogRepo.DeleteRedundantLogs(ctx, stuID, year, semester); deleteErr != nil {
+			cluc.log.Errorf("Error deleting redundant logs[%v %v %v]: %v", stuID, year, semester, deleteErr)
+			return
+		}
+		cluc.log.Infof("Successfully deleted redundant logs for [%v %v %v]", stuID, year, semester)
+	})
+	if taskErr != nil {
+		cluc.log.Errorf("Error submitting delete redundant logs task: %v", taskErr)
+	}
 }
 
 // Student 学生接口

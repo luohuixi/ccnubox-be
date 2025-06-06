@@ -115,6 +115,53 @@ func (r *RefreshLogRepo) GetRefreshLogByID(ctx context.Context, logID uint64) (*
 	return &refreshLog, nil
 }
 
+// DeleteRedundantLogs 删除冗余的刷新记录
+func (r *RefreshLogRepo) DeleteRedundantLogs(ctx context.Context, stuID, year, semester string) error {
+
+	var ids []int
+
+	// 首先找到所有成功的记录的ID
+	err := r.db.WithContext(ctx).Table(do.ClassRefreshLogTableName).
+		Where("stu_id = ? AND year = ? AND semester = ? AND status = ?",
+			stuID, year, semester, do.Ready).Order("id DESC").Pluck("id", &ids).Error
+
+	if err != nil {
+		return err
+	}
+
+	// 如果没有找到成功的记录或者成功的记录等于1，直接返回
+	if len(ids) <= 1 {
+		return nil
+	}
+
+	// 获取除最新一条记录外的所有记录ID
+	toDelete := make([]int, len(ids)-1)
+	copy(toDelete, ids[1:])
+
+	// 并添加已失败的刷新记录
+	var failedLog []int
+	err = r.db.WithContext(ctx).Table(do.ClassRefreshLogTableName).
+		Where("stu_id = ? AND year = ? AND semester = ? AND status = ?",
+			stuID, year, semester, do.Failed).Order("id DESC").Pluck("id", &failedLog).Error
+	if err != nil {
+		failedLog = nil
+	}
+
+	// 将失败的记录ID添加到待删除列表中
+	if len(failedLog) > 0 {
+		toDelete = append(toDelete, failedLog...)
+	}
+	// 删除这些记录
+	if len(toDelete) > 0 {
+		err = r.db.WithContext(ctx).Table(do.ClassRefreshLogTableName).
+			Where("id IN ?", toDelete).Delete(&do.ClassRefreshLog{}).Error
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (r *RefreshLogRepo) createRefreshLog(ctx context.Context, db *gorm.DB, refreshLog *do.ClassRefreshLog) error {
 	return db.WithContext(ctx).Create(refreshLog).Error
 }

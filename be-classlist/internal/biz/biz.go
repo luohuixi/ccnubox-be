@@ -51,6 +51,7 @@ type RefreshLogRepo interface {
 	SearchRefreshLog(ctx context.Context, stuID, year, semester string) (*do.ClassRefreshLog, error)
 	GetRefreshLogByID(ctx context.Context, logID uint64) (*do.ClassRefreshLog, error)
 	GetLastRefreshTime(ctx context.Context, stuID, year, semester string, beforeTime time.Time) *time.Time
+	DeleteRedundantLogs(ctx context.Context, stuID, year, semester string) error
 }
 
 type DelayQueue interface {
