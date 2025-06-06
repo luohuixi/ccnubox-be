@@ -59,11 +59,12 @@ func wireApp(confServer *conf.Server, confData *conf.Data, confRegistry *conf.Re
 		return nil, nil, err
 	}
 	refreshLogRepo := data.NewRefreshLogRepo(db, confServer)
-	classUsecase := biz.NewClassUsecase(classRepo, crawlerCrawler, jxbDBRepo, ccnuService, delayKafka, refreshLogRepo, confServer, logger)
+	classUsecase, cleanup3 := biz.NewClassUsecase(classRepo, crawlerCrawler, jxbDBRepo, ccnuService, delayKafka, refreshLogRepo, confServer, logger)
 	classListService := service.NewClasserService(classUsecase, schoolDay, logger)
 	grpcServer := server.NewGRPCServer(confServer, classListService, logger)
 	app := newApp(logger, grpcServer, etcdRegistry)
 	return app, func() {
+		cleanup3()
 		cleanup2()
 		cleanup()
 	}, nil
