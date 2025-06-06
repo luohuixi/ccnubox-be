@@ -99,7 +99,7 @@ func (s *gradeService) getGradeWithSingleFlight(ctx context.Context, studentId s
 
 	//如果没成绩尝试获取最新成绩
 	s.l.Info("数据库中无成绩或查询失败，尝试从ccnu获取", logger.FormatLog("dao", err)...)
-	_, grades, err = s.fetchGradesFromRemoteAndUpdate(ctx, studentId, true)
+	_, grades, err = s.fetchGradesFromRemoteAndUpdate(ctx, studentId, false)
 	if err != nil {
 		return nil, ErrGetGrade(err)
 	}
@@ -108,26 +108,36 @@ func (s *gradeService) getGradeWithSingleFlight(ctx context.Context, studentId s
 }
 
 func (s *gradeService) fetchGradesFromRemote(ctx context.Context, studentId string) ([]model.Grade, error) {
+	key := studentId
 
-	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
-	defer cancel()
+	result, err, _ := s.sf.Do(key, func() (interface{}, error) {
+		ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+		defer cancel()
 
-	start := time.Now()
-	cookieResp, err := s.userClient.GetCookie(ctx, &userv1.GetCookieRequest{StudentId: studentId})
-	if err != nil {
-		return nil, err
-	}
-
-	grades, err := GetGrade(ctx, cookieResp.GetCookie(), 0, 0, 300)
-	if err == COOKIE_TIMEOUT {
-		cookieResp, err = s.userClient.GetCookie(ctx, &userv1.GetCookieRequest{StudentId: studentId})
+		start := time.Now()
+		cookieResp, err := s.userClient.GetCookie(ctx, &userv1.GetCookieRequest{StudentId: studentId})
 		if err != nil {
 			return nil, err
 		}
-		return GetGrade(ctx, cookieResp.GetCookie(), 0, 0, 300)
+
+		grades, err := GetGrade(ctx, cookieResp.GetCookie(), 0, 0, 300)
+		if err == COOKIE_TIMEOUT {
+			cookieResp, err = s.userClient.GetCookie(ctx, &userv1.GetCookieRequest{StudentId: studentId})
+			if err != nil {
+				return nil, err
+			}
+			return GetGrade(ctx, cookieResp.GetCookie(), 0, 0, 300)
+		}
+		s.l.Info("获取成绩耗时", logger.String("耗时", time.Since(start).String()))
+
+		return grades, err
+	})
+
+	grades, ok := result.([]model.Grade)
+	if !ok {
+		s.l.Warn("类型断言失败", logger.FormatLog("service", err)...)
 	}
 
-	s.l.Info("获取成绩耗时", logger.String("耗时", time.Since(start).String()))
 	return grades, err
 
 }
@@ -137,6 +147,7 @@ func (s *gradeService) updateGrades(grades []model.Grade) ([]model.Grade, error)
 	if err != nil {
 		return nil, err
 	}
+
 	for _, g := range updated {
 		s.l.Info("更新成绩成功", logger.String("studentId", g.Studentid), logger.String("课程", g.Kcmc))
 	}
@@ -144,43 +155,26 @@ func (s *gradeService) updateGrades(grades []model.Grade) ([]model.Grade, error)
 }
 
 func (s *gradeService) fetchGradesFromRemoteAndUpdate(ctx context.Context, studentId string, isAsyc bool) (updated []model.Grade, grades []model.Grade, err error) {
-	key := studentId
-	type Grades struct {
-		remote []model.Grade
-		update []model.Grade
+
+	remote, err := s.fetchGradesFromRemote(ctx, studentId)
+	if err != nil {
+		return nil, nil, err
 	}
 
-	result, err, _ := s.sf.Do(key, func() (interface{}, error) {
-		var result Grades
-		remote, err := s.fetchGradesFromRemote(ctx, studentId)
-		if err != nil {
-			return nil, err
-		}
-
-		if isAsyc {
-			go func() {
-				_, err := s.updateGrades(remote)
-				if err != nil {
-					s.l.Warn("异步更新成绩失败", logger.FormatLog("dao", err)...)
-				}
-			}()
-			return result, nil
-		}
-
-		result.update, err = s.updateGrades(remote)
-		if err != nil {
-			return result, err
-		}
-
-		return result, nil
-	})
-
-	res, ok := result.(Grades)
-	if !ok {
-		s.l.Error("类型断言失败!", logger.FormatLog("service", err)...)
-
+	if isAsyc {
+		go func() {
+			_, err := s.updateGrades(remote)
+			if err != nil {
+				s.l.Warn("异步更新成绩失败", logger.FormatLog("dao", err)...)
+			}
+		}()
+		return nil, remote, nil
 	}
 
-	return res.update, res.remote, nil
+	update, err := s.updateGrades(remote)
+	if err != nil {
+		return nil, remote, err
+	}
 
+	return update, remote, nil
 }
