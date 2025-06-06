@@ -250,7 +250,7 @@ wrapRes: //包装结果
 
 	// 随机执行删除log的操作
 	if cluc.goroutineSafeRandIntn(10)+1 <= 3 {
-		cluc.deleteRedundantLogs(ctx, stuID, year, semester)
+		cluc.deleteRedundantLogs(context.Background(), stuID, year, semester)
 	}
 
 	return classInfos, lastRefreshTime, nil
