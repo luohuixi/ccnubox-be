@@ -27,7 +27,11 @@ type ClassUsecase struct {
 	waitCrawTime    time.Duration
 	waitUserSvcTime time.Duration
 	log             *log.Helper
-	gpool           *ants.Pool
+
+	// gpool 是一个用于处理删除log操作的协程池
+	gpool *ants.Pool
+	// rndPool 用于生成随机数，避免每次都创建新的rand对象,同时保证并发安全
+	rndPool sync.Pool
 }
 
 func (cluc *ClassUsecase) Close() {
@@ -64,6 +68,11 @@ func NewClassUsecase(classRepo ClassRepo, crawler ClassCrawler,
 		waitUserSvcTime: waitUserSvcTime,
 		log:             log.NewHelper(logger),
 		gpool:           p,
+		rndPool: sync.Pool{
+			New: func() interface{} {
+				return rand.New(rand.NewSource(time.Now().UnixNano()))
+			},
+		},
 	}
 	// 开启一个协程来处理重试消息
 	go func() {
@@ -240,7 +249,7 @@ wrapRes: //包装结果
 	lastRefreshTime := cluc.refreshLogRepo.GetLastRefreshTime(ctx, stuID, year, semester, currentTime)
 
 	// 随机执行删除log的操作
-	if rand.Intn(10)+1 <= 3 {
+	if cluc.goroutineSafeRandIntn(10)+1 <= 3 {
 		cluc.deleteRedundantLogs(ctx, stuID, year, semester)
 	}
 
@@ -480,6 +489,13 @@ func (cluc *ClassUsecase) handleRetryMsg(key, val []byte) {
 	}
 	//更新日志状态
 	_ = cluc.refreshLogRepo.UpdateRefreshLogStatus(context.Background(), logID, do.Ready)
+}
+
+// goroutineSafeRandIntn 用于在多协程环境中安全地生成随机数
+func (cluc *ClassUsecase) goroutineSafeRandIntn(n int) int {
+	r := cluc.rndPool.Get().(*rand.Rand)
+	defer cluc.rndPool.Put(r)
+	return r.Intn(n)
 }
 
 func (cluc *ClassUsecase) deleteRedundantLogs(ctx context.Context, stuID, year, semester string) {
