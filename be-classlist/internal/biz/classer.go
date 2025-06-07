@@ -55,7 +55,8 @@ func NewClassUsecase(classRepo ClassRepo, crawler ClassCrawler,
 		waitUserSvcTime = time.Duration(cf.WaitUserSvcTime) * time.Millisecond
 	}
 
-	p, _ := ants.NewPool(100)
+	//使用非阻塞模式
+	p, _ := ants.NewPool(1000, ants.WithNonblocking(true))
 
 	cluc := &ClassUsecase{
 		classRepo:       classRepo,
@@ -249,7 +250,7 @@ wrapRes: //包装结果
 	lastRefreshTime := cluc.refreshLogRepo.GetLastRefreshTime(ctx, stuID, year, semester, currentTime)
 
 	// 随机执行删除log的操作
-	if cluc.goroutineSafeRandIntn(10)+1 <= 3 {
+	if refresh && cluc.goroutineSafeRandIntn(10)+1 <= 3 {
 		cluc.deleteRedundantLogs(context.Background(), stuID, year, semester)
 	}
 
