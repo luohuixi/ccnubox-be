@@ -121,6 +121,7 @@ func (c *ccnuService) xkLoginClient(client *http.Client) (*http.Client, error) {
 	if err != nil {
 		return nil, CCNUSERVER_ERROR(err)
 	}
+	request.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.109 Safari/537.36")
 
 	resp, err := client.Do(request)
 	if err != nil {
@@ -146,7 +147,7 @@ func (c *ccnuService) loginClient(ctx context.Context, client *http.Client, stud
 	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	request.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.109 Safari/537.36")
 	request.WithContext(ctx)
-	//创建一个带jar的客户端
+	// 创建一个带jar的客户端
 	j, _ := cookiejar.New(&cookiejar.Options{})
 	client.Jar = j
 	//发送请求
