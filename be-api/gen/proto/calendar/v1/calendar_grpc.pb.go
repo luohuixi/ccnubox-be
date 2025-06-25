@@ -19,7 +19,7 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	CalendarService_GetCalendar_FullMethodName  = "/calendar.v1.CalendarService/GetCalendar"
+	CalendarService_GetCalendars_FullMethodName = "/calendar.v1.CalendarService/GetCalendars"
 	CalendarService_SaveCalendar_FullMethodName = "/calendar.v1.CalendarService/SaveCalendar"
 	CalendarService_DelCalendar_FullMethodName  = "/calendar.v1.CalendarService/DelCalendar"
 )
@@ -28,7 +28,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type CalendarServiceClient interface {
-	GetCalendar(ctx context.Context, in *GetCalendarRequest, opts ...grpc.CallOption) (*GetCalendarResponse, error)
+	GetCalendars(ctx context.Context, in *GetCalendarsRequest, opts ...grpc.CallOption) (*GetCalendarsResponse, error)
 	SaveCalendar(ctx context.Context, in *SaveCalendarRequest, opts ...grpc.CallOption) (*SaveCalendarResponse, error)
 	DelCalendar(ctx context.Context, in *DelCalendarRequest, opts ...grpc.CallOption) (*DelCalendarResponse, error)
 }
@@ -41,10 +41,10 @@ func NewCalendarServiceClient(cc grpc.ClientConnInterface) CalendarServiceClient
 	return &calendarServiceClient{cc}
 }
 
-func (c *calendarServiceClient) GetCalendar(ctx context.Context, in *GetCalendarRequest, opts ...grpc.CallOption) (*GetCalendarResponse, error) {
+func (c *calendarServiceClient) GetCalendars(ctx context.Context, in *GetCalendarsRequest, opts ...grpc.CallOption) (*GetCalendarsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetCalendarResponse)
-	err := c.cc.Invoke(ctx, CalendarService_GetCalendar_FullMethodName, in, out, cOpts...)
+	out := new(GetCalendarsResponse)
+	err := c.cc.Invoke(ctx, CalendarService_GetCalendars_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +75,7 @@ func (c *calendarServiceClient) DelCalendar(ctx context.Context, in *DelCalendar
 // All implementations must embed UnimplementedCalendarServiceServer
 // for forward compatibility.
 type CalendarServiceServer interface {
-	GetCalendar(context.Context, *GetCalendarRequest) (*GetCalendarResponse, error)
+	GetCalendars(context.Context, *GetCalendarsRequest) (*GetCalendarsResponse, error)
 	SaveCalendar(context.Context, *SaveCalendarRequest) (*SaveCalendarResponse, error)
 	DelCalendar(context.Context, *DelCalendarRequest) (*DelCalendarResponse, error)
 	mustEmbedUnimplementedCalendarServiceServer()
@@ -88,8 +88,8 @@ type CalendarServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedCalendarServiceServer struct{}
 
-func (UnimplementedCalendarServiceServer) GetCalendar(context.Context, *GetCalendarRequest) (*GetCalendarResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetCalendar not implemented")
+func (UnimplementedCalendarServiceServer) GetCalendars(context.Context, *GetCalendarsRequest) (*GetCalendarsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetCalendars not implemented")
 }
 func (UnimplementedCalendarServiceServer) SaveCalendar(context.Context, *SaveCalendarRequest) (*SaveCalendarResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SaveCalendar not implemented")
@@ -118,20 +118,20 @@ func RegisterCalendarServiceServer(s grpc.ServiceRegistrar, srv CalendarServiceS
 	s.RegisterService(&CalendarService_ServiceDesc, srv)
 }
 
-func _CalendarService_GetCalendar_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetCalendarRequest)
+func _CalendarService_GetCalendars_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetCalendarsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CalendarServiceServer).GetCalendar(ctx, in)
+		return srv.(CalendarServiceServer).GetCalendars(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: CalendarService_GetCalendar_FullMethodName,
+		FullMethod: CalendarService_GetCalendars_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CalendarServiceServer).GetCalendar(ctx, req.(*GetCalendarRequest))
+		return srv.(CalendarServiceServer).GetCalendars(ctx, req.(*GetCalendarsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -180,8 +180,8 @@ var CalendarService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*CalendarServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "GetCalendar",
-			Handler:    _CalendarService_GetCalendar_Handler,
+			MethodName: "GetCalendars",
+			Handler:    _CalendarService_GetCalendars_Handler,
 		},
 		{
 			MethodName: "SaveCalendar",

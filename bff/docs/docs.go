@@ -243,7 +243,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/calendar/getCalendar": {
+        "/calendar/getCalendars": {
             "get": {
                 "description": "获取日历列表",
                 "consumes": [
@@ -256,14 +256,6 @@ const docTemplate = `{
                     "calendar"
                 ],
                 "summary": "获取日历列表",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "name": "year",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "成功",
@@ -276,7 +268,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/calendar.GetCalendarResponse"
+                                            "$ref": "#/definitions/calendar.GetCalendarsResponse"
                                         }
                                     }
                                 }
@@ -2740,18 +2732,7 @@ const docTemplate = `{
                 }
             }
         },
-        "calendar.DelCalendarRequest": {
-            "type": "object",
-            "required": [
-                "year"
-            ],
-            "properties": {
-                "year": {
-                    "type": "integer"
-                }
-            }
-        },
-        "calendar.GetCalendarResponse": {
+        "calendar.Calendar": {
             "type": "object",
             "required": [
                 "link",
@@ -2763,6 +2744,28 @@ const docTemplate = `{
                 },
                 "year": {
                     "type": "integer"
+                }
+            }
+        },
+        "calendar.DelCalendarRequest": {
+            "type": "object",
+            "required": [
+                "year"
+            ],
+            "properties": {
+                "year": {
+                    "type": "integer"
+                }
+            }
+        },
+        "calendar.GetCalendarsResponse": {
+            "type": "object",
+            "properties": {
+                "calendars": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/calendar.Calendar"
+                    }
                 }
             }
         },

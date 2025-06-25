@@ -11,6 +11,7 @@ type CalendarDAO interface {
 	GetCalendar(ctx context.Context, year int64) (*model.Calendar, error)
 	SaveCalendar(ctx context.Context, calendar *model.Calendar) error
 	DelCalendar(ctx context.Context, year int64) (*model.Calendar, error)
+	GetCalendars(ctx context.Context) ([]model.Calendar, error)
 }
 
 // calendarDAO 结构体实现 CalendarDAO 接口
@@ -28,6 +29,11 @@ func (dao *calendarDAO) GetCalendar(ctx context.Context, year int64) (*model.Cal
 	var c model.Calendar
 	err := dao.gorm.WithContext(ctx).Model(model.Calendar{}).Where("year=?", year).First(&c).Error
 	return &c, err
+}
+func (dao *calendarDAO) GetCalendars(ctx context.Context) ([]model.Calendar, error) {
+	var c []model.Calendar
+	err := dao.gorm.WithContext(ctx).Model(model.Calendar{}).Find(&c).Error
+	return c, err
 }
 
 // SaveCalendars 保存日历数据

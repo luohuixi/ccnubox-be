@@ -23,7 +23,7 @@ func NewCalendarHandler(calendarClient calendarv1.CalendarServiceClient,
 
 func (h *CalendarHandler) RegisterRoutes(s *gin.RouterGroup, authMiddleware gin.HandlerFunc) {
 	sg := s.Group("/calendar")
-	sg.GET("/getCalendar", ginx.WrapReq(h.GetCalendar))
+	sg.GET("/getCalendars", ginx.Wrap(h.GetCalendars))
 	sg.POST("/saveCalendar", authMiddleware, ginx.WrapClaimsAndReq(h.SaveCalendar))
 	sg.DELETE("/delCalendar", authMiddleware, ginx.WrapClaimsAndReq(h.DelCalendar))
 }
@@ -34,16 +34,16 @@ func (h *CalendarHandler) RegisterRoutes(s *gin.RouterGroup, authMiddleware gin.
 // @Tags calendar
 // @Accept  json
 // @Produce  json
-// @Param request query GetCalendarRequest true "获取日历列表请求参数"
-// @Success 200 {object} web.Response{data=GetCalendarResponse} "成功"
-// @Router /calendar/getCalendar [get]
-func (h *CalendarHandler) GetCalendar(ctx *gin.Context, req GetCalendarRequest) (web.Response, error) {
-	calendar, err := h.calendarClient.GetCalendar(ctx, &calendarv1.GetCalendarRequest{Year: req.Year})
+// @Success 200 {object} web.Response{data=GetCalendarsResponse} "成功"
+// @Router /calendar/getCalendars [get]
+func (h *CalendarHandler) GetCalendars(ctx *gin.Context) (web.Response, error) {
+	calendar, err := h.calendarClient.GetCalendars(ctx, &calendarv1.GetCalendarsRequest{})
 	if err != nil {
 		return web.Response{}, errs.GET_CALENDAR_ERROR(err)
 	}
+
 	//类型转换
-	var resp GetCalendarResponse
+	var resp GetCalendarsResponse
 	err = copier.Copy(&resp, &calendar)
 	if err != nil {
 		return web.Response{}, errs.TYPE_CHANGE_ERROR(err)
@@ -68,7 +68,7 @@ func (h *CalendarHandler) SaveCalendar(ctx *gin.Context, req SaveCalendarRequest
 		return web.Response{}, errs.ROLE_ERROR(fmt.Errorf("没有访问权限: %s", uc.StudentId))
 	}
 
-	_, err := h.calendarClient.SaveCalendar(ctx, &calendarv1.SaveCalendarRequest{Calendar: &calendarv1.CalendarRequest{
+	_, err := h.calendarClient.SaveCalendar(ctx, &calendarv1.SaveCalendarRequest{Calendar: &calendarv1.Calendar{
 		Link: req.Link,
 		Year: req.Year,
 	}})

@@ -6,32 +6,24 @@ option go_package = "github.com/asynccnu/ccnubox-be/be-api/gen/proto/calendar/v1
 //import "google/protobuf/any.proto";
 
 service CalendarService {
-  rpc GetCalendar(GetCalendarRequest)returns(GetCalendarResponse);
+  rpc GetCalendars(GetCalendarsRequest)returns(GetCalendarsResponse);
   rpc SaveCalendar(SaveCalendarRequest)returns(SaveCalendarResponse);
   rpc DelCalendar(DelCalendarRequest)returns(DelCalendarResponse);
 }
 
-message CalendarRequest {
+message Calendar {
   string link =1;
   int64 year =2;
 }
 
-message CalendarResponse {
-  string link =1;
-  int64 year =2;
-}
+message GetCalendarsRequest {}
 
-message GetCalendarRequest {
-  int64 year =1;
-}
-
-message GetCalendarResponse {
-  string link =1;
-  int64 year =2;
+message GetCalendarsResponse {
+  repeated Calendar calendars=1;
 }
 
 message SaveCalendarRequest {
-  CalendarRequest calendar = 1;
+  Calendar calendar = 1;
 }
 
 message SaveCalendarResponse {}
