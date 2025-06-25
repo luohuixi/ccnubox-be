@@ -41,14 +41,7 @@ definitions:
     - picture_link
     - web_link
     type: object
-  calendar.DelCalendarRequest:
-    properties:
-      year:
-        type: integer
-    required:
-    - year
-    type: object
-  calendar.GetCalendarResponse:
+  calendar.Calendar:
     properties:
       link:
         type: string
@@ -57,6 +50,20 @@ definitions:
     required:
     - link
     - year
+    type: object
+  calendar.DelCalendarRequest:
+    properties:
+      year:
+        type: integer
+    required:
+    - year
+    type: object
+  calendar.GetCalendarsResponse:
+    properties:
+      calendars:
+        items:
+          $ref: '#/definitions/calendar.Calendar'
+        type: array
     type: object
   calendar.SaveCalendarRequest:
     properties:
@@ -1156,16 +1163,11 @@ paths:
       summary: 删除日历内容
       tags:
       - calendar
-  /calendar/getCalendar:
+  /calendar/getCalendars:
     get:
       consumes:
       - application/json
       description: 获取日历列表
-      parameters:
-      - in: query
-        name: year
-        required: true
-        type: integer
       produces:
       - application/json
       responses:
@@ -1176,7 +1178,7 @@ paths:
             - $ref: '#/definitions/web.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/calendar.GetCalendarResponse'
+                  $ref: '#/definitions/calendar.GetCalendarsResponse'
               type: object
       summary: 获取日历列表
       tags:

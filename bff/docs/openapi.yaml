@@ -145,18 +145,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/web.Response'
       x-codegen-request-body-name: request
-  /calendar/getCalendar:
+  /calendar/getCalendars:
     get:
       tags:
       - calendar
       summary: 获取日历列表
       description: 获取日历列表
-      parameters:
-      - name: year
-        in: query
-        required: true
-        schema:
-          type: integer
       responses:
         "200":
           description: 成功
@@ -168,7 +162,7 @@ paths:
                 - type: object
                   properties:
                     data:
-                      $ref: '#/components/schemas/calendar.GetCalendarResponse'
+                      $ref: '#/components/schemas/calendar.GetCalendarsResponse'
   /calendar/saveCalendar:
     post:
       tags:
@@ -1781,14 +1775,7 @@ components:
           type: string
         web_link:
           type: string
-    calendar.DelCalendarRequest:
-      required:
-      - year
-      type: object
-      properties:
-        year:
-          type: integer
-    calendar.GetCalendarResponse:
+    calendar.Calendar:
       required:
       - link
       - year
@@ -1798,6 +1785,20 @@ components:
           type: string
         year:
           type: integer
+    calendar.DelCalendarRequest:
+      required:
+      - year
+      type: object
+      properties:
+        year:
+          type: integer
+    calendar.GetCalendarsResponse:
+      type: object
+      properties:
+        calendars:
+          type: array
+          items:
+            $ref: '#/components/schemas/calendar.Calendar'
     calendar.SaveCalendarRequest:
       required:
       - link
@@ -2468,7 +2469,8 @@ components:
       properties:
         kcxzmcs:
           type: array
-          description: "课程种类筛选,有如下类型:专业主干课程,通识选修课,通识必修课,个性发展课程,通识核心课等"
+          description: "课程种类筛选,有如下类型:专业主干课程,通识选修课,通识必修课,个性发展课程,通识核心课,教师教育选修,教师教育必修\
+            ,大学英语分级教育等"
           items:
             type: string
         refresh:

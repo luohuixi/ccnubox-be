@@ -17,14 +17,13 @@ func NewCalendarServiceServer(svc service.CalendarService) *CalendarServiceServe
 	return &CalendarServiceServer{svc: svc}
 }
 
-func (c *CalendarServiceServer) GetCalendar(ctx context.Context, request *calendarv1.GetCalendarRequest) (*calendarv1.GetCalendarResponse, error) {
-	calendar, err := c.svc.GetCalendar(ctx, request.GetYear())
+func (c *CalendarServiceServer) GetCalendars(ctx context.Context, request *calendarv1.GetCalendarsRequest) (*calendarv1.GetCalendarsResponse, error) {
+	calendars, err := c.svc.GetCalendars(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return &calendarv1.GetCalendarResponse{
-		Link: calendar.Link,
-		Year: calendar.Year,
+	return &calendarv1.GetCalendarsResponse{
+		Calendars: convDomainsToGRPC(calendars),
 	}, nil
 }
 
@@ -50,4 +49,14 @@ func (c *CalendarServiceServer) DelCalendar(ctx context.Context, request *calend
 // 注册为grpc服务
 func (c *CalendarServiceServer) Register(server *grpc.Server) {
 	calendarv1.RegisterCalendarServiceServer(server, c)
+}
+func convDomainsToGRPC(calendars []domain.Calendar) []*calendarv1.Calendar {
+	res := make([]*calendarv1.Calendar, 0, len(calendars))
+	for _, c := range calendars {
+		res = append(res, &calendarv1.Calendar{
+			Year: c.Year,
+			Link: c.Link,
+		})
+	}
+	return res
 }

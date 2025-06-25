@@ -13,9 +13,10 @@ import (
 
 // 定义接口
 type CalendarService interface {
-	GetCalendar(ctx context.Context, year int64) (*domain.Calendar, error)
+	GetCalendars(ctx context.Context) ([]domain.Calendar, error)
 	SaveCalendar(ctx context.Context, calendar *domain.Calendar) error
 	DelCalendar(ctx context.Context, year int64) error
+	GetCalendar(ctx context.Context, year int64) (*domain.Calendar, error)
 }
 
 // 定义错误结构体
@@ -46,13 +47,35 @@ func NewCachedCalendarService(dao dao.CalendarDAO, cache cache.CalendarCache, l 
 }
 
 // 从缓存或数据库获取日历
-func (s *CachedCalendarService) GetCalendar(ctx context.Context, year int64) (*domain.Calendar, error) {
+func (s *CachedCalendarService) GetCalendars(ctx context.Context) ([]domain.Calendar, error) {
 	// 尝试从缓存获取
-	res, err := s.cache.GetCalendar(ctx, year)
+	res, err := s.cache.GetCalendars(ctx)
 	if err == nil {
 		return res, nil
 	}
 	s.l.Info("从缓存获取失败", logger.FormatLog("cache", err)...)
+
+	// 如果缓存中不存在则从数据库获取
+	calendars, err := s.dao.GetCalendars(ctx)
+	if err != nil {
+		return []domain.Calendar{}, GET_CALENDAR_ERROR(err)
+	}
+
+	res = convModelsToDomains(calendars)
+
+	// 异步写入缓存，牺牲一定的一致性
+	go func() {
+		ctx = context.Background()
+		err = s.cache.SetCalendar(ctx, res)
+		if err != nil {
+			s.l.Error("回写资源失败", logger.FormatLog("cache", err)...)
+		}
+	}()
+
+	return res, nil
+}
+
+func (s *CachedCalendarService) GetCalendar(ctx context.Context, year int64) (*domain.Calendar, error) {
 
 	// 如果缓存中不存在则从数据库获取
 	calendar, err := s.dao.GetCalendar(ctx, year)
@@ -60,20 +83,10 @@ func (s *CachedCalendarService) GetCalendar(ctx context.Context, year int64) (*d
 		return &domain.Calendar{}, GET_CALENDAR_ERROR(err)
 	}
 
-	// 异步写入缓存，牺牲一定的一致性
-	go func() {
-		ctx = context.Background()
-		err = s.cache.SetCalendar(ctx, &domain.Calendar{Year: calendar.Year, Link: calendar.Link}, calendar.Year)
-		if err != nil {
-			s.l.Error("回写资源失败", logger.FormatLog("cache", err)...)
-		}
-	}()
-
-	//赋值给res
-	res.Year = calendar.Year
-	res.Link = calendar.Link
-
-	return res, nil
+	return &domain.Calendar{
+		Year: calendar.Year,
+		Link: calendar.Link,
+	}, nil
 }
 
 // 保存日历信息并更新缓存
@@ -95,7 +108,13 @@ func (s *CachedCalendarService) SaveCalendar(ctx context.Context, calendar *doma
 	// 异步写入缓存，牺牲一定的一致性
 	go func() {
 		ctx = context.Background()
-		err = s.cache.SetCalendar(ctx, &domain.Calendar{Year: calendar.Year, Link: calendar.Link}, calendar.Year)
+		c, err := s.dao.GetCalendars(ctx)
+		if err != nil {
+			s.l.Error("获取日历资源失败", logger.FormatLog("dao", err)...)
+			return
+		}
+
+		err = s.cache.SetCalendar(ctx, convModelsToDomains(c))
 		if err != nil {
 			s.l.Error("回写资源失败", logger.FormatLog("cache", err)...)
 		}
@@ -116,10 +135,38 @@ func (s *CachedCalendarService) DelCalendar(ctx context.Context, year int64) err
 	//异步删除指定缓存资源
 	go func() {
 		ctx = context.Background()
-		err := s.cache.ClearCalendarCache(ctx, year)
+		c, err := s.dao.GetCalendars(ctx)
 		if err != nil {
-			s.l.Error("清除指定缓存失败", logger.FormatLog("cache", err)...)
+			s.l.Error("获取日历资源失败", logger.FormatLog("dao", err)...)
+			return
+		}
+
+		err = s.cache.SetCalendar(ctx, convModelsToDomains(c))
+		if err != nil {
+			s.l.Error("回写资源失败", logger.FormatLog("cache", err)...)
 		}
 	}()
 	return nil
+}
+
+func convModelsToDomains(calendars []model.Calendar) []domain.Calendar {
+	res := make([]domain.Calendar, 0, len(calendars))
+	for _, c := range calendars {
+		res = append(res, domain.Calendar{
+			Year: c.Year,
+			Link: c.Link,
+		})
+	}
+	return res
+}
+
+func convDomainsToModels(calendars []domain.Calendar) []model.Calendar {
+	res := make([]model.Calendar, 0, len(calendars))
+	for _, c := range calendars {
+		res = append(res, model.Calendar{
+			Year: c.Year,
+			Link: c.Link,
+		})
+	}
+	return res
 }
