@@ -2,9 +2,10 @@ package biz
 
 import (
 	"context"
+	"time"
+
 	"github.com/asynccnu/ccnubox-be/be-classlist/internal/data/do"
 	"github.com/google/wire"
-	"time"
 )
 
 // ProviderSet is biz providers.
@@ -32,6 +33,7 @@ type ClassRepo interface {
 	CheckSCIdsExist(ctx context.Context, stuID, year, semester, classID string) bool
 	GetAllSchoolClassInfos(ctx context.Context, year, semester string, cursor time.Time) []*ClassInfo
 	GetAddedClasses(ctx context.Context, stuID, year, semester string) ([]*ClassInfo, error)
+	IsClassOfficial(ctx context.Context,stuID,year,semester,classID string) bool
 }
 
 type JxbRepo interface {

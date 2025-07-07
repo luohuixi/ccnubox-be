@@ -3,11 +3,13 @@ package biz
 import (
 	"context"
 	"fmt"
+	"testing"
+
 	"github.com/asynccnu/ccnubox-be/be-class/internal/client"
 	"github.com/asynccnu/ccnubox-be/be-class/internal/conf"
 	"github.com/asynccnu/ccnubox-be/be-class/internal/data"
 	"github.com/asynccnu/ccnubox-be/be-class/internal/registry"
-	"testing"
+
 )
 
 func initCS() *ClassSerivceUserCase {
@@ -33,7 +35,10 @@ func initCS() *ClassSerivceUserCase {
 		panic(err)
 	}
 
-	cs := NewClassSerivceUserCase(dt, classListService)
+	cs := &ClassSerivceUserCase{
+		es:         dt,
+		cs: classListService,
+	}
 	return cs
 }
 
