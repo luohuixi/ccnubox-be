@@ -2,6 +2,8 @@ name: Build and Deploy - be-feed
 
 on:
   push:
+    branches:
+      - main
     paths:
       - 'be-feed/**'
 env:

@@ -2,6 +2,8 @@ name: Build and Deploy - be-class
 
 on:
   push:
+    branches:
+      - main
     paths:
       - 'be-class/**'
 env:
