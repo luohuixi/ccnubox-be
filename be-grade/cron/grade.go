@@ -88,7 +88,7 @@ func (c *GradeController) publishMSG(label string) {
 
 	resp, err := c.counter.GetCounterLevels(ctx, &counterv1.GetCounterLevelsReq{Label: label})
 	if err != nil {
-		c.l.Error("获取UserLevels失败", logger.FormatLog("userLevels", err)...)
+		c.l.Error("获取UserLevels失败", logger.Error(err))
 		return
 	}
 
@@ -96,7 +96,7 @@ func (c *GradeController) publishMSG(label string) {
 		//获取成绩
 		grades, err := c.gradeService.GetUpdateScore(ctx, studentId)
 		if err != nil {
-			c.l.Error("获取成绩失败", logger.FormatLog("feed", err)...)
+			c.l.Error("获取成绩失败", logger.Error(err))
 			return
 		}
 
@@ -116,7 +116,7 @@ func (c *GradeController) publishMSG(label string) {
 			})
 
 			if err != nil {
-				c.l.Error("更改优先级发生错误", logger.FormatLog("feed", err)...)
+				c.l.Error("更改优先级发生错误", logger.Error(err))
 				return
 			}
 
@@ -130,7 +130,7 @@ func (c *GradeController) publishMSG(label string) {
 				},
 			})
 			if err != nil {
-				c.l.Error("推送错误", logger.FormatLog("feed", err)...)
+				c.l.Error("推送错误", logger.Error(err))
 			}
 		}
 	}

@@ -108,7 +108,7 @@ func (s *pushService) PushToAll(ctx context.Context, pushData *domain.FeedEvent)
 		// 获取一批 studentIds 和 tokens
 		studentIdsAndTokens, newLastId, err := s.feedTokenDAO.GetStudentIdAndTokensByCursor(ctx, lastId, batchSize)
 		if err != nil {
-			s.l.Error("获取用户studentId和tokens错误", append(logger.FormatLog("dao", err))...)
+			s.l.Error("获取用户studentId和tokens错误", logger.Error(err))
 		}
 
 		// 如果没有更多数据，结束循环
@@ -123,7 +123,7 @@ func (s *pushService) PushToAll(ctx context.Context, pushData *domain.FeedEvent)
 			// 权限检测
 			allowed, err := s.checkIfAllow(ctx, pushData.Type, studentId)
 			if err != nil {
-				s.l.Error("检查权限出错", append(logger.FormatLog("dao", err))...)
+				s.l.Error("检查权限出错", logger.Error(err))
 				// 日志记录错误，但不终止流程
 				continue
 			}
@@ -152,7 +152,7 @@ func (s *pushService) PushToAll(ctx context.Context, pushData *domain.FeedEvent)
 		})
 
 		if err != nil {
-			s.l.Error("批量推送出错", append(logger.FormatLog("push", err))...)
+			s.l.Error("批量推送出错", logger.Error(err))
 		}
 
 		// 更新游标为最新值

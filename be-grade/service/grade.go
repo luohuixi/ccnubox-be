@@ -61,7 +61,7 @@ func (s *gradeService) GetUpdateScore(ctx context.Context, studentId string) ([]
 
 	updated, err := s.gradeDAO.BatchInsertOrUpdate(context.Background(), grades)
 	if err != nil {
-		s.l.Warn("更新成绩失败", logger.FormatLog("dao", err)...)
+		s.l.Warn("更新成绩失败", logger.Error(err))
 		return nil, ErrGetGrade(err)
 	}
 
@@ -75,7 +75,7 @@ func (s *gradeService) getGradeWithSingleFlight(ctx context.Context, studentId s
 	if refresh {
 		_, grades, err := s.fetchGradesFromRemoteAndUpdate(ctx, studentId, true)
 		if err != nil || len(grades) == 0 {
-			s.l.Warn("从ccnu获取成绩失败!", logger.FormatLog("ccnu", err)...)
+			s.l.Warn("从ccnu获取成绩失败!", logger.Error(err))
 			grades, err = s.gradeDAO.FindGrades(context.Background(), studentId, 0, 0)
 			if err != nil {
 				return nil, ErrGetGrade(err)
@@ -91,14 +91,14 @@ func (s *gradeService) getGradeWithSingleFlight(ctx context.Context, studentId s
 		go func() {
 			_, _, err := s.fetchGradesFromRemoteAndUpdate(context.Background(), studentId, true)
 			if err != nil {
-				s.l.Warn("从ccnu获取成绩失败!", logger.FormatLog("ccnu", err)...)
+				s.l.Warn("从ccnu获取成绩失败!", logger.Error(err))
 			}
 		}()
 		return grades, nil
 	}
 
 	//如果没成绩尝试获取最新成绩
-	s.l.Info("数据库中无成绩或查询失败，尝试从ccnu获取", logger.FormatLog("dao", err)...)
+	s.l.Info("数据库中无成绩或查询失败，尝试从ccnu获取", logger.Error(err))
 	_, grades, err = s.fetchGradesFromRemoteAndUpdate(ctx, studentId, false)
 	if err != nil {
 		return nil, ErrGetGrade(err)
@@ -135,7 +135,7 @@ func (s *gradeService) fetchGradesFromRemote(ctx context.Context, studentId stri
 
 	grades, ok := result.([]model.Grade)
 	if !ok {
-		s.l.Warn("类型断言失败", logger.FormatLog("service", err)...)
+		s.l.Warn("类型断言失败", logger.Error(err))
 	}
 
 	return grades, err
@@ -165,7 +165,7 @@ func (s *gradeService) fetchGradesFromRemoteAndUpdate(ctx context.Context, stude
 		go func() {
 			_, err := s.updateGrades(remote)
 			if err != nil {
-				s.l.Warn("异步更新成绩失败", logger.FormatLog("dao", err)...)
+				s.l.Warn("异步更新成绩失败", logger.Error(err))
 			}
 		}()
 		return nil, remote, nil

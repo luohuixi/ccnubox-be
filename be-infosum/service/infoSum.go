@@ -67,7 +67,7 @@ func (repo *infoSumService) GetInfoSums(ctx context.Context) ([]*domain.InfoSum,
 	go func() {
 		err = repo.cache.SetInfoSums(context.Background(), res)
 		if err != nil {
-			repo.l.Error("回写InfoSums资源失败", logger.FormatLog("cache", err)...)
+			repo.l.Error("回写InfoSums资源失败", logger.Error(err))
 		}
 	}()
 
@@ -97,7 +97,7 @@ func (repo *infoSumService) SaveInfoSum(ctx context.Context, req *domain.InfoSum
 		defer cancel()
 		resp, err := repo.dao.GetInfoSums(ctx)
 		if err != nil {
-			repo.l.Error("回写InfoSums字段时从dao层中获取失败", logger.FormatLog("cache", err)...)
+			repo.l.Error("回写InfoSums字段时从dao层中获取失败", logger.Error(err))
 		}
 		var InfoSums []*domain.InfoSum
 		err = copier.Copy(resp, InfoSums)
@@ -106,7 +106,7 @@ func (repo *infoSumService) SaveInfoSum(ctx context.Context, req *domain.InfoSum
 		}
 		err = repo.cache.SetInfoSums(ct, InfoSums)
 		if err != nil {
-			repo.l.Error("回写InfoSums资源失败", logger.FormatLog("cache", err)...)
+			repo.l.Error("回写InfoSums资源失败", logger.Error(err))
 		}
 	}()
 
@@ -125,7 +125,7 @@ func (repo *infoSumService) DelInfoSum(ctx context.Context, id uint) error {
 		defer cancel()
 		resp, err := repo.dao.GetInfoSums(ctx)
 		if err != nil {
-			repo.l.Error("回写InfoSums字段时从dao层中获取失败", logger.FormatLog("cache", err)...)
+			repo.l.Error("回写InfoSums字段时从dao层中获取失败", logger.Error(err))
 		}
 		var InfoSums []*domain.InfoSum
 		err = copier.Copy(resp, InfoSums)
@@ -134,7 +134,7 @@ func (repo *infoSumService) DelInfoSum(ctx context.Context, id uint) error {
 		}
 		err = repo.cache.SetInfoSums(ct, InfoSums)
 		if err != nil {
-			repo.l.Error("回写InfoSums资源失败", logger.FormatLog("cache", err)...)
+			repo.l.Error("回写InfoSums资源失败", logger.Error(err))
 		}
 	}()
 

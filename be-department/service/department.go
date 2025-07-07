@@ -50,7 +50,7 @@ func (s *departmentService) GetDepartments(ctx context.Context) ([]*domain.Depar
 	if err == nil {
 		return res, nil
 	}
-	s.l.Info("从缓存获取部门失败", logger.FormatLog("cache", err)...)
+	s.l.Info("从缓存获取部门失败", logger.Error(err))
 
 	// 如果缓存中不存在则从数据库获取
 	dps, err := s.dao.GetDepartments(ctx)
@@ -61,7 +61,7 @@ func (s *departmentService) GetDepartments(ctx context.Context) ([]*domain.Depar
 	// 类型转换
 	err = copier.Copy(&res, &dps)
 	if err != nil {
-		s.l.Error("类型转换失败", logger.FormatLog("error", err)...)
+		s.l.Error("类型转换失败", logger.Error(err))
 		return nil, GET_DEPARTMENT_ERROR(err)
 	}
 
@@ -69,7 +69,7 @@ func (s *departmentService) GetDepartments(ctx context.Context) ([]*domain.Depar
 		// 写缓存
 		err = s.cache.SetDepartments(context.Background(), res)
 		if err != nil {
-			s.l.Error("回写部门资源失败", logger.FormatLog("cache", err)...)
+			s.l.Error("回写部门资源失败", logger.Error(err))
 		}
 	}()
 
@@ -91,7 +91,7 @@ func (s *departmentService) SaveDepartment(ctx context.Context, req *domain.Depa
 	// 存储或者更新部门
 	err = s.dao.SaveDepartment(ctx, department)
 	if err != nil {
-		s.l.Error("保存部门失败", logger.FormatLog("dao", err)...)
+		s.l.Error("保存部门失败", logger.Error(err))
 		return SAVE_DEPARTMENT_ERROR(err)
 	}
 
@@ -102,22 +102,22 @@ func (s *departmentService) SaveDepartment(ctx context.Context, req *domain.Depa
 
 		// 获取所有部门并写入缓存
 		dps := []*domain.Department{}
-		res, er := s.dao.GetDepartments(ct)
-		if er != nil {
-			s.l.Error("获取部门失败", logger.FormatLog("dao", er)...)
+		res, err := s.dao.GetDepartments(ct)
+		if err != nil {
+			s.l.Error("获取部门失败", logger.Error(err))
 			return
 		}
 
-		err := copier.Copy(&dps, &res)
+		err = copier.Copy(&dps, &res)
 		if err != nil {
-			s.l.Error("类型转换失败", logger.FormatLog("error", err)...)
+			s.l.Error("类型转换失败", logger.Error(err))
 			return
 		}
 
 		// 写缓存
-		er = s.cache.SetDepartments(ct, dps)
-		if er != nil {
-			s.l.Error("回写部门资源失败", logger.FormatLog("cache", er)...)
+		err = s.cache.SetDepartments(ct, dps)
+		if err != nil {
+			s.l.Error("回写部门资源失败", logger.Error(err))
 		}
 	}()
 
@@ -137,22 +137,22 @@ func (s *departmentService) DelDepartment(ctx context.Context, id uint) error {
 
 		// 获取部门并更新缓存
 		dps := []*domain.Department{}
-		res, er := s.dao.GetDepartments(ct)
-		if er != nil {
-			s.l.Error("获取部门失败", logger.FormatLog("dao", er)...)
+		res, err := s.dao.GetDepartments(ct)
+		if err != nil {
+			s.l.Error("获取部门失败", logger.Error(err))
 			return
 		}
 
-		err := copier.Copy(&dps, &res)
+		err = copier.Copy(&dps, &res)
 		if err != nil {
-			s.l.Error("类型转换失败", logger.FormatLog("error", err)...)
+			s.l.Error("类型转换失败", logger.Error(err))
 			return
 		}
 
 		// 设置缓存
-		er = s.cache.SetDepartments(ct, dps)
-		if er != nil {
-			s.l.Error("回写部门资源失败", logger.FormatLog("cache", er)...)
+		err = s.cache.SetDepartments(ct, dps)
+		if err != nil {
+			s.l.Error("回写部门资源失败", logger.Error(err))
 		}
 	}()
 

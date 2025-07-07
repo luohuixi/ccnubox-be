@@ -50,7 +50,7 @@ func (s *bannerService) GetBanners(ctx context.Context) ([]*domain.Banner, error
 	if err == nil {
 		return res, nil
 	}
-	s.l.Info("从缓存获取banner失败!", logger.FormatLog("cache", err)...)
+	s.l.Info("从缓存获取banner失败!", logger.Error(err))
 	// 如果缓存中不存在则从数据库获取
 	banners, err := s.dao.GetBanners(ctx)
 	if err != nil {
@@ -65,7 +65,7 @@ func (s *bannerService) GetBanners(ctx context.Context) ([]*domain.Banner, error
 	go func() {
 		err = s.cache.SetBanners(context.Background(), res)
 		if err != nil {
-			s.l.Error("回写department资源失败", logger.FormatLog("cache", err)...)
+			s.l.Error("回写department资源失败", logger.Error(err))
 		}
 	}()
 
@@ -104,7 +104,7 @@ func (s *bannerService) SaveBanner(ctx context.Context, req *domain.Banner) erro
 		}
 		err = s.cache.SetBanners(ct, banners)
 		if err != nil {
-			s.l.Error("回写department资源失败", logger.FormatLog("cache", err)...)
+			s.l.Error("回写department资源失败", logger.Error(err))
 		}
 	}()
 
@@ -130,7 +130,7 @@ func (s *bannerService) DelBanner(ctx context.Context, id int64) error {
 		}
 		err = s.cache.SetBanners(ct, banners)
 		if err != nil {
-			s.l.Error("回写department资源失败", logger.FormatLog("cache", err)...)
+			s.l.Error("回写department资源失败", logger.Error(err))
 		}
 
 	}()

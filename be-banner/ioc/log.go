@@ -35,12 +35,12 @@ func InitLogger() logger.Logger {
 
 	// 创建zap日志核心
 	core := zapcore.NewCore(
-		zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig()),
+		zapcore.NewJSONEncoder(logger.ProdEncoderConfig()),
 		zapcore.AddSync(lumberjackLogger),
 		zapcore.DebugLevel, // 设置日志级别
 	)
 
-	l := zap.New(core, zap.AddCaller())
+	l := zap.New(core, zap.AddCaller(), zap.AddStacktrace(zap.ErrorLevel), zap.AddCallerSkip(1))
 	res := logger.NewZapLogger(l)
 
 	return res

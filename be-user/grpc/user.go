@@ -30,3 +30,11 @@ func (s *UserServiceServer) GetCookie(ctx context.Context, request *userv1.GetCo
 	u, err := s.svc.GetCookie(ctx, request.GetStudentId())
 	return &userv1.GetCookieResponse{Cookie: u}, err
 }
+
+func (s *UserServiceServer) CheckUser(ctx context.Context, req *userv1.CheckUserReq) (*userv1.CheckUserResp, error) {
+	success, err := s.svc.Check(ctx, req.StudentId, req.Password)
+
+	return &userv1.CheckUserResp{
+		Success: success,
+	}, err
+}

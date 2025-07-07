@@ -1,6 +1,9 @@
 package logger
 
-import "go.uber.org/zap"
+import (
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+)
 
 type ZapLogger struct {
 	l *zap.Logger
@@ -34,4 +37,16 @@ func (z *ZapLogger) toArgs(args []Field) []zap.Field {
 		res = append(res, zap.Any(arg.Key, arg.Val))
 	}
 	return res
+}
+func ProdEncoderConfig() zapcore.EncoderConfig {
+	return zapcore.EncoderConfig{
+		TimeKey:       "@timestamp",
+		LevelKey:      "level",
+		MessageKey:    "msg",
+		CallerKey:     "caller",
+		StacktraceKey: "stacktrace",
+		EncodeLevel:   zapcore.CapitalLevelEncoder,
+		EncodeTime:    zapcore.ISO8601TimeEncoder,
+		EncodeCaller:  zapcore.ShortCallerEncoder,
+	}
 }

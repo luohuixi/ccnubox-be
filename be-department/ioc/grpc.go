@@ -72,34 +72,30 @@ func LoggingMiddleware(l logger.Logger) middleware.Middleware {
 				customError := errorx.ToCustomError(err)
 				if customError != nil {
 					// 捕获错误并记录
-					l.Error("执行业务出错",
+					l.Error("执行业务逻辑出错",
 						logger.Error(err),
 						logger.String("operationName", operationName),
 						logger.String("endPointName", endPointName),
 						logger.String("request", fmt.Sprintf("%v", req)),
 						logger.String("duration", duration.String()),
-						logger.String("timestamp", time.Now().Format(time.RFC3339)),
-						logger.String("msg", customError.ERR.Error()),
 						logger.String("category", customError.Category),
 						logger.String("file", customError.File),
 						logger.Int("line", customError.Line),
 						logger.String("function", customError.Function),
 					)
-
-					//转化为kratos的错误,非常的优雅
+					//转化为 kratos 的错误,非常的优雅
 					err = customError.ERR
-				} else {
-					// 记录常规日志
-					l.Info("请求成功",
-						logger.String("operationName", operationName),
-						logger.String("endPointName", endPointName),
-						logger.String("request", fmt.Sprintf("%v", req)),
-						logger.String("reqHeader", fmt.Sprintf("%v", reqHeader)),
-						logger.String("duration", duration.String()),
-						logger.String("timestamp", time.Now().Format(time.RFC3339)),
-					)
 				}
-
+			} else {
+				// 记录常规日志
+				l.Info("请求成功",
+					logger.String("operationName", operationName),
+					logger.String("endPointName", endPointName),
+					logger.String("request", fmt.Sprintf("%v", req)),
+					logger.String("reqHeader", fmt.Sprintf("%v", reqHeader)),
+					logger.String("duration", duration.String()),
+					logger.String("timestamp", time.Now().Format(time.RFC3339)),
+				)
 			}
 
 			return reply, err

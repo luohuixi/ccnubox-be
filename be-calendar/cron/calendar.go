@@ -55,7 +55,7 @@ func (r *CalendarController) StartCronTask() {
 			case <-ticker.C:
 				err := r.scrapeAndUpload()
 				if err != nil {
-					r.l.Error("日历爬取错误:", logger.FormatLog("cron", err)...)
+					r.l.Error("日历爬取错误:", logger.Error(err))
 				}
 			case <-r.stopChan:
 				ticker.Stop()

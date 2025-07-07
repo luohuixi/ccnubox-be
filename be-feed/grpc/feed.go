@@ -2,7 +2,6 @@ package grpc
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	feedv1 "github.com/asynccnu/ccnubox-be/be-api/gen/proto/feed/v1"
 	"github.com/asynccnu/ccnubox-be/be-feed/domain"
@@ -50,7 +49,7 @@ func (g *FeedServiceServer) GetFeedEvents(ctx context.Context, req *feedv1.GetFe
 			if len(errs) > 0 {
 				g.l.Info(
 					fmt.Sprintf("原失败消息数量:%d,推送发生错误数量:%d,首条错误消息%s", len(fail), len(errs), errs[0].Err.Error()),
-					logger.FormatLog("push", errors.New("消息推送发生错误"))...,
+					logger.Error(err),
 				)
 			}
 		}()
@@ -155,7 +154,7 @@ func (g *FeedServiceServer) PublicFeedEvent(ctx context.Context, req *feedv1.Pub
 
 		err := g.feedEventService.PublicFeedEvent(ctx, req.GetIsAll(), feedEvent)
 		if err != nil {
-			g.l.Error("推送失败", logger.FormatLog("push", err)...)
+			g.l.Error("推送失败", logger.Error(err))
 		}
 		return
 	}()
