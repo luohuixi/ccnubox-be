@@ -82,3 +82,15 @@ func IsDecryptError(err error) bool {
 func ErrorDecryptError(format string, args ...interface{}) *errors.Error {
 	return errors.New(505, UserErrorReason_DECRYPT_ERROR.String(), fmt.Sprintf(format, args...))
 }
+
+func IsIncorrectPasswordError(err error) bool {
+	if err == nil {
+		return false
+	}
+	e := errors.FromError(err)
+	return e.Reason == UserErrorReason_INCORRECT_PASSWORD_ERROR.String() && e.Code == 505
+}
+
+func ErrorIncorrectPasswordError(format string, args ...interface{}) *errors.Error {
+	return errors.New(505, UserErrorReason_INCORRECT_PASSWORD_ERROR.String(), fmt.Sprintf(format, args...))
+}

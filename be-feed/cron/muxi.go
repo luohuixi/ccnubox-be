@@ -68,7 +68,7 @@ func (c *MuxiController) publicMuxiFeed() {
 	//获取feed列表
 	msgs, err := c.muxi.GetToBePublicOfficialMSG(ctx)
 	if err != nil {
-		c.l.Warn("获取木犀消息失败!", logger.FormatLog("cache", err)...)
+		c.l.Warn("获取木犀消息失败!", logger.Error(err))
 		return
 	}
 	for _, msg := range msgs {
@@ -85,7 +85,7 @@ func (c *MuxiController) publicMuxiFeed() {
 				ExtendFields: msg.ExtendFields,
 			})
 			if err != nil {
-				c.l.Warn("消息推送失败!", logger.FormatLog("cache", err)...)
+				c.l.Warn("消息推送失败!", logger.Error(err))
 				return
 			}
 		}

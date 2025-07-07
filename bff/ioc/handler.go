@@ -4,7 +4,6 @@ import (
 	bannerv1 "github.com/asynccnu/ccnubox-be/be-api/gen/proto/banner/v1"
 	calendarv1 "github.com/asynccnu/ccnubox-be/be-api/gen/proto/calendar/v1"
 	cardv1 "github.com/asynccnu/ccnubox-be/be-api/gen/proto/card/v1"
-	ccnuv1 "github.com/asynccnu/ccnubox-be/be-api/gen/proto/ccnu/v1"
 	cs "github.com/asynccnu/ccnubox-be/be-api/gen/proto/classService/v1"
 	classlistv1 "github.com/asynccnu/ccnubox-be/be-api/gen/proto/classlist/v1"
 	counterv1 "github.com/asynccnu/ccnubox-be/be-api/gen/proto/counter/v1"
@@ -200,13 +199,13 @@ func InitCardHandler(client cardv1.CardClient) *card.CardHandler {
 		slice.ToMapV(administrators, func(element string) (string, struct{}) { return element, struct{}{} }))
 }
 
-func InitUserHandler(hdl ijwt.Handler, userClient userv1.UserServiceClient, ccnuClient ccnuv1.CCNUServiceClient) *user.UserHandler {
+func InitUserHandler(hdl ijwt.Handler, userClient userv1.UserServiceClient) *user.UserHandler {
 	var administrators []string
 	err := viper.UnmarshalKey("administrators", &administrators)
 	if err != nil {
 		panic(err)
 	}
-	return user.NewUserHandler(hdl, userClient, ccnuClient)
+	return user.NewUserHandler(hdl, userClient)
 }
 
 func InitTubeHandler(putPolicy storage.PutPolicy, mac *qbox.Mac) *tube.TubeHandler {

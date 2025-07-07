@@ -8,12 +8,12 @@ import (
 	"github.com/asynccnu/ccnubox-be/be-ccnu/pkg/errorx"
 	"github.com/asynccnu/ccnubox-be/be-ccnu/tool"
 	"io"
-	"net"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
 	"regexp"
 	"strings"
+	"time"
 )
 
 // 定义错误,这里将kratos的error作为一个重要部分传入,此处的错误并不直接在service中去捕获,而是选择在更底层的爬虫去捕获,因为爬虫的错误处理非常复杂
@@ -31,7 +31,7 @@ var (
 	}
 )
 
-func (c *ccnuService) GetCCNUCookie(ctx context.Context, studentId string, password string) (string, error) {
+func (c *ccnuService) GetXKCookie(ctx context.Context, studentId string, password string) (string, error) {
 
 	//初始化client
 	client := c.client()
@@ -44,7 +44,8 @@ func (c *ccnuService) GetCCNUCookie(ctx context.Context, studentId string, passw
 	}
 
 	client, err = tool.Retry(func() (*http.Client, error) {
-		return c.loginClient(ctx, client, studentId, password, params)
+		loginClient, _, err := c.loginClient(ctx, client, studentId, password, params)
+		return loginClient, err
 	})
 	if err != nil {
 		return "", err
@@ -67,21 +68,25 @@ func (c *ccnuService) GetCCNUCookie(ctx context.Context, studentId string, passw
 	return cookie, nil
 }
 
-func (c *ccnuService) Login(ctx context.Context, studentId string, password string) (bool, error) {
+func (c *ccnuService) GetCCNUCookie(ctx context.Context, studentId string, password string) (string, error) {
 	client := c.client()
 
 	params, err := tool.Retry(func() (*accountRequestParams, error) {
 		return c.makeAccountPreflightRequest(client)
 	})
 	if err != nil {
-		return false, err
+		return "", err
 	}
 
-	client, err = tool.Retry(func() (*http.Client, error) {
-		return c.loginClient(ctx, client, studentId, password, params)
+	s, err := tool.Retry(func() (string, error) {
+		_, s, err := c.loginClient(ctx, client, studentId, password, params)
+		return s, err
 	})
+	if err != nil {
+		return "", err
+	}
 
-	return client != nil, err
+	return s, nil
 }
 
 // getBKSCookie 返回本科生院的Cookie
@@ -133,7 +138,7 @@ func (c *ccnuService) xkLoginClient(client *http.Client) (*http.Client, error) {
 }
 
 // 1.登陆ccnu通行证
-func (c *ccnuService) loginClient(ctx context.Context, client *http.Client, studentId string, password string, params *accountRequestParams) (*http.Client, error) {
+func (c *ccnuService) loginClient(ctx context.Context, client *http.Client, studentId string, password string, params *accountRequestParams) (*http.Client, string, error) {
 
 	v := url.Values{}
 	v.Set("username", studentId)
@@ -144,6 +149,9 @@ func (c *ccnuService) loginClient(ctx context.Context, client *http.Client, stud
 	v.Set("submit", params.submit)
 
 	request, err := http.NewRequest("POST", "https://account.ccnu.edu.cn/cas/login;jsessionid="+params.JSESSIONID, strings.NewReader(v.Encode()))
+	if err != nil {
+		return nil, "", SYSTEM_ERROR(err)
+	}
 	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	request.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.109 Safari/537.36")
 	request.WithContext(ctx)
@@ -153,18 +161,37 @@ func (c *ccnuService) loginClient(ctx context.Context, client *http.Client, stud
 	//发送请求
 	resp, err := client.Do(request)
 	if err != nil {
-		var opErr *net.OpError
-		if errors.As(err, &opErr) {
-			return nil, CCNUSERVER_ERROR(err)
-		}
-		return nil, err
+		return nil, "", CCNUSERVER_ERROR(err)
 	}
 	defer resp.Body.Close()
 
-	if len(resp.Header.Get("Set-Cookie")) == 0 {
-		return nil, Invalid_SidOrPwd_ERROR(errors.New("学号或密码错误"))
+	res, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, "", CCNUSERVER_ERROR(err)
 	}
-	return client, nil
+	t := time.Now()
+	////如果捕获到关键字说明是账号密码错误
+	if strings.Contains(string(res), "您输入的用户名或密码有误") {
+		return nil, "", Invalid_SidOrPwd_ERROR(errors.New("学号或密码错误"))
+	}
+	fmt.Println(time.Now().Sub(t))
+	// 如果没有捕获到账号密码错误但是也没设置设置Cookie,说明是你师系统有问题
+	if len(resp.Header.Get("Set-Cookie")) == 0 {
+		return nil, "", CCNUSERVER_ERROR(err)
+	}
+
+	//获取 Cookie 中的 CASTGC，这是用于单点登录的凭证
+	var CASTGC string
+	for _, cookie := range resp.Cookies() {
+		if cookie.Name == "CASTGC" {
+			CASTGC = cookie.Value
+		}
+	}
+	if CASTGC == "" {
+		return client, "", CCNUSERVER_ERROR(err)
+	}
+
+	return client, CASTGC, nil
 }
 
 type accountRequestParams struct {

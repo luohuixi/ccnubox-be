@@ -24,7 +24,6 @@ func InitApp() *App {
 		ioc.InitStaticClient,
 		ioc.InitFeedClient,
 		ioc.InitJwtHandler,
-		ioc.InitCCNUClient,
 		ioc.InitUserClient,
 		ioc.InitElecpriceClient,
 		ioc.InitFeedbackHelpClient,

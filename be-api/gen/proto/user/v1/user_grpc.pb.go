@@ -20,6 +20,7 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	UserService_SaveUser_FullMethodName  = "/user.v1.UserService/SaveUser"
+	UserService_CheckUser_FullMethodName = "/user.v1.UserService/CheckUser"
 	UserService_GetCookie_FullMethodName = "/user.v1.UserService/GetCookie"
 )
 
@@ -28,6 +29,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type UserServiceClient interface {
 	SaveUser(ctx context.Context, in *SaveUserReq, opts ...grpc.CallOption) (*SaveUserResp, error)
+	CheckUser(ctx context.Context, in *CheckUserReq, opts ...grpc.CallOption) (*CheckUserResp, error)
 	GetCookie(ctx context.Context, in *GetCookieRequest, opts ...grpc.CallOption) (*GetCookieResponse, error)
 }
 
@@ -49,6 +51,16 @@ func (c *userServiceClient) SaveUser(ctx context.Context, in *SaveUserReq, opts 
 	return out, nil
 }
 
+func (c *userServiceClient) CheckUser(ctx context.Context, in *CheckUserReq, opts ...grpc.CallOption) (*CheckUserResp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CheckUserResp)
+	err := c.cc.Invoke(ctx, UserService_CheckUser_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *userServiceClient) GetCookie(ctx context.Context, in *GetCookieRequest, opts ...grpc.CallOption) (*GetCookieResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetCookieResponse)
@@ -64,6 +76,7 @@ func (c *userServiceClient) GetCookie(ctx context.Context, in *GetCookieRequest,
 // for forward compatibility.
 type UserServiceServer interface {
 	SaveUser(context.Context, *SaveUserReq) (*SaveUserResp, error)
+	CheckUser(context.Context, *CheckUserReq) (*CheckUserResp, error)
 	GetCookie(context.Context, *GetCookieRequest) (*GetCookieResponse, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
@@ -77,6 +90,9 @@ type UnimplementedUserServiceServer struct{}
 
 func (UnimplementedUserServiceServer) SaveUser(context.Context, *SaveUserReq) (*SaveUserResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SaveUser not implemented")
+}
+func (UnimplementedUserServiceServer) CheckUser(context.Context, *CheckUserReq) (*CheckUserResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CheckUser not implemented")
 }
 func (UnimplementedUserServiceServer) GetCookie(context.Context, *GetCookieRequest) (*GetCookieResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCookie not implemented")
@@ -120,6 +136,24 @@ func _UserService_SaveUser_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_CheckUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CheckUserReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).CheckUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_CheckUser_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).CheckUser(ctx, req.(*CheckUserReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _UserService_GetCookie_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetCookieRequest)
 	if err := dec(in); err != nil {
@@ -148,6 +182,10 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SaveUser",
 			Handler:    _UserService_SaveUser_Handler,
+		},
+		{
+			MethodName: "CheckUser",
+			Handler:    _UserService_CheckUser_Handler,
 		},
 		{
 			MethodName: "GetCookie",

@@ -53,7 +53,7 @@ func (s *CachedCalendarService) GetCalendars(ctx context.Context) ([]domain.Cale
 	if err == nil {
 		return res, nil
 	}
-	s.l.Info("从缓存获取失败", logger.FormatLog("cache", err)...)
+	s.l.Info("从缓存获取失败", logger.Error(err))
 
 	// 如果缓存中不存在则从数据库获取
 	calendars, err := s.dao.GetCalendars(ctx)
@@ -68,7 +68,7 @@ func (s *CachedCalendarService) GetCalendars(ctx context.Context) ([]domain.Cale
 		ctx = context.Background()
 		err = s.cache.SetCalendar(ctx, res)
 		if err != nil {
-			s.l.Error("回写资源失败", logger.FormatLog("cache", err)...)
+			s.l.Error("回写资源失败", logger.Error(err))
 		}
 	}()
 
@@ -110,13 +110,13 @@ func (s *CachedCalendarService) SaveCalendar(ctx context.Context, calendar *doma
 		ctx = context.Background()
 		c, err := s.dao.GetCalendars(ctx)
 		if err != nil {
-			s.l.Error("获取日历资源失败", logger.FormatLog("dao", err)...)
+			s.l.Error("获取日历资源失败", logger.Error(err))
 			return
 		}
 
 		err = s.cache.SetCalendar(ctx, convModelsToDomains(c))
 		if err != nil {
-			s.l.Error("回写资源失败", logger.FormatLog("cache", err)...)
+			s.l.Error("回写资源失败", logger.Error(err))
 		}
 
 	}()
@@ -137,13 +137,13 @@ func (s *CachedCalendarService) DelCalendar(ctx context.Context, year int64) err
 		ctx = context.Background()
 		c, err := s.dao.GetCalendars(ctx)
 		if err != nil {
-			s.l.Error("获取日历资源失败", logger.FormatLog("dao", err)...)
+			s.l.Error("获取日历资源失败", logger.Error(err))
 			return
 		}
 
 		err = s.cache.SetCalendar(ctx, convModelsToDomains(c))
 		if err != nil {
-			s.l.Error("回写资源失败", logger.FormatLog("cache", err)...)
+			s.l.Error("回写资源失败", logger.Error(err))
 		}
 	}()
 	return nil

@@ -50,7 +50,7 @@ func (s *websiteService) GetWebsites(ctx context.Context) ([]*domain.Website, er
 	if err == nil {
 		return res, nil
 	}
-	s.l.Error("从缓存获取website失败", logger.FormatLog("cache", err)...)
+	s.l.Error("从缓存获取website失败", logger.Error(err))
 
 	//如果缓存中不存在则从数据库获取
 	webs, err := s.dao.GetWebsites(ctx)
@@ -67,7 +67,7 @@ func (s *websiteService) GetWebsites(ctx context.Context) ([]*domain.Website, er
 	go func() {
 		err = s.cache.SetWebsites(context.Background(), res)
 		if err != nil {
-			s.l.Error("回写websites资源失败", logger.FormatLog("cache", err)...)
+			s.l.Error("回写websites资源失败", logger.Error(err))
 		}
 	}()
 
@@ -97,7 +97,7 @@ func (s *websiteService) SaveWebsite(ctx context.Context, req *domain.Website) e
 		defer cancel()
 		resp, err := s.dao.GetWebsites(ctx)
 		if err != nil {
-			s.l.Error("回写websites字段时从dao层中获取失败", logger.FormatLog("cache", err)...)
+			s.l.Error("回写websites字段时从dao层中获取失败", logger.Error(err))
 		}
 		var websites []*domain.Website
 		err = copier.Copy(resp, websites)
@@ -106,7 +106,7 @@ func (s *websiteService) SaveWebsite(ctx context.Context, req *domain.Website) e
 		}
 		err = s.cache.SetWebsites(ct, websites)
 		if err != nil {
-			s.l.Error("回写websites资源失败", logger.FormatLog("cache", err)...)
+			s.l.Error("回写websites资源失败", logger.Error(err))
 		}
 	}()
 
@@ -125,7 +125,7 @@ func (s *websiteService) DelWebsite(ctx context.Context, id uint) error {
 		defer cancel()
 		resp, err := s.dao.GetWebsites(ctx)
 		if err != nil {
-			s.l.Error("回写websites字段时从dao层中获取失败", logger.FormatLog("cache", err)...)
+			s.l.Error("回写websites字段时从dao层中获取失败", logger.Error(err))
 		}
 		var websites []*domain.Website
 		err = copier.Copy(resp, websites)
@@ -134,7 +134,7 @@ func (s *websiteService) DelWebsite(ctx context.Context, id uint) error {
 		}
 		err = s.cache.SetWebsites(ct, websites)
 		if err != nil {
-			s.l.Error("回写websites资源失败", logger.FormatLog("cache", err)...)
+			s.l.Error("回写websites资源失败", logger.Error(err))
 		}
 	}()
 
