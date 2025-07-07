@@ -2,6 +2,8 @@ name: Build and Deploy - be-calendar
 
 on:
   push:
+    branches:
+      - main
     paths:
       - 'be-calendar/**'
 env:

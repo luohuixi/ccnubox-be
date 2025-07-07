@@ -2,6 +2,8 @@ name: Build and Deploy - be-department
 
 on:
   push:
+    branches:
+      - main
     paths:
       - 'be-department/**'
 env:

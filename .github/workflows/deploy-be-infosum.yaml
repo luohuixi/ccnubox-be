@@ -2,6 +2,8 @@ name: Build and Deploy - be-infosum
 
 on:
   push:
+    branches:
+      - main
     paths:
       - 'be-infosum/**'
 env:
