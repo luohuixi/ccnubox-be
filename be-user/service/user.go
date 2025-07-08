@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	ccnuv1 "github.com/asynccnu/ccnubox-be/be-api/gen/proto/ccnu/v1"
 	userv1 "github.com/asynccnu/ccnubox-be/be-api/gen/proto/user/v1"
 	"github.com/asynccnu/ccnubox-be/be-user/pkg/crypto"
@@ -11,7 +12,6 @@ import (
 	"github.com/asynccnu/ccnubox-be/be-user/repository/dao"
 	"github.com/asynccnu/ccnubox-be/be-user/tool"
 	"golang.org/x/sync/singleflight"
-	"gorm.io/gorm"
 	"net/http"
 )
 
@@ -74,8 +74,8 @@ func (s *userService) Save(ctx context.Context, studentId string, password strin
 
 	//尝试查找用户
 	user, err := s.dao.FindByStudentId(ctx, studentId)
-	switch err {
-	case nil:
+	switch {
+	case err == nil:
 
 		//检查是否有更新的价值
 		if user.Password != password {
@@ -84,7 +84,7 @@ func (s *userService) Save(ctx context.Context, studentId string, password strin
 			return nil
 		}
 
-	case gorm.ErrRecordNotFound:
+	case errors.Is(err, dao.UserNotFound):
 		user.StudentId = studentId
 		user.Password = password
 

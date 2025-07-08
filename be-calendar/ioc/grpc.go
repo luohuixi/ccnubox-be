@@ -17,7 +17,7 @@ import (
 )
 
 func InitGRPCxKratosServer(grpcServer *grpc.
-CalendarServiceServer, ecli *clientv3.Client, l logger.Logger) grpcx.Server {
+	CalendarServiceServer, ecli *clientv3.Client, l logger.Logger) grpcx.Server {
 	type Config struct {
 		Name    string `yaml:"name"`
 		Weight  int    `yaml:"weight"`
