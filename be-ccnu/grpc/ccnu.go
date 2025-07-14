@@ -25,7 +25,7 @@ func (s *CCNUServiceServer) GetXKCookie(ctx context.Context, request *ccnuv1.Get
 	return &ccnuv1.GetXKCookieResponse{Cookie: cookie}, err
 }
 
-func (s *CCNUServiceServer) GetCCNUCookie(ctx context.Context, request *ccnuv1.GetCCNUCookieRequest) (*ccnuv1.GetCCNUCookieResponse, error) {
-	cookie, err := s.ccnu.GetCCNUCookie(ctx, request.GetStudentId(), request.GetPassword())
-	return &ccnuv1.GetCCNUCookieResponse{Cookie: cookie}, err
+func (s *CCNUServiceServer) LoginCCNU(ctx context.Context, request *ccnuv1.LoginCCNURequest) (*ccnuv1.LoginCCNUResponse, error) {
+	success, err := s.ccnu.LoginCCNU(ctx, request.GetStudentId(), request.GetPassword())
+	return &ccnuv1.LoginCCNUResponse{Success: success}, err
 }

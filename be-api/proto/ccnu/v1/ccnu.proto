@@ -5,7 +5,7 @@ option go_package="github.com/asynccnu/ccnubox-be/be-api/gen/proto/ccnu/v1;ccnuv
 
 service CCNUService {
   rpc GetXKCookie(GetXKCookieRequest)returns(GetXKCookieResponse);
-  rpc GetCCNUCookie(GetCCNUCookieRequest)returns(GetCCNUCookieResponse);
+  rpc LoginCCNU(LoginCCNURequest)returns(LoginCCNUResponse);
   // 后来可能还会有别的cookie需要获取可以在这里添加,这里作为一个非常重要的对外组件负责了所有登录部分的逻辑
 }
 
@@ -19,11 +19,11 @@ message GetXKCookieResponse{
 }
 
 
-message GetCCNUCookieRequest{
+message LoginCCNURequest{
   string student_id = 1;
   string password = 2;
 }
 
-message GetCCNUCookieResponse{
-  string cookie = 1;
+message LoginCCNUResponse{
+  bool success = 1;
 }

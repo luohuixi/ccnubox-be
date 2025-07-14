@@ -7,7 +7,7 @@ import (
 )
 
 type CCNUService interface {
-	GetCCNUCookie(ctx context.Context, studentId string, password string) (string, error)
+	LoginCCNU(ctx context.Context, studentId string, password string) (bool, error)
 	GetXKCookie(ctx context.Context, studentId string, password string) (string, error)
 }
 

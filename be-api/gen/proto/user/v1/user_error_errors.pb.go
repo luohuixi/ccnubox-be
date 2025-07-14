@@ -88,9 +88,9 @@ func IsIncorrectPasswordError(err error) bool {
 		return false
 	}
 	e := errors.FromError(err)
-	return e.Reason == UserErrorReason_INCORRECT_PASSWORD_ERROR.String() && e.Code == 505
+	return e.Reason == UserErrorReason_INCORRECT_PASSWORD_ERROR.String() && e.Code == 401
 }
 
 func ErrorIncorrectPasswordError(format string, args ...interface{}) *errors.Error {
-	return errors.New(505, UserErrorReason_INCORRECT_PASSWORD_ERROR.String(), fmt.Sprintf(format, args...))
+	return errors.New(401, UserErrorReason_INCORRECT_PASSWORD_ERROR.String(), fmt.Sprintf(format, args...))
 }
