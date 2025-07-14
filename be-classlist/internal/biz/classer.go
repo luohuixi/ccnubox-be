@@ -5,15 +5,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math/rand"
+	"sync"
+	"time"
+
 	"github.com/asynccnu/ccnubox-be/be-classlist/internal/conf"
 	"github.com/asynccnu/ccnubox-be/be-classlist/internal/data/do"
 	"github.com/asynccnu/ccnubox-be/be-classlist/internal/errcode"
 	"github.com/asynccnu/ccnubox-be/be-classlist/internal/pkg/tool"
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/panjf2000/ants/v2"
-	"math/rand"
-	"sync"
-	"time"
 )
 
 type ClassUsecase struct {
@@ -262,6 +263,13 @@ func (cluc *ClassUsecase) AddClass(ctx context.Context, stuID string, info *Clas
 }
 
 func (cluc *ClassUsecase) DeleteClass(ctx context.Context, stuID, year, semester, classId string) error {
+	// 先检查课程是否是官方课程，如果是，不让删
+	isOfficial := cluc.classRepo.IsClassOfficial(ctx, stuID, year, semester, classId)
+	if isOfficial {
+		cluc.log.Errorf("class [%v] is official, cannot delete", classId)
+		return fmt.Errorf("class [%v] is official, cannot delete", classId)
+	}
+
 	//删除课程
 	err := cluc.classRepo.DeleteClass(ctx, stuID, year, semester, []string{classId})
 	if err != nil {
@@ -323,6 +331,13 @@ func (cluc *ClassUsecase) SearchClass(ctx context.Context, classId string) (*Cla
 	return info, nil
 }
 func (cluc *ClassUsecase) UpdateClass(ctx context.Context, stuID, year, semester string, newClassInfo *ClassInfo, newSc *StudentCourse, oldClassId string) error {
+	// 检查下要更新的课程是否是官方课程，如果是，不让更新
+	isOfficial := cluc.classRepo.IsClassOfficial(ctx, stuID, year, semester, oldClassId)
+	if isOfficial {
+		cluc.log.Errorf("class [%v] is official, cannot update", oldClassId)
+		return fmt.Errorf("class [%v] is official, cannot update", oldClassId)
+	}
+	
 	err := cluc.classRepo.UpdateClass(ctx, stuID, year, semester, oldClassId, newClassInfo, newSc)
 	if err != nil {
 		return err

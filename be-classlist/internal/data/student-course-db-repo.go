@@ -3,6 +3,7 @@ package data
 import (
 	"context"
 	"errors"
+
 	"github.com/asynccnu/ccnubox-be/be-classlist/internal/data/do"
 	"github.com/asynccnu/ccnubox-be/be-classlist/internal/errcode"
 	"github.com/go-kratos/kratos/v2/log"
@@ -99,7 +100,7 @@ func (s StudentAndCourseDBRepo) CheckManualCourseStatus(ctx context.Context, stu
 	err := db.Where("stu_id = ? and year = ? and semester = ? and cla_id = ?", stuID, year, semester, classID).
 		Pluck("is_manually_added", &isAdded).Error
 	if err != nil {
-		return false
+		return true
 	}
 	return isAdded
 }
