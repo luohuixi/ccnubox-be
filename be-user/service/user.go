@@ -103,15 +103,15 @@ func (s *userService) Save(ctx context.Context, studentId string, password strin
 
 func (s *userService) Check(ctx context.Context, studentId string, password string) (bool, error) {
 
-	_, err := tool.Retry(func() (*ccnuv1.GetCCNUCookieResponse, error) {
-		return s.ccnu.GetCCNUCookie(ctx, &ccnuv1.GetCCNUCookieRequest{StudentId: studentId, Password: password})
+	_, err := tool.Retry(func() (*ccnuv1.LoginCCNUResponse, error) {
+		return s.ccnu.LoginCCNU(ctx, &ccnuv1.LoginCCNURequest{StudentId: studentId, Password: password})
 	})
 
 	switch {
 	case err == nil:
 		return true, nil
 	case ccnuv1.IsInvalidSidOrPwd(err):
-		return false, InCorrectPassword(err)
+		return false, InCorrectPassword(errors.New("invalid sid or password"))
 	}
 	s.l.Warn("尝试从ccnu登录失败!", logger.Error(err))
 
