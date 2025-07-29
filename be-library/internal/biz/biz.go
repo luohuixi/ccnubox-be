@@ -19,7 +19,7 @@ type Transaction interface {
 
 type CCNUServiceProxy interface {
 	// 从其他服务获取cookie
-	GetCookie(ctx context.Context, stuID string) (string, error)
+	GetLibraryCookie(ctx context.Context, stuID string) (string, error)
 }
 
 type DelayQueue interface {

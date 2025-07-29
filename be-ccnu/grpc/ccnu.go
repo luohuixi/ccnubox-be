@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"context"
+
 	ccnuv1 "github.com/asynccnu/ccnubox-be/be-api/gen/proto/ccnu/v1"
 	"github.com/asynccnu/ccnubox-be/be-ccnu/service"
 	"google.golang.org/grpc"
@@ -28,4 +29,9 @@ func (s *CCNUServiceServer) GetXKCookie(ctx context.Context, request *ccnuv1.Get
 func (s *CCNUServiceServer) GetCCNUCookie(ctx context.Context, request *ccnuv1.GetCCNUCookieRequest) (*ccnuv1.GetCCNUCookieResponse, error) {
 	cookie, err := s.ccnu.GetCCNUCookie(ctx, request.GetStudentId(), request.GetPassword())
 	return &ccnuv1.GetCCNUCookieResponse{Cookie: cookie}, err
+}
+
+func (s *CCNUServiceServer) GetLibraryCookie(ctx context.Context, request *ccnuv1.GetLibraryCookieRequest) (*ccnuv1.GetLibraryCookieResponse, error) {
+	cookie, err := s.ccnu.GetLibraryCookie(ctx, request.GetStudentId(), request.GetPassword())
+	return &ccnuv1.GetLibraryCookieResponse{Cookie: cookie}, err
 }

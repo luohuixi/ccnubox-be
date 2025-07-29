@@ -19,8 +19,9 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	CCNUService_GetXKCookie_FullMethodName   = "/ccnu.v1.CCNUService/GetXKCookie"
-	CCNUService_GetCCNUCookie_FullMethodName = "/ccnu.v1.CCNUService/GetCCNUCookie"
+	CCNUService_GetXKCookie_FullMethodName      = "/ccnu.v1.CCNUService/GetXKCookie"
+	CCNUService_GetCCNUCookie_FullMethodName    = "/ccnu.v1.CCNUService/GetCCNUCookie"
+	CCNUService_GetLibraryCookie_FullMethodName = "/ccnu.v1.CCNUService/GetLibraryCookie"
 )
 
 // CCNUServiceClient is the client API for CCNUService service.
@@ -29,6 +30,7 @@ const (
 type CCNUServiceClient interface {
 	GetXKCookie(ctx context.Context, in *GetXKCookieRequest, opts ...grpc.CallOption) (*GetXKCookieResponse, error)
 	GetCCNUCookie(ctx context.Context, in *GetCCNUCookieRequest, opts ...grpc.CallOption) (*GetCCNUCookieResponse, error)
+	GetLibraryCookie(ctx context.Context, in *GetLibraryCookieRequest, opts ...grpc.CallOption) (*GetLibraryCookieResponse, error)
 }
 
 type cCNUServiceClient struct {
@@ -59,12 +61,23 @@ func (c *cCNUServiceClient) GetCCNUCookie(ctx context.Context, in *GetCCNUCookie
 	return out, nil
 }
 
+func (c *cCNUServiceClient) GetLibraryCookie(ctx context.Context, in *GetLibraryCookieRequest, opts ...grpc.CallOption) (*GetLibraryCookieResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetLibraryCookieResponse)
+	err := c.cc.Invoke(ctx, CCNUService_GetLibraryCookie_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CCNUServiceServer is the server API for CCNUService service.
 // All implementations must embed UnimplementedCCNUServiceServer
 // for forward compatibility.
 type CCNUServiceServer interface {
 	GetXKCookie(context.Context, *GetXKCookieRequest) (*GetXKCookieResponse, error)
 	GetCCNUCookie(context.Context, *GetCCNUCookieRequest) (*GetCCNUCookieResponse, error)
+	GetLibraryCookie(context.Context, *GetLibraryCookieRequest) (*GetLibraryCookieResponse, error)
 	mustEmbedUnimplementedCCNUServiceServer()
 }
 
@@ -80,6 +93,9 @@ func (UnimplementedCCNUServiceServer) GetXKCookie(context.Context, *GetXKCookieR
 }
 func (UnimplementedCCNUServiceServer) GetCCNUCookie(context.Context, *GetCCNUCookieRequest) (*GetCCNUCookieResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCCNUCookie not implemented")
+}
+func (UnimplementedCCNUServiceServer) GetLibraryCookie(context.Context, *GetLibraryCookieRequest) (*GetLibraryCookieResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetLibraryCookie not implemented")
 }
 func (UnimplementedCCNUServiceServer) mustEmbedUnimplementedCCNUServiceServer() {}
 func (UnimplementedCCNUServiceServer) testEmbeddedByValue()                     {}
@@ -138,6 +154,24 @@ func _CCNUService_GetCCNUCookie_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CCNUService_GetLibraryCookie_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetLibraryCookieRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CCNUServiceServer).GetLibraryCookie(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CCNUService_GetLibraryCookie_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CCNUServiceServer).GetLibraryCookie(ctx, req.(*GetLibraryCookieRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // CCNUService_ServiceDesc is the grpc.ServiceDesc for CCNUService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -152,6 +186,10 @@ var CCNUService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetCCNUCookie",
 			Handler:    _CCNUService_GetCCNUCookie_Handler,
+		},
+		{
+			MethodName: "GetLibraryCookie",
+			Handler:    _CCNUService_GetLibraryCookie_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

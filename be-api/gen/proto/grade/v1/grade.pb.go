@@ -187,7 +187,7 @@ func (x *GetGradeByTermResp) GetGrades() []*Grade {
 	return nil
 }
 
-// 成绩结构体
+//成绩结构体
 type Grade struct {
 	state               protoimpl.MessageState `protogen:"open.v1"`
 	Kcmc                string                 `protobuf:"bytes,1,opt,name=Kcmc,proto3" json:"Kcmc,omitempty"`                               //课程名

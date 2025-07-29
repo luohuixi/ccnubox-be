@@ -5,28 +5,177 @@ package library.v1;
 option go_package = "github.com/asynccnu/ccnubox-be/be-api/gen/proto/library/v1;libraryv1";
 
 service Library {
-    // 获取座位
     rpc GetSeat (GetSeatRequest) returns (GetSeatResponse);
+    rpc ReserveSeat (ReserveSeatRequest) returns (ReserveSeatResponse);
+    rpc GetSeatRecord (GetSeatRecordRequest) returns (GetSeatRecordResponse);
+    rpc CancelSeat (CancelSeatRequest) returns (CancelSeatResponse);
+    rpc GetCreditPoint (GetCreditPointRequest) returns (GetCreditPointResponse);
+    rpc GetDiscussion (GetDiscussionRequest) returns (GetDiscussionResponse);
+    rpc SearchUser (SearchUserRequest) returns (SearchUserResponse);
+    rpc ReserveDiscussion (ReserveDiscussionRequest) returns (ReserveDiscussionResponse);
+    rpc CancelDiscussion (CancelDiscussionRequest) returns (CancelDiscussionResponse);
 }
 
+// 获取座位信息
 message GetSeatRequest {
-    string room_id = 1;
-    string stu_id = 2;
+    string stu_id = 1;
 }
 
 message GetSeatResponse {
-    repeated Seat seat = 1;
+    repeated RoomSeat room_seats = 1;
+}
+
+message RoomSeat {
+    string room_id = 1;
+    repeated Seat seats = 2;
 }
 
 message Seat {
-    string name = 1;
-    string dev_id = 2;
-    string kind_name = 3;
-    repeated TimeSlot ts = 4;
+    string lab_name = 1;
+    string kind_name = 2;
+    string dev_id = 3;
+    string dev_name = 4;
+    repeated TimeSlot ts = 5;
 }
 
 message TimeSlot {
     string start = 1;
     string end = 2;
-    string owner = 3;
+    string state = 3;
+    string owner = 4;
+    bool occupy= 5;
+}
+
+// 预约座位
+message ReserveSeatRequest {
+    string dev_id = 1;
+    string start = 2;
+    string end = 3;
+    string stu_id = 4;
+}
+
+message ReserveSeatResponse {
+    string message = 1;
+}
+
+// 获取未来预约记录
+message GetSeatRecordRequest {
+    string stu_id = 1;
+}
+
+message GetSeatRecordResponse {
+    repeated Record record = 1;
+}
+
+message Record {
+    string id = 1;
+    string owner = 2;
+    string start = 3;
+    string end = 4;
+    string time_desc = 5;
+    string occur = 6;
+    string states = 7;
+    string dev_name = 8;
+    string room_id = 9;
+    string room_name = 10;
+    string lab_name = 11;
+}
+
+// 取消座位
+message CancelSeatRequest {
+    string id = 1;
+    string stu_id = 2;
+}
+
+message CancelSeatResponse {
+    string message = 1;
+}
+
+// 获取信誉分
+message GetCreditPointRequest{
+    string stu_id = 1;
+}
+
+message GetCreditPointResponse{
+    CreditSummary credit_summary = 1;
+    repeated CreditRecord credit_record = 2;
+}
+
+message CreditSummary{
+    string system = 1;
+    string remain = 2;
+    string total = 3;
+}
+
+message CreditRecord{
+    string title = 1;
+    string subtitle = 2;
+    string location = 3;
+}
+
+// 获取研讨间信息
+message GetDiscussionRequest{
+    string class_id = 1;
+    string date = 2;
+    string stu_id = 3;
+}
+
+message GetDiscussionResponse{
+    repeated Discussion discussions = 1;
+}
+
+message Discussion{
+    string lab_name = 1;
+    string kind_name = 2;
+    string dev_id = 3;
+    string dev_name = 4;
+    repeated DiscussionTS TS = 5;
+}
+
+message DiscussionTS{
+    string start = 1;
+    string end = 2;
+    string state = 3;
+    string title = 4;
+    string owner = 5;
+    bool occupy = 6;
+}
+
+// 查找用户
+message SearchUserRequest{
+    string student_id = 1;
+    string stu_id = 2;
+}
+
+message SearchUserResponse{
+    string id = 1;
+    string pid = 2;
+    string name = 3;
+    string label = 4;
+}
+
+// 预约研讨间
+message ReserveDiscussionRequest{
+    string dev_id = 1;
+    string lab_id = 2;
+    string kind_id = 3;
+    string title = 4;
+    string start = 5;
+    string end = 6;
+    repeated string list = 7;
+    string stu_id = 8;
+}
+
+message ReserveDiscussionResponse{
+    string message = 1;
+}
+
+// 取消研讨间
+message CancelDiscussionRequest{
+    string id = 1;
+    string stu_id = 2;
+}
+
+message CancelDiscussionResponse{
+    string message = 1;
 }
