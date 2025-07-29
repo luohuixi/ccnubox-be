@@ -318,8 +318,41 @@ var (
 	}
 )
 
+// library
 var (
 	GET_SEAT_ERROR = func(err error) error {
-		return errorx.New(http.StatusInternalServerError, INTERNAL_SERVER_ERROR_CODE, "获取座位信息失败！", "library", err)
+		return errorx.New(http.StatusInternalServerError, INTERNAL_SERVER_ERROR_CODE, "获取座位信息失败!", "Library", err)
+	}
+
+	RESERVE_SEAT_ERROR = func(err error) error {
+		return errorx.New(http.StatusInternalServerError, INTERNAL_SERVER_ERROR_CODE, "预约座位失败!", "Library", err)
+	}
+
+	GET_SEAT_RECORD_ERROR = func(err error) error {
+		return errorx.New(http.StatusInternalServerError, INTERNAL_SERVER_ERROR_CODE, "获取未来预约失败!", "Library", err)
+	}
+
+	CANCEL_SEAT_ERROR = func(err error) error {
+		return errorx.New(http.StatusInternalServerError, INTERNAL_SERVER_ERROR_CODE, "取消座位失败!", "Library", err)
+	}
+
+	GET_CREDIT_POINTS_ERROR = func(err error) error {
+		return errorx.New(http.StatusInternalServerError, INTERNAL_SERVER_ERROR_CODE, "获取信誉分失败!", "Library", err)
+	}
+
+	GET_DISCUSSION_ERROR = func(err error) error {
+		return errorx.New(http.StatusInternalServerError, INTERNAL_SERVER_ERROR_CODE, "获取研讨间信息失败!", "Library", err)
+	}
+
+	SEARCH_USER_ERROR = func(err error) error {
+		return errorx.New(http.StatusInternalServerError, INTERNAL_SERVER_ERROR_CODE, "搜索用户失败!", "Library", err)
+	}
+
+	RESERVE_DISCUSSION_ERROR = func(err error) error {
+		return errorx.New(http.StatusInternalServerError, INTERNAL_SERVER_ERROR_CODE, "预约研讨间失败!", "Library", err)
+	}
+
+	CANCEL_DISCUSSION_ERROR = func(err error) error {
+		return errorx.New(http.StatusInternalServerError, INTERNAL_SERVER_ERROR_CODE, "取消研讨间失败!", "Library", err)
 	}
 )

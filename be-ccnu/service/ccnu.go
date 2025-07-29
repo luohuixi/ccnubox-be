@@ -4,9 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	ccnuv1 "github.com/asynccnu/ccnubox-be/be-api/gen/proto/ccnu/v1"
-	"github.com/asynccnu/ccnubox-be/be-ccnu/pkg/errorx"
-	"github.com/asynccnu/ccnubox-be/be-ccnu/tool"
 	"io"
 	"net/http"
 	"net/http/cookiejar"
@@ -14,6 +11,10 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	ccnuv1 "github.com/asynccnu/ccnubox-be/be-api/gen/proto/ccnu/v1"
+	"github.com/asynccnu/ccnubox-be/be-ccnu/pkg/errorx"
+	"github.com/asynccnu/ccnubox-be/be-ccnu/tool"
 )
 
 // 定义错误,这里将kratos的error作为一个重要部分传入,此处的错误并不直接在service中去捕获,而是选择在更底层的爬虫去捕获,因为爬虫的错误处理非常复杂
@@ -89,11 +90,128 @@ func (c *ccnuService) GetCCNUCookie(ctx context.Context, studentId string, passw
 	return s, nil
 }
 
+func (c *ccnuService) GetLibraryCookie(ctx context.Context, studentId, password string) (string, error) {
+	client := c.client()
+
+	// 获取登录参数
+	params, err := tool.Retry(func() (*accountRequestParams, error) {
+		return c.makeAccountPreflightRequest(client)
+	})
+	if err != nil {
+		return "", err
+	}
+
+	// 执行登录到图书馆系统
+	client, err = tool.Retry(func() (*http.Client, error) {
+		return c.libraryLoginClient(ctx, client, studentId, password, params)
+	})
+	if err != nil {
+		return "", err
+	}
+
+	// 获取图书馆Cookie
+	cookie, err := tool.Retry(func() (string, error) {
+		return c.getLibraryCookie(client)
+	})
+	if err != nil {
+		return "", err
+	}
+
+	return cookie, nil
+}
+
+// 图书馆登录客户端
+func (c *ccnuService) libraryLoginClient(ctx context.Context, client *http.Client, studentId string, password string, params *accountRequestParams) (*http.Client, error) {
+	v := url.Values{}
+	v.Set("username", studentId)
+	v.Set("password", password)
+	v.Set("lt", params.lt)
+	v.Set("execution", params.execution)
+	v.Set("_eventId", params._eventId)
+	v.Set("submit", params.submit)
+
+	// 登录到图书馆系统
+	request, err := http.NewRequest("POST", "https://account.ccnu.edu.cn/cas/login;jsessionid="+params.JSESSIONID+"?service=http://kjyy.ccnu.edu.cn/loginall.aspx?page=", strings.NewReader(v.Encode()))
+	if err != nil {
+		return nil, SYSTEM_ERROR(err)
+	}
+	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	request.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.109 Safari/537.36")
+	request.WithContext(ctx)
+
+	// 发送请求
+	resp, err := client.Do(request)
+	if err != nil {
+		return nil, CCNUSERVER_ERROR(err)
+	}
+	defer resp.Body.Close()
+
+	res, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, CCNUSERVER_ERROR(err)
+	}
+
+	// 检查登录是否成功
+	if strings.Contains(string(res), "您输入的用户名或密码有误") {
+		return nil, Invalid_SidOrPwd_ERROR(errors.New("学号或密码错误"))
+	}
+
+	// 如果没有设置Cookie，说明系统有问题
+	if len(resp.Header.Get("Set-Cookie")) == 0 {
+		return nil, CCNUSERVER_ERROR(errors.New("登录失败，未获取到Cookie"))
+	}
+
+	libraryReq, err := http.NewRequest("GET", "http://kjyy.ccnu.edu.cn/clientweb/default.aspx", nil)
+	if err != nil {
+		return nil, SYSTEM_ERROR(err)
+	}
+
+	libraryReq.WithContext(ctx)
+
+	libraryResp, err := client.Do(libraryReq)
+	if err != nil {
+		return nil, CCNUSERVER_ERROR(err)
+	}
+	defer libraryResp.Body.Close()
+
+	if libraryResp.StatusCode != http.StatusOK {
+		return nil, CCNUSERVER_ERROR(fmt.Errorf("访问图书馆系统失败，状态码: %d", libraryResp.StatusCode))
+	}
+
+	return client, nil
+}
+
+// 获取图书馆Cookie
+func (c *ccnuService) getLibraryCookie(client *http.Client) (string, error) {
+	// 构造用于获取Cookie的URL
+	libraryURL := "http://kjyy.ccnu.edu.cn/"
+	u, err := url.Parse(libraryURL)
+	if err != nil {
+		return "", SYSTEM_ERROR(err)
+	}
+
+	// 从CookieJar中获取这个域名的Cookie
+	cookies := client.Jar.Cookies(u)
+	if len(cookies) == 0 {
+		return "", SYSTEM_ERROR(errors.New("no cookies found after login"))
+	}
+
+	// 拼接所有Cookie为字符串格式
+	var cookieStrs []string
+	for _, cookie := range cookies {
+		cookieStrs = append(cookieStrs, fmt.Sprintf("%s=%s", cookie.Name, cookie.Value))
+	}
+
+	// 返回拼接好的Cookie字符串
+	finalCookie := strings.Join(cookieStrs, "; ")
+	return finalCookie, nil
+}
+
 // getBKSCookie 返回本科生院的Cookie
 func (c *ccnuService) getBKSCookie(client *http.Client) (string, error) {
 
 	// 构造用于获取 Cookie 的 URL（即请求时的登录 URL）
-	loginURL := "http://xk.ccnu.edu.cn/jwglxt"
+	loginURL := "http://kjyy.ccnu.edu.cn/"
 	u, err := url.Parse(loginURL)
 	if err != nil {
 		return "", SYSTEM_ERROR(err)

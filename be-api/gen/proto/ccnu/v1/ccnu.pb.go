@@ -213,6 +213,102 @@ func (x *GetCCNUCookieResponse) GetCookie() string {
 	return ""
 }
 
+type GetLibraryCookieRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	StudentId     string                 `protobuf:"bytes,1,opt,name=student_id,json=studentId,proto3" json:"student_id,omitempty"`
+	Password      string                 `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetLibraryCookieRequest) Reset() {
+	*x = GetLibraryCookieRequest{}
+	mi := &file_ccnu_v1_ccnu_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetLibraryCookieRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetLibraryCookieRequest) ProtoMessage() {}
+
+func (x *GetLibraryCookieRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ccnu_v1_ccnu_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetLibraryCookieRequest.ProtoReflect.Descriptor instead.
+func (*GetLibraryCookieRequest) Descriptor() ([]byte, []int) {
+	return file_ccnu_v1_ccnu_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *GetLibraryCookieRequest) GetStudentId() string {
+	if x != nil {
+		return x.StudentId
+	}
+	return ""
+}
+
+func (x *GetLibraryCookieRequest) GetPassword() string {
+	if x != nil {
+		return x.Password
+	}
+	return ""
+}
+
+type GetLibraryCookieResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Cookie        string                 `protobuf:"bytes,1,opt,name=cookie,proto3" json:"cookie,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetLibraryCookieResponse) Reset() {
+	*x = GetLibraryCookieResponse{}
+	mi := &file_ccnu_v1_ccnu_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetLibraryCookieResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetLibraryCookieResponse) ProtoMessage() {}
+
+func (x *GetLibraryCookieResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ccnu_v1_ccnu_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetLibraryCookieResponse.ProtoReflect.Descriptor instead.
+func (*GetLibraryCookieResponse) Descriptor() ([]byte, []int) {
+	return file_ccnu_v1_ccnu_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *GetLibraryCookieResponse) GetCookie() string {
+	if x != nil {
+		return x.Cookie
+	}
+	return ""
+}
+
 var File_ccnu_v1_ccnu_proto protoreflect.FileDescriptor
 
 const file_ccnu_v1_ccnu_proto_rawDesc = "" +
@@ -229,10 +325,17 @@ const file_ccnu_v1_ccnu_proto_rawDesc = "" +
 	"student_id\x18\x01 \x01(\tR\tstudentId\x12\x1a\n" +
 	"\bpassword\x18\x02 \x01(\tR\bpassword\"/\n" +
 	"\x15GetCCNUCookieResponse\x12\x16\n" +
-	"\x06cookie\x18\x01 \x01(\tR\x06cookie2\xa7\x01\n" +
+	"\x06cookie\x18\x01 \x01(\tR\x06cookie\"T\n" +
+	"\x17GetLibraryCookieRequest\x12\x1d\n" +
+	"\n" +
+	"student_id\x18\x01 \x01(\tR\tstudentId\x12\x1a\n" +
+	"\bpassword\x18\x02 \x01(\tR\bpassword\"2\n" +
+	"\x18GetLibraryCookieResponse\x12\x16\n" +
+	"\x06cookie\x18\x01 \x01(\tR\x06cookie2\x80\x02\n" +
 	"\vCCNUService\x12H\n" +
 	"\vGetXKCookie\x12\x1b.ccnu.v1.GetXKCookieRequest\x1a\x1c.ccnu.v1.GetXKCookieResponse\x12N\n" +
-	"\rGetCCNUCookie\x12\x1d.ccnu.v1.GetCCNUCookieRequest\x1a\x1e.ccnu.v1.GetCCNUCookieResponseB@Z>github.com/asynccnu/ccnubox-be/be-api/gen/proto/ccnu/v1;ccnuv1b\x06proto3"
+	"\rGetCCNUCookie\x12\x1d.ccnu.v1.GetCCNUCookieRequest\x1a\x1e.ccnu.v1.GetCCNUCookieResponse\x12W\n" +
+	"\x10GetLibraryCookie\x12 .ccnu.v1.GetLibraryCookieRequest\x1a!.ccnu.v1.GetLibraryCookieResponseB@Z>github.com/asynccnu/ccnubox-be/be-api/gen/proto/ccnu/v1;ccnuv1b\x06proto3"
 
 var (
 	file_ccnu_v1_ccnu_proto_rawDescOnce sync.Once
@@ -246,20 +349,24 @@ func file_ccnu_v1_ccnu_proto_rawDescGZIP() []byte {
 	return file_ccnu_v1_ccnu_proto_rawDescData
 }
 
-var file_ccnu_v1_ccnu_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_ccnu_v1_ccnu_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_ccnu_v1_ccnu_proto_goTypes = []any{
-	(*GetXKCookieRequest)(nil),    // 0: ccnu.v1.GetXKCookieRequest
-	(*GetXKCookieResponse)(nil),   // 1: ccnu.v1.GetXKCookieResponse
-	(*GetCCNUCookieRequest)(nil),  // 2: ccnu.v1.GetCCNUCookieRequest
-	(*GetCCNUCookieResponse)(nil), // 3: ccnu.v1.GetCCNUCookieResponse
+	(*GetXKCookieRequest)(nil),       // 0: ccnu.v1.GetXKCookieRequest
+	(*GetXKCookieResponse)(nil),      // 1: ccnu.v1.GetXKCookieResponse
+	(*GetCCNUCookieRequest)(nil),     // 2: ccnu.v1.GetCCNUCookieRequest
+	(*GetCCNUCookieResponse)(nil),    // 3: ccnu.v1.GetCCNUCookieResponse
+	(*GetLibraryCookieRequest)(nil),  // 4: ccnu.v1.GetLibraryCookieRequest
+	(*GetLibraryCookieResponse)(nil), // 5: ccnu.v1.GetLibraryCookieResponse
 }
 var file_ccnu_v1_ccnu_proto_depIdxs = []int32{
 	0, // 0: ccnu.v1.CCNUService.GetXKCookie:input_type -> ccnu.v1.GetXKCookieRequest
 	2, // 1: ccnu.v1.CCNUService.GetCCNUCookie:input_type -> ccnu.v1.GetCCNUCookieRequest
-	1, // 2: ccnu.v1.CCNUService.GetXKCookie:output_type -> ccnu.v1.GetXKCookieResponse
-	3, // 3: ccnu.v1.CCNUService.GetCCNUCookie:output_type -> ccnu.v1.GetCCNUCookieResponse
-	2, // [2:4] is the sub-list for method output_type
-	0, // [0:2] is the sub-list for method input_type
+	4, // 2: ccnu.v1.CCNUService.GetLibraryCookie:input_type -> ccnu.v1.GetLibraryCookieRequest
+	1, // 3: ccnu.v1.CCNUService.GetXKCookie:output_type -> ccnu.v1.GetXKCookieResponse
+	3, // 4: ccnu.v1.CCNUService.GetCCNUCookie:output_type -> ccnu.v1.GetCCNUCookieResponse
+	5, // 5: ccnu.v1.CCNUService.GetLibraryCookie:output_type -> ccnu.v1.GetLibraryCookieResponse
+	3, // [3:6] is the sub-list for method output_type
+	0, // [0:3] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name
@@ -276,7 +383,7 @@ func file_ccnu_v1_ccnu_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_ccnu_v1_ccnu_proto_rawDesc), len(file_ccnu_v1_ccnu_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

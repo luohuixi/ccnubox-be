@@ -24,8 +24,8 @@ func NewCCNUServiceProxy(cs user.UserServiceClient) biz.CCNUServiceProxy {
 	return &CCNUService{Cs: cs}
 }
 
-func (c *CCNUService) GetCookie(ctx context.Context, stuID string) (string, error) {
-	resp, err := c.Cs.GetCookie(ctx, &user.GetCookieRequest{
+func (c *CCNUService) GetLibraryCookie(ctx context.Context, stuID string) (string, error) {
+	resp, err := c.Cs.GetLibraryCookie(ctx, &user.GetLibraryCookieRequest{
 		StudentId: stuID,
 	})
 	if err != nil {
@@ -41,7 +41,7 @@ func NewClient(r *etcd.Registry, cf *conf.Registry, logger log.Logger) (user.Use
 		context.Background(),
 		grpc.WithEndpoint(cf.Usersvc), // 需要发现的服务，如果是k8s部署可以直接用服务器本地地址:9001，9001端口是需要调用的服务的端口
 		grpc.WithDiscovery(r),
-		grpc.WithTimeout(5*time.Second), //由于使用华师的服务,所以设置下超时时间最长为5s
+		grpc.WithTimeout(20*time.Second), //由于使用华师的服务,所以设置下超时时间最长为5s
 		grpc.WithMiddleware(
 			tracing.Client(),
 			recovery.Recovery(),
