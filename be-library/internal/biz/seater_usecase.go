@@ -91,7 +91,7 @@ func (u *libraryUsecase) ReserveFromCrawler(ctx context.Context, stuID string, D
 	return result, nil
 }
 
-func (u *libraryUsecase) GetRecordFromCrawler(ctx context.Context, stuID string) ([]*Record, error) {
+func (u *libraryUsecase) GetRecordFromCrawler(ctx context.Context, stuID string) ([]*FutureRecords, error) {
 	timeoutCtx, cancel := context.WithTimeout(ctx, u.waitTime)
 	defer cancel()
 
@@ -112,6 +112,29 @@ func (u *libraryUsecase) GetRecordFromCrawler(ctx context.Context, stuID string)
 	}
 
 	return records, nil
+}
+
+func (u *libraryUsecase) GetHistoryFromCrawler(ctx context.Context, stuID string) ([]*HistoryRecords, error) {
+	timeoutCtx, cancel := context.WithTimeout(ctx, u.waitTime)
+	defer cancel()
+
+	getCookieStart := time.Now()
+
+	cookie, err := u.ccnu.GetLibraryCookie(timeoutCtx, stuID)
+	if err != nil {
+		u.log.Errorf("Error getting cookie(stu_id:%v) from other service: %v", stuID, err)
+		return nil, err
+	}
+
+	u.log.Infof("Get cookie (stu_id:%v) from other service,cost %v", stuID, time.Since(getCookieStart))
+
+	history, err := u.crawler.GetHistory(ctx, cookie)
+	if err != nil {
+		u.log.Errorf("crawl history records(stu_id:%v cookie:%v) failed: %v", stuID, cookie, err)
+		return nil, err
+	}
+
+	return history, nil
 }
 
 func (u *libraryUsecase) CancelFromCrawler(ctx context.Context, stuID string, ID string) (string, error) {

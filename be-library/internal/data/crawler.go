@@ -178,7 +178,7 @@ func (c *Crawler) ReserveSeat(ctx context.Context, cookie string, devid, start, 
 	return ReserveResp.Msg, nil
 }
 
-func (c *Crawler) GetRecord(ctx context.Context, cookie string) ([]*biz.Record, error) {
+func (c *Crawler) GetRecord(ctx context.Context, cookie string) ([]*biz.FutureRecords, error) {
 	baseURL := "http://kjyy.ccnu.edu.cn/ClientWeb/pro/ajax/reserve.aspx"
 
 	params := url.Values{}
@@ -210,7 +210,7 @@ func (c *Crawler) GetRecord(ctx context.Context, cookie string) ([]*biz.Record, 
 		return nil, nil
 	}
 
-	var result []*biz.Record
+	var result []*biz.FutureRecords
 
 	// 遍历每个record
 	for _, item := range data.Array() {
@@ -231,7 +231,7 @@ func (c *Crawler) GetRecord(ctx context.Context, cookie string) ([]*biz.Record, 
 			}
 		})
 
-		record := &biz.Record{
+		record := &biz.FutureRecords{
 			ID:       item.Get("id").String(),
 			Owner:    item.Get("owner").String(),
 			Start:    item.Get("start").String(),
@@ -249,6 +249,54 @@ func (c *Crawler) GetRecord(ctx context.Context, cookie string) ([]*biz.Record, 
 	}
 
 	return result, nil
+}
+
+func (c *Crawler) GetHistory(ctx context.Context, cookie string) ([]*biz.HistoryRecords, error) {
+	fullURL := "http://kjyy.ccnu.edu.cn/clientweb/m/a/resvlist.aspx"
+
+	req, err := http.NewRequestWithContext(ctx, "GET", fullURL, nil)
+	if err != nil {
+		log.Fatal("创建请求失败:", err)
+	}
+
+	req.Header.Set("cookie", cookie)
+
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return nil, errcode.ErrCrawler
+	}
+	defer resp.Body.Close()
+
+	doc, err := goquery.NewDocumentFromReader(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var records []*biz.HistoryRecords
+
+	doc.Find("li.item-content").Each(func(i int, item *goquery.Selection) {
+		place := item.Find(".item-title").Text()
+		status := item.Find(".item-after").Text()
+		date := item.Find(".item-subtitle").Text()
+		submitText := item.Find(".item-text").Text()
+		submitParts := strings.Split(submitText, ",")
+		if len(submitParts) >= 2 {
+			floor := submitParts[0]
+			floor = strings.TrimSpace(floor)
+			submitTime := submitParts[2]
+			submitTime = strings.TrimSpace(submitTime)
+
+			records = append(records, &biz.HistoryRecords{
+				Place:      place,
+				Floor:      floor,
+				Status:     status,
+				Date:       date,
+				SubmitTime: submitTime,
+			})
+		}
+	})
+
+	return records, nil
 }
 
 func (c *Crawler) CancelSeat(ctx context.Context, cookie string, id string) (string, error) {

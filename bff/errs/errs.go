@@ -332,6 +332,10 @@ var (
 		return errorx.New(http.StatusInternalServerError, INTERNAL_SERVER_ERROR_CODE, "获取未来预约失败!", "Library", err)
 	}
 
+	GET_HISTORY_ERROR = func(err error) error {
+		return errorx.New(http.StatusInternalServerError, INTERNAL_SERVER_ERROR_CODE, "获取历史记录失败!", "Library", err)
+	}
+
 	CANCEL_SEAT_ERROR = func(err error) error {
 		return errorx.New(http.StatusInternalServerError, INTERNAL_SERVER_ERROR_CODE, "取消座位失败!", "Library", err)
 	}

@@ -98,6 +98,28 @@ func (ls *LibraryService) GetSeatRecord(ctx context.Context, req *pb.GetSeatReco
 	}, nil
 }
 
+func (ls *LibraryService) GetHistory(ctx context.Context, req *pb.GetHistoryRequest) (*pb.GetHistoryResponse, error) {
+	history, err := ls.use.GetHistoryFromCrawler(ctx, req.StuId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pbHistory []*pb.History
+	for _, h := range history {
+		pbHistory = append(pbHistory, &pb.History{
+			Place:      h.Place,
+			Floor:      h.Floor,
+			Status:     h.Status,
+			Date:       h.Date,
+			SubmitTime: h.SubmitTime,
+		})
+	}
+
+	return &pb.GetHistoryResponse{
+		History: pbHistory,
+	}, nil
+}
+
 func (ls *LibraryService) CancelSeat(ctx context.Context, req *pb.CancelSeatRequest) (*pb.CancelSeatResponse, error) {
 	message, err := ls.use.CancelFromCrawler(ctx, req.StuId, req.Id)
 	if err != nil {

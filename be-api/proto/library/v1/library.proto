@@ -8,6 +8,7 @@ service Library {
     rpc GetSeat (GetSeatRequest) returns (GetSeatResponse);
     rpc ReserveSeat (ReserveSeatRequest) returns (ReserveSeatResponse);
     rpc GetSeatRecord (GetSeatRecordRequest) returns (GetSeatRecordResponse);
+    rpc GetHistory (GetHistoryRequest) returns (GetHistoryResponse);
     rpc CancelSeat (CancelSeatRequest) returns (CancelSeatResponse);
     rpc GetCreditPoint (GetCreditPointRequest) returns (GetCreditPointResponse);
     rpc GetDiscussion (GetDiscussionRequest) returns (GetDiscussionResponse);
@@ -79,6 +80,23 @@ message Record {
     string room_id = 9;
     string room_name = 10;
     string lab_name = 11;
+}
+
+// 获取历史记录
+message GetHistoryRequest {
+    string stu_id = 1;
+}
+
+message GetHistoryResponse {
+    repeated History history = 1;
+}
+
+message History {
+    string place = 1;
+    string floor = 2;
+    string status = 3;
+    string date = 4;
+    string submitTime = 5;
 }
 
 // 取消座位

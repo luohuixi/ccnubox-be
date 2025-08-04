@@ -63,6 +63,22 @@ type Record struct {
 	LabName  string `json:"labName"`
 }
 
+type GetHistoryRequest struct {
+	StuID string `json:"stu_id"`
+}
+
+type GetHistoryResponse struct {
+	Histories []History `json:"history"`
+}
+
+type History struct {
+	Place      string `json:"place"`
+	Floor      string `json:"floor"`
+	Status     string `json:"status"`
+	Date       string `json:"date"`
+	SubmitTime string `json:"submitTime"`
+}
+
 type CancelSeatRequest struct {
 	ID    string `json:"id"`
 	StuID string `json:"stu_id"`

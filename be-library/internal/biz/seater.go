@@ -9,7 +9,8 @@ import (
 type LibraryCrawler interface {
 	GetSeatInfos(ctx context.Context, cookie string) (map[string][]*Seat, error)
 	ReserveSeat(ctx context.Context, cookie string, devid, start, end string) (string, error)
-	GetRecord(ctx context.Context, cookie string) ([]*Record, error)
+	GetRecord(ctx context.Context, cookie string) ([]*FutureRecords, error)
+	GetHistory(ctx context.Context, cookie string) ([]*HistoryRecords, error)
 	CancelSeat(ctx context.Context, cookie string, id string) (string, error)
 	GetCreditPoint(ctx context.Context, cookie string) (*CreditPoints, error)
 	GetDiscussion(ctx context.Context, cookie string, classid, date string) ([]*Discussion, error)
@@ -21,7 +22,8 @@ type LibraryCrawler interface {
 type LibraryUsecase interface {
 	GetSeatFromCrawler(ctx context.Context, stuID string) (map[string][]*Seat, error)
 	ReserveFromCrawler(ctx context.Context, stuID string, DevID, Start, End string) (string, error)
-	GetRecordFromCrawler(ctx context.Context, stuID string) ([]*Record, error)
+	GetRecordFromCrawler(ctx context.Context, stuID string) ([]*FutureRecords, error)
+	GetHistoryFromCrawler(ctx context.Context, stuID string) ([]*HistoryRecords, error)
 	CancelFromCrawler(ctx context.Context, stuID string, ID string) (string, error)
 	GetCreditPointFromCrawler(ctx context.Context, stuID string) (*CreditPoints, error)
 	GetDiscussionFromCrawler(ctx context.Context, stuID string, ClassID, Date string) ([]*Discussion, error)

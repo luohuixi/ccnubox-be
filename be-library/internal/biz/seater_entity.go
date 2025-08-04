@@ -34,17 +34,3 @@ type TimeSlot struct {
 	Owner  string
 	Occupy bool
 }
-
-type Record struct {
-	ID       string
-	Owner    string
-	Start    string
-	End      string
-	TimeDesc string
-	Occur    string
-	States   string
-	DevName  string
-	RoomID   string
-	RoomName string
-	LabName  string
-}

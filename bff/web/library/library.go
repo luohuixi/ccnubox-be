@@ -26,6 +26,7 @@ func (h *LibraryHandler) RegisterRoutes(s *gin.RouterGroup, authMiddlerware gin.
 	sg.GET("/get_seat", authMiddlerware, ginx.WrapClaims(h.GetSeatInfos))
 	sg.POST("/reserve_seat", authMiddlerware, ginx.WrapClaimsAndReq(h.ReserveSeat))
 	sg.GET("/get_seat_records", authMiddlerware, ginx.WrapClaims(h.GetSeatRecord))
+	sg.GET("/get_history_records", authMiddlerware, ginx.WrapClaims(h.GetHistory))
 	sg.POST("/cancel_seat", authMiddlerware, ginx.WrapClaimsAndReq(h.CancelSeat))
 	sg.GET("/get_credit_points", authMiddlerware, ginx.WrapClaims(h.GetCreditPoint))
 	sg.POST("/get_discussion", authMiddlerware, ginx.WrapClaimsAndReq(h.GetDiscussion))
@@ -129,6 +130,35 @@ func (h *LibraryHandler) GetSeatRecord(ctx *gin.Context, uc ijwt.UserClaims) (we
 
 	resp := GetSeatRecordResponse{
 		Records: respRecords,
+	}
+
+	return web.Response{
+		Msg:  "Success",
+		Data: resp,
+	}, nil
+}
+
+func (h *LibraryHandler) GetHistory(ctx *gin.Context, uc ijwt.UserClaims) (web.Response, error) {
+	res, err := h.LibraryClient.GetHistory(ctx, &libraryv1.GetHistoryRequest{
+		StuId: uc.StudentId,
+	})
+	if err != nil {
+		return web.Response{}, errs.GET_HISTORY_ERROR(err)
+	}
+
+	var HistoryRecords = make([]History, 0, len(res.History))
+	for _, history := range res.History {
+		HistoryRecords = append(HistoryRecords, History{
+			Place:      history.Place,
+			Floor:      history.Floor,
+			Status:     history.Status,
+			Date:       history.Date,
+			SubmitTime: history.SubmitTime,
+		})
+	}
+
+	resp := GetHistoryResponse{
+		Histories: HistoryRecords,
 	}
 
 	return web.Response{
