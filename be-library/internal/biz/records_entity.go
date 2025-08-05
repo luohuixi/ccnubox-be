@@ -6,7 +6,6 @@ type FutureRecords struct {
 	Start    string
 	End      string
 	TimeDesc string
-	Occur    string
 	States   string
 	DevName  string
 	RoomID   string

@@ -523,12 +523,11 @@ type Record struct {
 	Start         string                 `protobuf:"bytes,3,opt,name=start,proto3" json:"start,omitempty"`
 	End           string                 `protobuf:"bytes,4,opt,name=end,proto3" json:"end,omitempty"`
 	TimeDesc      string                 `protobuf:"bytes,5,opt,name=time_desc,json=timeDesc,proto3" json:"time_desc,omitempty"`
-	Occur         string                 `protobuf:"bytes,6,opt,name=occur,proto3" json:"occur,omitempty"`
-	States        string                 `protobuf:"bytes,7,opt,name=states,proto3" json:"states,omitempty"`
-	DevName       string                 `protobuf:"bytes,8,opt,name=dev_name,json=devName,proto3" json:"dev_name,omitempty"`
-	RoomId        string                 `protobuf:"bytes,9,opt,name=room_id,json=roomId,proto3" json:"room_id,omitempty"`
-	RoomName      string                 `protobuf:"bytes,10,opt,name=room_name,json=roomName,proto3" json:"room_name,omitempty"`
-	LabName       string                 `protobuf:"bytes,11,opt,name=lab_name,json=labName,proto3" json:"lab_name,omitempty"`
+	States        string                 `protobuf:"bytes,6,opt,name=states,proto3" json:"states,omitempty"`
+	DevName       string                 `protobuf:"bytes,7,opt,name=dev_name,json=devName,proto3" json:"dev_name,omitempty"`
+	RoomId        string                 `protobuf:"bytes,8,opt,name=room_id,json=roomId,proto3" json:"room_id,omitempty"`
+	RoomName      string                 `protobuf:"bytes,9,opt,name=room_name,json=roomName,proto3" json:"room_name,omitempty"`
+	LabName       string                 `protobuf:"bytes,10,opt,name=lab_name,json=labName,proto3" json:"lab_name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -594,13 +593,6 @@ func (x *Record) GetEnd() string {
 func (x *Record) GetTimeDesc() string {
 	if x != nil {
 		return x.TimeDesc
-	}
-	return ""
-}
-
-func (x *Record) GetOccur() string {
-	if x != nil {
-		return x.Occur
 	}
 	return ""
 }
@@ -805,103 +797,6 @@ func (x *History) GetSubmitTime() string {
 	return ""
 }
 
-// 取消座位
-type CancelSeatRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	StuId         string                 `protobuf:"bytes,2,opt,name=stu_id,json=stuId,proto3" json:"stu_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *CancelSeatRequest) Reset() {
-	*x = CancelSeatRequest{}
-	mi := &file_library_v1_library_proto_msgTypes[13]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *CancelSeatRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*CancelSeatRequest) ProtoMessage() {}
-
-func (x *CancelSeatRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_library_v1_library_proto_msgTypes[13]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use CancelSeatRequest.ProtoReflect.Descriptor instead.
-func (*CancelSeatRequest) Descriptor() ([]byte, []int) {
-	return file_library_v1_library_proto_rawDescGZIP(), []int{13}
-}
-
-func (x *CancelSeatRequest) GetId() string {
-	if x != nil {
-		return x.Id
-	}
-	return ""
-}
-
-func (x *CancelSeatRequest) GetStuId() string {
-	if x != nil {
-		return x.StuId
-	}
-	return ""
-}
-
-type CancelSeatResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Message       string                 `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *CancelSeatResponse) Reset() {
-	*x = CancelSeatResponse{}
-	mi := &file_library_v1_library_proto_msgTypes[14]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *CancelSeatResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*CancelSeatResponse) ProtoMessage() {}
-
-func (x *CancelSeatResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_library_v1_library_proto_msgTypes[14]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use CancelSeatResponse.ProtoReflect.Descriptor instead.
-func (*CancelSeatResponse) Descriptor() ([]byte, []int) {
-	return file_library_v1_library_proto_rawDescGZIP(), []int{14}
-}
-
-func (x *CancelSeatResponse) GetMessage() string {
-	if x != nil {
-		return x.Message
-	}
-	return ""
-}
-
 // 获取信誉分
 type GetCreditPointRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -912,7 +807,7 @@ type GetCreditPointRequest struct {
 
 func (x *GetCreditPointRequest) Reset() {
 	*x = GetCreditPointRequest{}
-	mi := &file_library_v1_library_proto_msgTypes[15]
+	mi := &file_library_v1_library_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -924,7 +819,7 @@ func (x *GetCreditPointRequest) String() string {
 func (*GetCreditPointRequest) ProtoMessage() {}
 
 func (x *GetCreditPointRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_library_v1_library_proto_msgTypes[15]
+	mi := &file_library_v1_library_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -937,7 +832,7 @@ func (x *GetCreditPointRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCreditPointRequest.ProtoReflect.Descriptor instead.
 func (*GetCreditPointRequest) Descriptor() ([]byte, []int) {
-	return file_library_v1_library_proto_rawDescGZIP(), []int{15}
+	return file_library_v1_library_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *GetCreditPointRequest) GetStuId() string {
@@ -957,7 +852,7 @@ type GetCreditPointResponse struct {
 
 func (x *GetCreditPointResponse) Reset() {
 	*x = GetCreditPointResponse{}
-	mi := &file_library_v1_library_proto_msgTypes[16]
+	mi := &file_library_v1_library_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -969,7 +864,7 @@ func (x *GetCreditPointResponse) String() string {
 func (*GetCreditPointResponse) ProtoMessage() {}
 
 func (x *GetCreditPointResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_library_v1_library_proto_msgTypes[16]
+	mi := &file_library_v1_library_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -982,7 +877,7 @@ func (x *GetCreditPointResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCreditPointResponse.ProtoReflect.Descriptor instead.
 func (*GetCreditPointResponse) Descriptor() ([]byte, []int) {
-	return file_library_v1_library_proto_rawDescGZIP(), []int{16}
+	return file_library_v1_library_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *GetCreditPointResponse) GetCreditSummary() *CreditSummary {
@@ -1010,7 +905,7 @@ type CreditSummary struct {
 
 func (x *CreditSummary) Reset() {
 	*x = CreditSummary{}
-	mi := &file_library_v1_library_proto_msgTypes[17]
+	mi := &file_library_v1_library_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1022,7 +917,7 @@ func (x *CreditSummary) String() string {
 func (*CreditSummary) ProtoMessage() {}
 
 func (x *CreditSummary) ProtoReflect() protoreflect.Message {
-	mi := &file_library_v1_library_proto_msgTypes[17]
+	mi := &file_library_v1_library_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1035,7 +930,7 @@ func (x *CreditSummary) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreditSummary.ProtoReflect.Descriptor instead.
 func (*CreditSummary) Descriptor() ([]byte, []int) {
-	return file_library_v1_library_proto_rawDescGZIP(), []int{17}
+	return file_library_v1_library_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *CreditSummary) GetSystem() string {
@@ -1070,7 +965,7 @@ type CreditRecord struct {
 
 func (x *CreditRecord) Reset() {
 	*x = CreditRecord{}
-	mi := &file_library_v1_library_proto_msgTypes[18]
+	mi := &file_library_v1_library_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1082,7 +977,7 @@ func (x *CreditRecord) String() string {
 func (*CreditRecord) ProtoMessage() {}
 
 func (x *CreditRecord) ProtoReflect() protoreflect.Message {
-	mi := &file_library_v1_library_proto_msgTypes[18]
+	mi := &file_library_v1_library_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1095,7 +990,7 @@ func (x *CreditRecord) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreditRecord.ProtoReflect.Descriptor instead.
 func (*CreditRecord) Descriptor() ([]byte, []int) {
-	return file_library_v1_library_proto_rawDescGZIP(), []int{18}
+	return file_library_v1_library_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *CreditRecord) GetTitle() string {
@@ -1131,7 +1026,7 @@ type GetDiscussionRequest struct {
 
 func (x *GetDiscussionRequest) Reset() {
 	*x = GetDiscussionRequest{}
-	mi := &file_library_v1_library_proto_msgTypes[19]
+	mi := &file_library_v1_library_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1143,7 +1038,7 @@ func (x *GetDiscussionRequest) String() string {
 func (*GetDiscussionRequest) ProtoMessage() {}
 
 func (x *GetDiscussionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_library_v1_library_proto_msgTypes[19]
+	mi := &file_library_v1_library_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1156,7 +1051,7 @@ func (x *GetDiscussionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetDiscussionRequest.ProtoReflect.Descriptor instead.
 func (*GetDiscussionRequest) Descriptor() ([]byte, []int) {
-	return file_library_v1_library_proto_rawDescGZIP(), []int{19}
+	return file_library_v1_library_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *GetDiscussionRequest) GetClassId() string {
@@ -1189,7 +1084,7 @@ type GetDiscussionResponse struct {
 
 func (x *GetDiscussionResponse) Reset() {
 	*x = GetDiscussionResponse{}
-	mi := &file_library_v1_library_proto_msgTypes[20]
+	mi := &file_library_v1_library_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1201,7 +1096,7 @@ func (x *GetDiscussionResponse) String() string {
 func (*GetDiscussionResponse) ProtoMessage() {}
 
 func (x *GetDiscussionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_library_v1_library_proto_msgTypes[20]
+	mi := &file_library_v1_library_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1214,7 +1109,7 @@ func (x *GetDiscussionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetDiscussionResponse.ProtoReflect.Descriptor instead.
 func (*GetDiscussionResponse) Descriptor() ([]byte, []int) {
-	return file_library_v1_library_proto_rawDescGZIP(), []int{20}
+	return file_library_v1_library_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *GetDiscussionResponse) GetDiscussions() []*Discussion {
@@ -1226,18 +1121,20 @@ func (x *GetDiscussionResponse) GetDiscussions() []*Discussion {
 
 type Discussion struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	LabName       string                 `protobuf:"bytes,1,opt,name=lab_name,json=labName,proto3" json:"lab_name,omitempty"`
-	KindName      string                 `protobuf:"bytes,2,opt,name=kind_name,json=kindName,proto3" json:"kind_name,omitempty"`
-	DevId         string                 `protobuf:"bytes,3,opt,name=dev_id,json=devId,proto3" json:"dev_id,omitempty"`
-	DevName       string                 `protobuf:"bytes,4,opt,name=dev_name,json=devName,proto3" json:"dev_name,omitempty"`
-	TS            []*DiscussionTS        `protobuf:"bytes,5,rep,name=TS,proto3" json:"TS,omitempty"`
+	LabId         string                 `protobuf:"bytes,1,opt,name=lab_id,json=labId,proto3" json:"lab_id,omitempty"`
+	LabName       string                 `protobuf:"bytes,2,opt,name=lab_name,json=labName,proto3" json:"lab_name,omitempty"`
+	KindId        string                 `protobuf:"bytes,3,opt,name=kind_id,json=kindId,proto3" json:"kind_id,omitempty"`
+	KindName      string                 `protobuf:"bytes,4,opt,name=kind_name,json=kindName,proto3" json:"kind_name,omitempty"`
+	DevId         string                 `protobuf:"bytes,5,opt,name=dev_id,json=devId,proto3" json:"dev_id,omitempty"`
+	DevName       string                 `protobuf:"bytes,6,opt,name=dev_name,json=devName,proto3" json:"dev_name,omitempty"`
+	TS            []*DiscussionTS        `protobuf:"bytes,7,rep,name=TS,proto3" json:"TS,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Discussion) Reset() {
 	*x = Discussion{}
-	mi := &file_library_v1_library_proto_msgTypes[21]
+	mi := &file_library_v1_library_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1249,7 +1146,7 @@ func (x *Discussion) String() string {
 func (*Discussion) ProtoMessage() {}
 
 func (x *Discussion) ProtoReflect() protoreflect.Message {
-	mi := &file_library_v1_library_proto_msgTypes[21]
+	mi := &file_library_v1_library_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1262,12 +1159,26 @@ func (x *Discussion) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Discussion.ProtoReflect.Descriptor instead.
 func (*Discussion) Descriptor() ([]byte, []int) {
-	return file_library_v1_library_proto_rawDescGZIP(), []int{21}
+	return file_library_v1_library_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *Discussion) GetLabId() string {
+	if x != nil {
+		return x.LabId
+	}
+	return ""
 }
 
 func (x *Discussion) GetLabName() string {
 	if x != nil {
 		return x.LabName
+	}
+	return ""
+}
+
+func (x *Discussion) GetKindId() string {
+	if x != nil {
+		return x.KindId
 	}
 	return ""
 }
@@ -1314,7 +1225,7 @@ type DiscussionTS struct {
 
 func (x *DiscussionTS) Reset() {
 	*x = DiscussionTS{}
-	mi := &file_library_v1_library_proto_msgTypes[22]
+	mi := &file_library_v1_library_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1326,7 +1237,7 @@ func (x *DiscussionTS) String() string {
 func (*DiscussionTS) ProtoMessage() {}
 
 func (x *DiscussionTS) ProtoReflect() protoreflect.Message {
-	mi := &file_library_v1_library_proto_msgTypes[22]
+	mi := &file_library_v1_library_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1339,7 +1250,7 @@ func (x *DiscussionTS) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DiscussionTS.ProtoReflect.Descriptor instead.
 func (*DiscussionTS) Descriptor() ([]byte, []int) {
-	return file_library_v1_library_proto_rawDescGZIP(), []int{22}
+	return file_library_v1_library_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *DiscussionTS) GetStart() string {
@@ -1395,7 +1306,7 @@ type SearchUserRequest struct {
 
 func (x *SearchUserRequest) Reset() {
 	*x = SearchUserRequest{}
-	mi := &file_library_v1_library_proto_msgTypes[23]
+	mi := &file_library_v1_library_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1407,7 +1318,7 @@ func (x *SearchUserRequest) String() string {
 func (*SearchUserRequest) ProtoMessage() {}
 
 func (x *SearchUserRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_library_v1_library_proto_msgTypes[23]
+	mi := &file_library_v1_library_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1420,7 +1331,7 @@ func (x *SearchUserRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SearchUserRequest.ProtoReflect.Descriptor instead.
 func (*SearchUserRequest) Descriptor() ([]byte, []int) {
-	return file_library_v1_library_proto_rawDescGZIP(), []int{23}
+	return file_library_v1_library_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *SearchUserRequest) GetStudentId() string {
@@ -1449,7 +1360,7 @@ type SearchUserResponse struct {
 
 func (x *SearchUserResponse) Reset() {
 	*x = SearchUserResponse{}
-	mi := &file_library_v1_library_proto_msgTypes[24]
+	mi := &file_library_v1_library_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1461,7 +1372,7 @@ func (x *SearchUserResponse) String() string {
 func (*SearchUserResponse) ProtoMessage() {}
 
 func (x *SearchUserResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_library_v1_library_proto_msgTypes[24]
+	mi := &file_library_v1_library_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1474,7 +1385,7 @@ func (x *SearchUserResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SearchUserResponse.ProtoReflect.Descriptor instead.
 func (*SearchUserResponse) Descriptor() ([]byte, []int) {
-	return file_library_v1_library_proto_rawDescGZIP(), []int{24}
+	return file_library_v1_library_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *SearchUserResponse) GetId() string {
@@ -1522,7 +1433,7 @@ type ReserveDiscussionRequest struct {
 
 func (x *ReserveDiscussionRequest) Reset() {
 	*x = ReserveDiscussionRequest{}
-	mi := &file_library_v1_library_proto_msgTypes[25]
+	mi := &file_library_v1_library_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1534,7 +1445,7 @@ func (x *ReserveDiscussionRequest) String() string {
 func (*ReserveDiscussionRequest) ProtoMessage() {}
 
 func (x *ReserveDiscussionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_library_v1_library_proto_msgTypes[25]
+	mi := &file_library_v1_library_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1547,7 +1458,7 @@ func (x *ReserveDiscussionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReserveDiscussionRequest.ProtoReflect.Descriptor instead.
 func (*ReserveDiscussionRequest) Descriptor() ([]byte, []int) {
-	return file_library_v1_library_proto_rawDescGZIP(), []int{25}
+	return file_library_v1_library_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *ReserveDiscussionRequest) GetDevId() string {
@@ -1615,7 +1526,7 @@ type ReserveDiscussionResponse struct {
 
 func (x *ReserveDiscussionResponse) Reset() {
 	*x = ReserveDiscussionResponse{}
-	mi := &file_library_v1_library_proto_msgTypes[26]
+	mi := &file_library_v1_library_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1627,7 +1538,7 @@ func (x *ReserveDiscussionResponse) String() string {
 func (*ReserveDiscussionResponse) ProtoMessage() {}
 
 func (x *ReserveDiscussionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_library_v1_library_proto_msgTypes[26]
+	mi := &file_library_v1_library_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1640,7 +1551,7 @@ func (x *ReserveDiscussionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReserveDiscussionResponse.ProtoReflect.Descriptor instead.
 func (*ReserveDiscussionResponse) Descriptor() ([]byte, []int) {
-	return file_library_v1_library_proto_rawDescGZIP(), []int{26}
+	return file_library_v1_library_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *ReserveDiscussionResponse) GetMessage() string {
@@ -1650,8 +1561,8 @@ func (x *ReserveDiscussionResponse) GetMessage() string {
 	return ""
 }
 
-// 取消研讨间
-type CancelDiscussionRequest struct {
+// 取消预约
+type CancelReserveRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	StuId         string                 `protobuf:"bytes,2,opt,name=stu_id,json=stuId,proto3" json:"stu_id,omitempty"`
@@ -1659,21 +1570,21 @@ type CancelDiscussionRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *CancelDiscussionRequest) Reset() {
-	*x = CancelDiscussionRequest{}
-	mi := &file_library_v1_library_proto_msgTypes[27]
+func (x *CancelReserveRequest) Reset() {
+	*x = CancelReserveRequest{}
+	mi := &file_library_v1_library_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *CancelDiscussionRequest) String() string {
+func (x *CancelReserveRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*CancelDiscussionRequest) ProtoMessage() {}
+func (*CancelReserveRequest) ProtoMessage() {}
 
-func (x *CancelDiscussionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_library_v1_library_proto_msgTypes[27]
+func (x *CancelReserveRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_library_v1_library_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1684,47 +1595,47 @@ func (x *CancelDiscussionRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CancelDiscussionRequest.ProtoReflect.Descriptor instead.
-func (*CancelDiscussionRequest) Descriptor() ([]byte, []int) {
-	return file_library_v1_library_proto_rawDescGZIP(), []int{27}
+// Deprecated: Use CancelReserveRequest.ProtoReflect.Descriptor instead.
+func (*CancelReserveRequest) Descriptor() ([]byte, []int) {
+	return file_library_v1_library_proto_rawDescGZIP(), []int{25}
 }
 
-func (x *CancelDiscussionRequest) GetId() string {
+func (x *CancelReserveRequest) GetId() string {
 	if x != nil {
 		return x.Id
 	}
 	return ""
 }
 
-func (x *CancelDiscussionRequest) GetStuId() string {
+func (x *CancelReserveRequest) GetStuId() string {
 	if x != nil {
 		return x.StuId
 	}
 	return ""
 }
 
-type CancelDiscussionResponse struct {
+type CancelReserveResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Message       string                 `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *CancelDiscussionResponse) Reset() {
-	*x = CancelDiscussionResponse{}
-	mi := &file_library_v1_library_proto_msgTypes[28]
+func (x *CancelReserveResponse) Reset() {
+	*x = CancelReserveResponse{}
+	mi := &file_library_v1_library_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *CancelDiscussionResponse) String() string {
+func (x *CancelReserveResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*CancelDiscussionResponse) ProtoMessage() {}
+func (*CancelReserveResponse) ProtoMessage() {}
 
-func (x *CancelDiscussionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_library_v1_library_proto_msgTypes[28]
+func (x *CancelReserveResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_library_v1_library_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1735,12 +1646,12 @@ func (x *CancelDiscussionResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CancelDiscussionResponse.ProtoReflect.Descriptor instead.
-func (*CancelDiscussionResponse) Descriptor() ([]byte, []int) {
-	return file_library_v1_library_proto_rawDescGZIP(), []int{28}
+// Deprecated: Use CancelReserveResponse.ProtoReflect.Descriptor instead.
+func (*CancelReserveResponse) Descriptor() ([]byte, []int) {
+	return file_library_v1_library_proto_rawDescGZIP(), []int{26}
 }
 
-func (x *CancelDiscussionResponse) GetMessage() string {
+func (x *CancelReserveResponse) GetMessage() string {
 	if x != nil {
 		return x.Message
 	}
@@ -1783,20 +1694,19 @@ const file_library_v1_library_proto_rawDesc = "" +
 	"\x14GetSeatRecordRequest\x12\x15\n" +
 	"\x06stu_id\x18\x01 \x01(\tR\x05stuId\"C\n" +
 	"\x15GetSeatRecordResponse\x12*\n" +
-	"\x06record\x18\x01 \x03(\v2\x12.library.v1.RecordR\x06record\"\x8d\x02\n" +
+	"\x06record\x18\x01 \x03(\v2\x12.library.v1.RecordR\x06record\"\xf7\x01\n" +
 	"\x06Record\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05owner\x18\x02 \x01(\tR\x05owner\x12\x14\n" +
 	"\x05start\x18\x03 \x01(\tR\x05start\x12\x10\n" +
 	"\x03end\x18\x04 \x01(\tR\x03end\x12\x1b\n" +
-	"\ttime_desc\x18\x05 \x01(\tR\btimeDesc\x12\x14\n" +
-	"\x05occur\x18\x06 \x01(\tR\x05occur\x12\x16\n" +
-	"\x06states\x18\a \x01(\tR\x06states\x12\x19\n" +
-	"\bdev_name\x18\b \x01(\tR\adevName\x12\x17\n" +
-	"\aroom_id\x18\t \x01(\tR\x06roomId\x12\x1b\n" +
-	"\troom_name\x18\n" +
-	" \x01(\tR\broomName\x12\x19\n" +
-	"\blab_name\x18\v \x01(\tR\alabName\"*\n" +
+	"\ttime_desc\x18\x05 \x01(\tR\btimeDesc\x12\x16\n" +
+	"\x06states\x18\x06 \x01(\tR\x06states\x12\x19\n" +
+	"\bdev_name\x18\a \x01(\tR\adevName\x12\x17\n" +
+	"\aroom_id\x18\b \x01(\tR\x06roomId\x12\x1b\n" +
+	"\troom_name\x18\t \x01(\tR\broomName\x12\x19\n" +
+	"\blab_name\x18\n" +
+	" \x01(\tR\alabName\"*\n" +
 	"\x11GetHistoryRequest\x12\x15\n" +
 	"\x06stu_id\x18\x01 \x01(\tR\x05stuId\"C\n" +
 	"\x12GetHistoryResponse\x12-\n" +
@@ -1808,12 +1718,7 @@ const file_library_v1_library_proto_rawDesc = "" +
 	"\x04date\x18\x04 \x01(\tR\x04date\x12\x1e\n" +
 	"\n" +
 	"submitTime\x18\x05 \x01(\tR\n" +
-	"submitTime\":\n" +
-	"\x11CancelSeatRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12\x15\n" +
-	"\x06stu_id\x18\x02 \x01(\tR\x05stuId\".\n" +
-	"\x12CancelSeatResponse\x12\x18\n" +
-	"\amessage\x18\x01 \x01(\tR\amessage\".\n" +
+	"submitTime\".\n" +
 	"\x15GetCreditPointRequest\x12\x15\n" +
 	"\x06stu_id\x18\x01 \x01(\tR\x05stuId\"\x99\x01\n" +
 	"\x16GetCreditPointResponse\x12@\n" +
@@ -1832,14 +1737,16 @@ const file_library_v1_library_proto_rawDesc = "" +
 	"\x04date\x18\x02 \x01(\tR\x04date\x12\x15\n" +
 	"\x06stu_id\x18\x03 \x01(\tR\x05stuId\"Q\n" +
 	"\x15GetDiscussionResponse\x128\n" +
-	"\vdiscussions\x18\x01 \x03(\v2\x16.library.v1.DiscussionR\vdiscussions\"\xa0\x01\n" +
+	"\vdiscussions\x18\x01 \x03(\v2\x16.library.v1.DiscussionR\vdiscussions\"\xd0\x01\n" +
 	"\n" +
-	"Discussion\x12\x19\n" +
-	"\blab_name\x18\x01 \x01(\tR\alabName\x12\x1b\n" +
-	"\tkind_name\x18\x02 \x01(\tR\bkindName\x12\x15\n" +
-	"\x06dev_id\x18\x03 \x01(\tR\x05devId\x12\x19\n" +
-	"\bdev_name\x18\x04 \x01(\tR\adevName\x12(\n" +
-	"\x02TS\x18\x05 \x03(\v2\x18.library.v1.DiscussionTSR\x02TS\"\x90\x01\n" +
+	"Discussion\x12\x15\n" +
+	"\x06lab_id\x18\x01 \x01(\tR\x05labId\x12\x19\n" +
+	"\blab_name\x18\x02 \x01(\tR\alabName\x12\x17\n" +
+	"\akind_id\x18\x03 \x01(\tR\x06kindId\x12\x1b\n" +
+	"\tkind_name\x18\x04 \x01(\tR\bkindName\x12\x15\n" +
+	"\x06dev_id\x18\x05 \x01(\tR\x05devId\x12\x19\n" +
+	"\bdev_name\x18\x06 \x01(\tR\adevName\x12(\n" +
+	"\x02TS\x18\a \x03(\v2\x18.library.v1.DiscussionTSR\x02TS\"\x90\x01\n" +
 	"\fDiscussionTS\x12\x14\n" +
 	"\x05start\x18\x01 \x01(\tR\x05start\x12\x10\n" +
 	"\x03end\x18\x02 \x01(\tR\x03end\x12\x14\n" +
@@ -1866,26 +1773,24 @@ const file_library_v1_library_proto_rawDesc = "" +
 	"\x04list\x18\a \x03(\tR\x04list\x12\x15\n" +
 	"\x06stu_id\x18\b \x01(\tR\x05stuId\"5\n" +
 	"\x19ReserveDiscussionResponse\x12\x18\n" +
-	"\amessage\x18\x01 \x01(\tR\amessage\"@\n" +
-	"\x17CancelDiscussionRequest\x12\x0e\n" +
+	"\amessage\x18\x01 \x01(\tR\amessage\"=\n" +
+	"\x14CancelReserveRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x15\n" +
-	"\x06stu_id\x18\x02 \x01(\tR\x05stuId\"4\n" +
-	"\x18CancelDiscussionResponse\x12\x18\n" +
-	"\amessage\x18\x01 \x01(\tR\amessage2\xca\x06\n" +
+	"\x06stu_id\x18\x02 \x01(\tR\x05stuId\"1\n" +
+	"\x15CancelReserveResponse\x12\x18\n" +
+	"\amessage\x18\x01 \x01(\tR\amessage2\xf4\x05\n" +
 	"\aLibrary\x12B\n" +
 	"\aGetSeat\x12\x1a.library.v1.GetSeatRequest\x1a\x1b.library.v1.GetSeatResponse\x12N\n" +
 	"\vReserveSeat\x12\x1e.library.v1.ReserveSeatRequest\x1a\x1f.library.v1.ReserveSeatResponse\x12T\n" +
 	"\rGetSeatRecord\x12 .library.v1.GetSeatRecordRequest\x1a!.library.v1.GetSeatRecordResponse\x12K\n" +
 	"\n" +
-	"GetHistory\x12\x1d.library.v1.GetHistoryRequest\x1a\x1e.library.v1.GetHistoryResponse\x12K\n" +
-	"\n" +
-	"CancelSeat\x12\x1d.library.v1.CancelSeatRequest\x1a\x1e.library.v1.CancelSeatResponse\x12W\n" +
+	"GetHistory\x12\x1d.library.v1.GetHistoryRequest\x1a\x1e.library.v1.GetHistoryResponse\x12W\n" +
 	"\x0eGetCreditPoint\x12!.library.v1.GetCreditPointRequest\x1a\".library.v1.GetCreditPointResponse\x12T\n" +
 	"\rGetDiscussion\x12 .library.v1.GetDiscussionRequest\x1a!.library.v1.GetDiscussionResponse\x12K\n" +
 	"\n" +
 	"SearchUser\x12\x1d.library.v1.SearchUserRequest\x1a\x1e.library.v1.SearchUserResponse\x12`\n" +
-	"\x11ReserveDiscussion\x12$.library.v1.ReserveDiscussionRequest\x1a%.library.v1.ReserveDiscussionResponse\x12]\n" +
-	"\x10CancelDiscussion\x12#.library.v1.CancelDiscussionRequest\x1a$.library.v1.CancelDiscussionResponseBFZDgithub.com/asynccnu/ccnubox-be/be-api/gen/proto/library/v1;libraryv1b\x06proto3"
+	"\x11ReserveDiscussion\x12$.library.v1.ReserveDiscussionRequest\x1a%.library.v1.ReserveDiscussionResponse\x12T\n" +
+	"\rCancelReserve\x12 .library.v1.CancelReserveRequest\x1a!.library.v1.CancelReserveResponseBFZDgithub.com/asynccnu/ccnubox-be/be-api/gen/proto/library/v1;libraryv1b\x06proto3"
 
 var (
 	file_library_v1_library_proto_rawDescOnce sync.Once
@@ -1899,7 +1804,7 @@ func file_library_v1_library_proto_rawDescGZIP() []byte {
 	return file_library_v1_library_proto_rawDescData
 }
 
-var file_library_v1_library_proto_msgTypes = make([]protoimpl.MessageInfo, 29)
+var file_library_v1_library_proto_msgTypes = make([]protoimpl.MessageInfo, 27)
 var file_library_v1_library_proto_goTypes = []any{
 	(*GetSeatRequest)(nil),            // 0: library.v1.GetSeatRequest
 	(*GetSeatResponse)(nil),           // 1: library.v1.GetSeatResponse
@@ -1914,22 +1819,20 @@ var file_library_v1_library_proto_goTypes = []any{
 	(*GetHistoryRequest)(nil),         // 10: library.v1.GetHistoryRequest
 	(*GetHistoryResponse)(nil),        // 11: library.v1.GetHistoryResponse
 	(*History)(nil),                   // 12: library.v1.History
-	(*CancelSeatRequest)(nil),         // 13: library.v1.CancelSeatRequest
-	(*CancelSeatResponse)(nil),        // 14: library.v1.CancelSeatResponse
-	(*GetCreditPointRequest)(nil),     // 15: library.v1.GetCreditPointRequest
-	(*GetCreditPointResponse)(nil),    // 16: library.v1.GetCreditPointResponse
-	(*CreditSummary)(nil),             // 17: library.v1.CreditSummary
-	(*CreditRecord)(nil),              // 18: library.v1.CreditRecord
-	(*GetDiscussionRequest)(nil),      // 19: library.v1.GetDiscussionRequest
-	(*GetDiscussionResponse)(nil),     // 20: library.v1.GetDiscussionResponse
-	(*Discussion)(nil),                // 21: library.v1.Discussion
-	(*DiscussionTS)(nil),              // 22: library.v1.DiscussionTS
-	(*SearchUserRequest)(nil),         // 23: library.v1.SearchUserRequest
-	(*SearchUserResponse)(nil),        // 24: library.v1.SearchUserResponse
-	(*ReserveDiscussionRequest)(nil),  // 25: library.v1.ReserveDiscussionRequest
-	(*ReserveDiscussionResponse)(nil), // 26: library.v1.ReserveDiscussionResponse
-	(*CancelDiscussionRequest)(nil),   // 27: library.v1.CancelDiscussionRequest
-	(*CancelDiscussionResponse)(nil),  // 28: library.v1.CancelDiscussionResponse
+	(*GetCreditPointRequest)(nil),     // 13: library.v1.GetCreditPointRequest
+	(*GetCreditPointResponse)(nil),    // 14: library.v1.GetCreditPointResponse
+	(*CreditSummary)(nil),             // 15: library.v1.CreditSummary
+	(*CreditRecord)(nil),              // 16: library.v1.CreditRecord
+	(*GetDiscussionRequest)(nil),      // 17: library.v1.GetDiscussionRequest
+	(*GetDiscussionResponse)(nil),     // 18: library.v1.GetDiscussionResponse
+	(*Discussion)(nil),                // 19: library.v1.Discussion
+	(*DiscussionTS)(nil),              // 20: library.v1.DiscussionTS
+	(*SearchUserRequest)(nil),         // 21: library.v1.SearchUserRequest
+	(*SearchUserResponse)(nil),        // 22: library.v1.SearchUserResponse
+	(*ReserveDiscussionRequest)(nil),  // 23: library.v1.ReserveDiscussionRequest
+	(*ReserveDiscussionResponse)(nil), // 24: library.v1.ReserveDiscussionResponse
+	(*CancelReserveRequest)(nil),      // 25: library.v1.CancelReserveRequest
+	(*CancelReserveResponse)(nil),     // 26: library.v1.CancelReserveResponse
 }
 var file_library_v1_library_proto_depIdxs = []int32{
 	2,  // 0: library.v1.GetSeatResponse.room_seats:type_name -> library.v1.RoomSeat
@@ -1937,32 +1840,30 @@ var file_library_v1_library_proto_depIdxs = []int32{
 	4,  // 2: library.v1.Seat.ts:type_name -> library.v1.TimeSlot
 	9,  // 3: library.v1.GetSeatRecordResponse.record:type_name -> library.v1.Record
 	12, // 4: library.v1.GetHistoryResponse.history:type_name -> library.v1.History
-	17, // 5: library.v1.GetCreditPointResponse.credit_summary:type_name -> library.v1.CreditSummary
-	18, // 6: library.v1.GetCreditPointResponse.credit_record:type_name -> library.v1.CreditRecord
-	21, // 7: library.v1.GetDiscussionResponse.discussions:type_name -> library.v1.Discussion
-	22, // 8: library.v1.Discussion.TS:type_name -> library.v1.DiscussionTS
+	15, // 5: library.v1.GetCreditPointResponse.credit_summary:type_name -> library.v1.CreditSummary
+	16, // 6: library.v1.GetCreditPointResponse.credit_record:type_name -> library.v1.CreditRecord
+	19, // 7: library.v1.GetDiscussionResponse.discussions:type_name -> library.v1.Discussion
+	20, // 8: library.v1.Discussion.TS:type_name -> library.v1.DiscussionTS
 	0,  // 9: library.v1.Library.GetSeat:input_type -> library.v1.GetSeatRequest
 	5,  // 10: library.v1.Library.ReserveSeat:input_type -> library.v1.ReserveSeatRequest
 	7,  // 11: library.v1.Library.GetSeatRecord:input_type -> library.v1.GetSeatRecordRequest
 	10, // 12: library.v1.Library.GetHistory:input_type -> library.v1.GetHistoryRequest
-	13, // 13: library.v1.Library.CancelSeat:input_type -> library.v1.CancelSeatRequest
-	15, // 14: library.v1.Library.GetCreditPoint:input_type -> library.v1.GetCreditPointRequest
-	19, // 15: library.v1.Library.GetDiscussion:input_type -> library.v1.GetDiscussionRequest
-	23, // 16: library.v1.Library.SearchUser:input_type -> library.v1.SearchUserRequest
-	25, // 17: library.v1.Library.ReserveDiscussion:input_type -> library.v1.ReserveDiscussionRequest
-	27, // 18: library.v1.Library.CancelDiscussion:input_type -> library.v1.CancelDiscussionRequest
-	1,  // 19: library.v1.Library.GetSeat:output_type -> library.v1.GetSeatResponse
-	6,  // 20: library.v1.Library.ReserveSeat:output_type -> library.v1.ReserveSeatResponse
-	8,  // 21: library.v1.Library.GetSeatRecord:output_type -> library.v1.GetSeatRecordResponse
-	11, // 22: library.v1.Library.GetHistory:output_type -> library.v1.GetHistoryResponse
-	14, // 23: library.v1.Library.CancelSeat:output_type -> library.v1.CancelSeatResponse
-	16, // 24: library.v1.Library.GetCreditPoint:output_type -> library.v1.GetCreditPointResponse
-	20, // 25: library.v1.Library.GetDiscussion:output_type -> library.v1.GetDiscussionResponse
-	24, // 26: library.v1.Library.SearchUser:output_type -> library.v1.SearchUserResponse
-	26, // 27: library.v1.Library.ReserveDiscussion:output_type -> library.v1.ReserveDiscussionResponse
-	28, // 28: library.v1.Library.CancelDiscussion:output_type -> library.v1.CancelDiscussionResponse
-	19, // [19:29] is the sub-list for method output_type
-	9,  // [9:19] is the sub-list for method input_type
+	13, // 13: library.v1.Library.GetCreditPoint:input_type -> library.v1.GetCreditPointRequest
+	17, // 14: library.v1.Library.GetDiscussion:input_type -> library.v1.GetDiscussionRequest
+	21, // 15: library.v1.Library.SearchUser:input_type -> library.v1.SearchUserRequest
+	23, // 16: library.v1.Library.ReserveDiscussion:input_type -> library.v1.ReserveDiscussionRequest
+	25, // 17: library.v1.Library.CancelReserve:input_type -> library.v1.CancelReserveRequest
+	1,  // 18: library.v1.Library.GetSeat:output_type -> library.v1.GetSeatResponse
+	6,  // 19: library.v1.Library.ReserveSeat:output_type -> library.v1.ReserveSeatResponse
+	8,  // 20: library.v1.Library.GetSeatRecord:output_type -> library.v1.GetSeatRecordResponse
+	11, // 21: library.v1.Library.GetHistory:output_type -> library.v1.GetHistoryResponse
+	14, // 22: library.v1.Library.GetCreditPoint:output_type -> library.v1.GetCreditPointResponse
+	18, // 23: library.v1.Library.GetDiscussion:output_type -> library.v1.GetDiscussionResponse
+	22, // 24: library.v1.Library.SearchUser:output_type -> library.v1.SearchUserResponse
+	24, // 25: library.v1.Library.ReserveDiscussion:output_type -> library.v1.ReserveDiscussionResponse
+	26, // 26: library.v1.Library.CancelReserve:output_type -> library.v1.CancelReserveResponse
+	18, // [18:27] is the sub-list for method output_type
+	9,  // [9:18] is the sub-list for method input_type
 	9,  // [9:9] is the sub-list for extension type_name
 	9,  // [9:9] is the sub-list for extension extendee
 	0,  // [0:9] is the sub-list for field type_name
@@ -1979,7 +1880,7 @@ func file_library_v1_library_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_library_v1_library_proto_rawDesc), len(file_library_v1_library_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   29,
+			NumMessages:   27,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

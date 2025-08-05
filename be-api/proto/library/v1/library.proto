@@ -9,12 +9,11 @@ service Library {
     rpc ReserveSeat (ReserveSeatRequest) returns (ReserveSeatResponse);
     rpc GetSeatRecord (GetSeatRecordRequest) returns (GetSeatRecordResponse);
     rpc GetHistory (GetHistoryRequest) returns (GetHistoryResponse);
-    rpc CancelSeat (CancelSeatRequest) returns (CancelSeatResponse);
     rpc GetCreditPoint (GetCreditPointRequest) returns (GetCreditPointResponse);
     rpc GetDiscussion (GetDiscussionRequest) returns (GetDiscussionResponse);
     rpc SearchUser (SearchUserRequest) returns (SearchUserResponse);
     rpc ReserveDiscussion (ReserveDiscussionRequest) returns (ReserveDiscussionResponse);
-    rpc CancelDiscussion (CancelDiscussionRequest) returns (CancelDiscussionResponse);
+    rpc CancelReserve (CancelReserveRequest) returns (CancelReserveResponse);
 }
 
 // 获取座位信息
@@ -74,12 +73,11 @@ message Record {
     string start = 3;
     string end = 4;
     string time_desc = 5;
-    string occur = 6;
-    string states = 7;
-    string dev_name = 8;
-    string room_id = 9;
-    string room_name = 10;
-    string lab_name = 11;
+    string states = 6;
+    string dev_name = 7;
+    string room_id = 8;
+    string room_name = 9;
+    string lab_name = 10;
 }
 
 // 获取历史记录
@@ -97,16 +95,6 @@ message History {
     string status = 3;
     string date = 4;
     string submitTime = 5;
-}
-
-// 取消座位
-message CancelSeatRequest {
-    string id = 1;
-    string stu_id = 2;
-}
-
-message CancelSeatResponse {
-    string message = 1;
 }
 
 // 获取信誉分
@@ -143,11 +131,13 @@ message GetDiscussionResponse{
 }
 
 message Discussion{
-    string lab_name = 1;
-    string kind_name = 2;
-    string dev_id = 3;
-    string dev_name = 4;
-    repeated DiscussionTS TS = 5;
+    string lab_id = 1;
+    string lab_name = 2;
+    string kind_id = 3;
+    string kind_name = 4;
+    string dev_id = 5;
+    string dev_name = 6;
+    repeated DiscussionTS TS = 7;
 }
 
 message DiscussionTS{
@@ -188,12 +178,12 @@ message ReserveDiscussionResponse{
     string message = 1;
 }
 
-// 取消研讨间
-message CancelDiscussionRequest{
+// 取消预约
+message CancelReserveRequest{
     string id = 1;
     string stu_id = 2;
 }
 
-message CancelDiscussionResponse{
+message CancelReserveResponse{
     string message = 1;
 }

@@ -1,7 +1,9 @@
 package biz
 
 type Discussion struct {
+	LabID    string
 	LabName  string
+	KindID   string
 	KindName string
 	DevID    string
 	DevName  string

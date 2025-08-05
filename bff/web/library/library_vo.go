@@ -1,10 +1,5 @@
 package library
 
-type GetSeatRequest struct {
-	RoomID string `json:"room_id"`
-	StuID  string `json:"stu_id"`
-}
-
 type GetSeatResponse struct {
 	Rooms []Room `json:"rooms"`
 }
@@ -34,15 +29,6 @@ type ReserveSeatRequest struct {
 	DevID string `json:"dev_id"`
 	Start string `json:"start"`
 	End   string `json:"end"`
-	StuID string `json:"stu_id"`
-}
-
-type ReserveSeatResponse struct {
-	Message string `json:"message"`
-}
-
-type GetSeatRecordRequest struct {
-	StuID string `json:"stu_id"`
 }
 
 type GetSeatRecordResponse struct {
@@ -55,16 +41,11 @@ type Record struct {
 	Start    string `json:"start"`
 	End      string `json:"end"`
 	TimeDesc string `json:"timeDesc"`
-	Occur    string `json:"occur"`
 	States   string `json:"states"`
 	DevName  string `json:"devName"`
 	RoomID   string `json:"roomId"`
 	RoomName string `json:"roomName"`
 	LabName  string `json:"labName"`
-}
-
-type GetHistoryRequest struct {
-	StuID string `json:"stu_id"`
 }
 
 type GetHistoryResponse struct {
@@ -77,19 +58,6 @@ type History struct {
 	Status     string `json:"status"`
 	Date       string `json:"date"`
 	SubmitTime string `json:"submitTime"`
-}
-
-type CancelSeatRequest struct {
-	ID    string `json:"id"`
-	StuID string `json:"stu_id"`
-}
-
-type CancelSeatResponse struct {
-	Message string `json:"message"`
-}
-
-type GetCreditPointRequest struct {
-	StuID string `json:"stu_id"`
 }
 
 type GetCreditPointResponse struct {
@@ -116,7 +84,6 @@ type CreditRecord struct {
 type GetDiscussionRequest struct {
 	ClassID string `json:"class_id"`
 	Date    string `json:"date"`
-	StuID   string `json:"stu_id"`
 }
 
 type GetDiscussionResponse struct {
@@ -124,7 +91,9 @@ type GetDiscussionResponse struct {
 }
 
 type Discussion struct {
+	LabID    string `json:"labId"`
 	LabName  string `json:"labName"`
+	KindID   string `json:"kindId"`
 	KindName string `json:"kindName"`
 	DevID    string `json:"devId"`
 	DevName  string `json:"devName"`
@@ -141,8 +110,7 @@ type DiscussionTS struct {
 }
 
 type SearchUserRequest struct {
-	StudentID string `json:"student_id"`
-	StuID     string `json:"stu_id"`
+	StudentID string `form:"student_id" binding:"required"`
 }
 
 type SearchUserResponse struct {
@@ -164,18 +132,8 @@ type ReserveDiscussionRequest struct {
 	Start  string   `json:"start"`
 	End    string   `json:"end"`
 	List   []string `json:"list"`
-	StuID  string   `json:"stu_id"`
 }
 
-type ReserveDiscussionResponse struct {
-	Message string `json:"message"`
-}
-
-type CancelDiscussionRequest struct {
-	ID    string `json:"id"`
-	StuID string `json:"stu_id"`
-}
-
-type CancelDiscussionResponse struct {
-	Message string `json:"message"`
+type CancelReserveRequest struct {
+	ID string `form:"id" binding:"required"`
 }

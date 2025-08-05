@@ -84,7 +84,6 @@ func (ls *LibraryService) GetSeatRecord(ctx context.Context, req *pb.GetSeatReco
 			Start:    r.Start,
 			End:      r.End,
 			TimeDesc: r.TimeDesc,
-			Occur:    r.Occur,
 			States:   r.States,
 			DevName:  r.DevName,
 			RoomId:   r.RoomID,
@@ -117,17 +116,6 @@ func (ls *LibraryService) GetHistory(ctx context.Context, req *pb.GetHistoryRequ
 
 	return &pb.GetHistoryResponse{
 		History: pbHistory,
-	}, nil
-}
-
-func (ls *LibraryService) CancelSeat(ctx context.Context, req *pb.CancelSeatRequest) (*pb.CancelSeatResponse, error) {
-	message, err := ls.use.CancelFromCrawler(ctx, req.StuId, req.Id)
-	if err != nil {
-		return nil, err
-	}
-
-	return &pb.CancelSeatResponse{
-		Message: message,
 	}, nil
 }
 
@@ -178,7 +166,9 @@ func (ls *LibraryService) GetDiscussion(ctx context.Context, req *pb.GetDiscussi
 			})
 		}
 		pbDiscussions = append(pbDiscussions, &pb.Discussion{
+			LabId:    d.LabID,
 			LabName:  d.LabName,
+			KindId:   d.KindID,
 			KindName: d.KindName,
 			DevId:    d.DevID,
 			DevName:  d.DevName,
@@ -216,13 +206,13 @@ func (ls *LibraryService) ReserveDiscussion(ctx context.Context, req *pb.Reserve
 	}, nil
 }
 
-func (ls *LibraryService) CancelDiscussion(ctx context.Context, req *pb.CancelDiscussionRequest) (*pb.CancelDiscussionResponse, error) {
-	message, err := ls.use.CancelDFromCrawler(ctx, req.StuId, req.Id)
+func (ls *LibraryService) CancelReserve(ctx context.Context, req *pb.CancelReserveRequest) (*pb.CancelReserveResponse, error) {
+	message, err := ls.use.CancelFromCrawler(ctx, req.StuId, req.Id)
 	if err != nil {
 		return nil, err
 	}
 
-	return &pb.CancelDiscussionResponse{
+	return &pb.CancelReserveResponse{
 		Message: message,
 	}, nil
 }
