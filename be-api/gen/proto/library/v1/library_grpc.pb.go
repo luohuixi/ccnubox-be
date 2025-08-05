@@ -22,12 +22,12 @@ const (
 	Library_GetSeat_FullMethodName           = "/library.v1.Library/GetSeat"
 	Library_ReserveSeat_FullMethodName       = "/library.v1.Library/ReserveSeat"
 	Library_GetSeatRecord_FullMethodName     = "/library.v1.Library/GetSeatRecord"
-	Library_CancelSeat_FullMethodName        = "/library.v1.Library/CancelSeat"
+	Library_GetHistory_FullMethodName        = "/library.v1.Library/GetHistory"
 	Library_GetCreditPoint_FullMethodName    = "/library.v1.Library/GetCreditPoint"
 	Library_GetDiscussion_FullMethodName     = "/library.v1.Library/GetDiscussion"
 	Library_SearchUser_FullMethodName        = "/library.v1.Library/SearchUser"
 	Library_ReserveDiscussion_FullMethodName = "/library.v1.Library/ReserveDiscussion"
-	Library_CancelDiscussion_FullMethodName  = "/library.v1.Library/CancelDiscussion"
+	Library_CancelReserve_FullMethodName     = "/library.v1.Library/CancelReserve"
 )
 
 // LibraryClient is the client API for Library service.
@@ -37,12 +37,12 @@ type LibraryClient interface {
 	GetSeat(ctx context.Context, in *GetSeatRequest, opts ...grpc.CallOption) (*GetSeatResponse, error)
 	ReserveSeat(ctx context.Context, in *ReserveSeatRequest, opts ...grpc.CallOption) (*ReserveSeatResponse, error)
 	GetSeatRecord(ctx context.Context, in *GetSeatRecordRequest, opts ...grpc.CallOption) (*GetSeatRecordResponse, error)
-	CancelSeat(ctx context.Context, in *CancelSeatRequest, opts ...grpc.CallOption) (*CancelSeatResponse, error)
+	GetHistory(ctx context.Context, in *GetHistoryRequest, opts ...grpc.CallOption) (*GetHistoryResponse, error)
 	GetCreditPoint(ctx context.Context, in *GetCreditPointRequest, opts ...grpc.CallOption) (*GetCreditPointResponse, error)
 	GetDiscussion(ctx context.Context, in *GetDiscussionRequest, opts ...grpc.CallOption) (*GetDiscussionResponse, error)
 	SearchUser(ctx context.Context, in *SearchUserRequest, opts ...grpc.CallOption) (*SearchUserResponse, error)
 	ReserveDiscussion(ctx context.Context, in *ReserveDiscussionRequest, opts ...grpc.CallOption) (*ReserveDiscussionResponse, error)
-	CancelDiscussion(ctx context.Context, in *CancelDiscussionRequest, opts ...grpc.CallOption) (*CancelDiscussionResponse, error)
+	CancelReserve(ctx context.Context, in *CancelReserveRequest, opts ...grpc.CallOption) (*CancelReserveResponse, error)
 }
 
 type libraryClient struct {
@@ -83,10 +83,10 @@ func (c *libraryClient) GetSeatRecord(ctx context.Context, in *GetSeatRecordRequ
 	return out, nil
 }
 
-func (c *libraryClient) CancelSeat(ctx context.Context, in *CancelSeatRequest, opts ...grpc.CallOption) (*CancelSeatResponse, error) {
+func (c *libraryClient) GetHistory(ctx context.Context, in *GetHistoryRequest, opts ...grpc.CallOption) (*GetHistoryResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(CancelSeatResponse)
-	err := c.cc.Invoke(ctx, Library_CancelSeat_FullMethodName, in, out, cOpts...)
+	out := new(GetHistoryResponse)
+	err := c.cc.Invoke(ctx, Library_GetHistory_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -133,10 +133,10 @@ func (c *libraryClient) ReserveDiscussion(ctx context.Context, in *ReserveDiscus
 	return out, nil
 }
 
-func (c *libraryClient) CancelDiscussion(ctx context.Context, in *CancelDiscussionRequest, opts ...grpc.CallOption) (*CancelDiscussionResponse, error) {
+func (c *libraryClient) CancelReserve(ctx context.Context, in *CancelReserveRequest, opts ...grpc.CallOption) (*CancelReserveResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(CancelDiscussionResponse)
-	err := c.cc.Invoke(ctx, Library_CancelDiscussion_FullMethodName, in, out, cOpts...)
+	out := new(CancelReserveResponse)
+	err := c.cc.Invoke(ctx, Library_CancelReserve_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -150,12 +150,12 @@ type LibraryServer interface {
 	GetSeat(context.Context, *GetSeatRequest) (*GetSeatResponse, error)
 	ReserveSeat(context.Context, *ReserveSeatRequest) (*ReserveSeatResponse, error)
 	GetSeatRecord(context.Context, *GetSeatRecordRequest) (*GetSeatRecordResponse, error)
-	CancelSeat(context.Context, *CancelSeatRequest) (*CancelSeatResponse, error)
+	GetHistory(context.Context, *GetHistoryRequest) (*GetHistoryResponse, error)
 	GetCreditPoint(context.Context, *GetCreditPointRequest) (*GetCreditPointResponse, error)
 	GetDiscussion(context.Context, *GetDiscussionRequest) (*GetDiscussionResponse, error)
 	SearchUser(context.Context, *SearchUserRequest) (*SearchUserResponse, error)
 	ReserveDiscussion(context.Context, *ReserveDiscussionRequest) (*ReserveDiscussionResponse, error)
-	CancelDiscussion(context.Context, *CancelDiscussionRequest) (*CancelDiscussionResponse, error)
+	CancelReserve(context.Context, *CancelReserveRequest) (*CancelReserveResponse, error)
 	mustEmbedUnimplementedLibraryServer()
 }
 
@@ -175,8 +175,8 @@ func (UnimplementedLibraryServer) ReserveSeat(context.Context, *ReserveSeatReque
 func (UnimplementedLibraryServer) GetSeatRecord(context.Context, *GetSeatRecordRequest) (*GetSeatRecordResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetSeatRecord not implemented")
 }
-func (UnimplementedLibraryServer) CancelSeat(context.Context, *CancelSeatRequest) (*CancelSeatResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CancelSeat not implemented")
+func (UnimplementedLibraryServer) GetHistory(context.Context, *GetHistoryRequest) (*GetHistoryResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetHistory not implemented")
 }
 func (UnimplementedLibraryServer) GetCreditPoint(context.Context, *GetCreditPointRequest) (*GetCreditPointResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCreditPoint not implemented")
@@ -190,8 +190,8 @@ func (UnimplementedLibraryServer) SearchUser(context.Context, *SearchUserRequest
 func (UnimplementedLibraryServer) ReserveDiscussion(context.Context, *ReserveDiscussionRequest) (*ReserveDiscussionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReserveDiscussion not implemented")
 }
-func (UnimplementedLibraryServer) CancelDiscussion(context.Context, *CancelDiscussionRequest) (*CancelDiscussionResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CancelDiscussion not implemented")
+func (UnimplementedLibraryServer) CancelReserve(context.Context, *CancelReserveRequest) (*CancelReserveResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CancelReserve not implemented")
 }
 func (UnimplementedLibraryServer) mustEmbedUnimplementedLibraryServer() {}
 func (UnimplementedLibraryServer) testEmbeddedByValue()                 {}
@@ -268,20 +268,20 @@ func _Library_GetSeatRecord_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Library_CancelSeat_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CancelSeatRequest)
+func _Library_GetHistory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetHistoryRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(LibraryServer).CancelSeat(ctx, in)
+		return srv.(LibraryServer).GetHistory(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Library_CancelSeat_FullMethodName,
+		FullMethod: Library_GetHistory_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(LibraryServer).CancelSeat(ctx, req.(*CancelSeatRequest))
+		return srv.(LibraryServer).GetHistory(ctx, req.(*GetHistoryRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -358,20 +358,20 @@ func _Library_ReserveDiscussion_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Library_CancelDiscussion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CancelDiscussionRequest)
+func _Library_CancelReserve_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CancelReserveRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(LibraryServer).CancelDiscussion(ctx, in)
+		return srv.(LibraryServer).CancelReserve(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Library_CancelDiscussion_FullMethodName,
+		FullMethod: Library_CancelReserve_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(LibraryServer).CancelDiscussion(ctx, req.(*CancelDiscussionRequest))
+		return srv.(LibraryServer).CancelReserve(ctx, req.(*CancelReserveRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -396,8 +396,8 @@ var Library_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Library_GetSeatRecord_Handler,
 		},
 		{
-			MethodName: "CancelSeat",
-			Handler:    _Library_CancelSeat_Handler,
+			MethodName: "GetHistory",
+			Handler:    _Library_GetHistory_Handler,
 		},
 		{
 			MethodName: "GetCreditPoint",
@@ -416,8 +416,8 @@ var Library_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Library_ReserveDiscussion_Handler,
 		},
 		{
-			MethodName: "CancelDiscussion",
-			Handler:    _Library_CancelDiscussion_Handler,
+			MethodName: "CancelReserve",
+			Handler:    _Library_CancelReserve_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

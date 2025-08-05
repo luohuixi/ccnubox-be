@@ -45,7 +45,6 @@ func (c *Crawler) GetSeatInfos(ctx context.Context, cookie string) (map[string][
 	var wg sync.WaitGroup
 	results := make(map[string][]*biz.Seat)
 	mutex := &sync.Mutex{}
-	fmt.Println(cookie) //todo
 
 	for _, roomID := range biz.RoomIDs {
 		wg.Add(1)
@@ -178,7 +177,7 @@ func (c *Crawler) ReserveSeat(ctx context.Context, cookie string, devid, start, 
 	return ReserveResp.Msg, nil
 }
 
-func (c *Crawler) GetRecord(ctx context.Context, cookie string) ([]*biz.Record, error) {
+func (c *Crawler) GetRecord(ctx context.Context, cookie string) ([]*biz.FutureRecords, error) {
 	baseURL := "http://kjyy.ccnu.edu.cn/ClientWeb/pro/ajax/reserve.aspx"
 
 	params := url.Values{}
@@ -210,7 +209,7 @@ func (c *Crawler) GetRecord(ctx context.Context, cookie string) ([]*biz.Record, 
 		return nil, nil
 	}
 
-	var result []*biz.Record
+	var result []*biz.FutureRecords
 
 	// 遍历每个record
 	for _, item := range data.Array() {
@@ -231,13 +230,12 @@ func (c *Crawler) GetRecord(ctx context.Context, cookie string) ([]*biz.Record, 
 			}
 		})
 
-		record := &biz.Record{
+		record := &biz.FutureRecords{
 			ID:       item.Get("id").String(),
 			Owner:    item.Get("owner").String(),
 			Start:    item.Get("start").String(),
 			End:      item.Get("end").String(),
 			TimeDesc: item.Get("timeDesc").String(),
-			Occur:    item.Get("occur").String(),
 			States:   strings.Join(plainStates, ","),
 			DevName:  item.Get("devName").String(),
 			RoomID:   item.Get("roomId").String(),
@@ -251,14 +249,8 @@ func (c *Crawler) GetRecord(ctx context.Context, cookie string) ([]*biz.Record, 
 	return result, nil
 }
 
-func (c *Crawler) CancelSeat(ctx context.Context, cookie string, id string) (string, error) {
-	baseURL := "http://kjyy.ccnu.edu.cn/ClientWeb/pro/ajax/reserve.aspx"
-
-	params := url.Values{}
-	params.Set("act", "del_resv")
-	params.Set("id", id)
-
-	fullURL := baseURL + "?" + params.Encode()
+func (c *Crawler) GetHistory(ctx context.Context, cookie string) ([]*biz.HistoryRecords, error) {
+	fullURL := "http://kjyy.ccnu.edu.cn/clientweb/m/a/resvlist.aspx"
 
 	req, err := http.NewRequestWithContext(ctx, "GET", fullURL, nil)
 	if err != nil {
@@ -267,32 +259,43 @@ func (c *Crawler) CancelSeat(ctx context.Context, cookie string, id string) (str
 
 	req.Header.Set("cookie", cookie)
 
+	//todo:去重
 	resp, err := c.client.Do(req)
 	if err != nil {
-		return "", errcode.ErrCrawler
+		return nil, errcode.ErrCrawler
 	}
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
+	doc, err := goquery.NewDocumentFromReader(resp.Body)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	jsonRegexp := regexp.MustCompile(`\{[^}]+}`)
-	matches := jsonRegexp.FindAll(body, -1)
+	var records []*biz.HistoryRecords
 
-	var CancelResp model.Response
-	for _, m := range matches {
-		if err = json.Unmarshal(m, &CancelResp); err != nil {
-			continue // 忽略无效块
-		}
-		if CancelResp.Ret == 1 {
-			return CancelResp.Msg, nil
-		}
-		return "", fmt.Errorf(CancelResp.Msg)
-	}
+	doc.Find("li.item-content").Each(func(i int, item *goquery.Selection) {
+		place := item.Find(".item-title").Text()
+		status := item.Find(".item-after").Text()
+		date := item.Find(".item-subtitle").Text()
+		submitText := item.Find(".item-text").Text()
+		submitParts := strings.Split(submitText, ",")
+		if len(submitParts) >= 2 {
+			floor := submitParts[0]
+			floor = strings.TrimSpace(floor)
+			submitTime := submitParts[2]
+			submitTime = strings.TrimSpace(submitTime)
 
-	return CancelResp.Msg, nil
+			records = append(records, &biz.HistoryRecords{
+				Place:      place,
+				Floor:      floor,
+				Status:     status,
+				Date:       date,
+				SubmitTime: submitTime,
+			})
+		}
+	})
+
+	return records, nil
 }
 
 func (c *Crawler) GetCreditPoint(ctx context.Context, cookie string) (*biz.CreditPoints, error) {
@@ -386,7 +389,9 @@ func (c *Crawler) GetDiscussion(ctx context.Context, cookie string, classid, dat
 
 	data.ForEach(func(_, item gjson.Result) bool {
 		dis := &biz.Discussion{
+			LabID:    item.Get("labId").String(),
 			LabName:  item.Get("labName").String(),
+			KindID:   item.Get("kindId").String(),
 			KindName: item.Get("kindName").String(),
 			DevID:    item.Get("devId").String(),
 			DevName:  item.Get("devName").String(),
@@ -494,7 +499,7 @@ func (c *Crawler) ReserveDiscussion(ctx context.Context, cookie string, devid, l
 	return ReserveResp.Msg, nil
 }
 
-func (c *Crawler) CancelDiscussion(ctx context.Context, cookie string, id string) (string, error) {
+func (c *Crawler) CancelReserve(ctx context.Context, cookie string, id string) (string, error) {
 	baseURL := "http://kjyy.ccnu.edu.cn/ClientWeb/pro/ajax/reserve.aspx"
 
 	params := url.Values{}
