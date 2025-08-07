@@ -8,7 +8,7 @@ import (
 )
 
 // ProviderSet is data providers.
-var ProviderSet = wire.NewSet(NewData, NewLibraryCrawler, NewDelayKafka)
+var ProviderSet = wire.NewSet(NewData, NewLibraryCrawler)
 
 // Data 做CURD时使用该框架
 type Data struct {

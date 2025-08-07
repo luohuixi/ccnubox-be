@@ -2,6 +2,7 @@ package data
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -13,34 +14,40 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/asynccnu/ccnubox-be/be-library/internal/biz"
+	"github.com/asynccnu/ccnubox-be/be-library/internal/client"
 	"github.com/asynccnu/ccnubox-be/be-library/internal/errcode"
 	"github.com/asynccnu/ccnubox-be/be-library/internal/model"
 	"github.com/go-kratos/kratos/v2/log"
-	"github.com/goccy/go-json"
 	"github.com/tidwall/gjson"
 )
 
+// 定义全局URL常量
+const (
+	BaseDomain = "http://kjyy.ccnu.edu.cn"
+)
+
+// API端点路径
+var (
+	DeviceAPIPath     = "/ClientWeb/pro/ajax/device.aspx"
+	ReserveAPIPath    = "/ClientWeb/pro/ajax/reserve.aspx"
+	SearchAccountPath = "/ClientWeb/pro/ajax/data/searchAccount.aspx"
+)
+
+// Crawler 主爬虫结构体
 type Crawler struct {
-	log    *log.Helper
-	client *http.Client
+	log        *log.Helper
+	cookiePool *client.CookiePool
 }
 
-func NewLibraryCrawler(logger log.Logger) biz.LibraryCrawler {
-	client := &http.Client{
-		Transport: &http.Transport{
-			MaxIdleConns:        100,              // 最大空闲连接
-			IdleConnTimeout:     90 * time.Second, // 空闲连接超时
-			TLSHandshakeTimeout: 10 * time.Second, // TLS握手超时
-			DisableKeepAlives:   false,            // 确保不会意外关闭 Keep-Alive
-		},
-	}
-
+// NewLibraryCrawler 创建新的图书馆爬虫
+func NewLibraryCrawler(logger log.Logger, cookiePool *client.CookiePool) biz.LibraryCrawler {
 	return &Crawler{
-		log:    log.NewHelper(logger),
-		client: client,
+		log:        log.NewHelper(logger),
+		cookiePool: cookiePool,
 	}
 }
 
+// GetSeatInfos 获取座位信息
 func (c *Crawler) GetSeatInfos(ctx context.Context, cookie string) (map[string][]*biz.Seat, error) {
 	var wg sync.WaitGroup
 	results := make(map[string][]*biz.Seat)
@@ -52,7 +59,7 @@ func (c *Crawler) GetSeatInfos(ctx context.Context, cookie string) (map[string][
 			defer wg.Done()
 			seats, err := c.getSeatInfos(ctx, cookie, roomID)
 			if err != nil {
-				fmt.Printf("获取房间 %s 座位失败: %v", roomID, err)
+				c.log.Errorf("获取房间 %s 座位失败: %v", roomID, err)
 				mutex.Lock()
 				results[roomID] = nil
 				mutex.Unlock()
@@ -68,29 +75,60 @@ func (c *Crawler) GetSeatInfos(ctx context.Context, cookie string) (map[string][
 	return results, nil
 }
 
-func (c *Crawler) getSeatInfos(ctx context.Context, cookie string, roomid string) ([]*biz.Seat, error) {
-	baseURL := "http://kjyy.ccnu.edu.cn/ClientWeb/pro/ajax/device.aspx"
+// buildURL 构建带参数的URL
+func buildURL(path string, params url.Values) (string, error) {
+	baseURL := BaseDomain + path
 
+	// 创建URL对象
+	u, err := url.Parse(baseURL)
+	if err != nil {
+		return "", err
+	}
+
+	// 添加传入的query到URL
+	u.RawQuery = params.Encode()
+
+	return u.String(), nil
+}
+
+// doRequest 通用HTTP请求函数
+func (c *Crawler) doRequest(ctx context.Context, cookie, method, url string, body io.Reader) (*http.Response, error) {
+	req, err := http.NewRequestWithContext(ctx, method, url, body)
+	if err != nil {
+		return nil, fmt.Errorf("创建请求失败: %w", err)
+	}
+
+	client, err := c.cookiePool.GetClient(cookie)
+	if err != nil {
+		return nil, errcode.ErrCrawler
+	}
+
+	resp, err := client.DoWithContext(ctx, req)
+	if err != nil {
+		return nil, errcode.ErrCrawler
+	}
+
+	return resp, nil
+}
+
+// getSeatInfos 获取指定房间的座位信息
+func (c *Crawler) getSeatInfos(ctx context.Context, cookie string, roomid string) ([]*biz.Seat, error) {
 	date := time.Now().Format("2006-01-02")
 
 	params := url.Values{}
-	params.Set("classkind", "8")
-	params.Set("room_id", roomid)
-	params.Set("date", date)
-	params.Set("act", "get_rsv_sta")
+	params.Add("classkind", "8")
+	params.Add("room_id", roomid)
+	params.Add("date", date)
+	params.Add("act", "get_rsv_sta")
 
-	fullURL := baseURL + "?" + params.Encode()
-
-	req, err := http.NewRequestWithContext(ctx, "GET", fullURL, nil)
-	if err != nil {
-		log.Fatal("创建请求失败:", err)
-	}
-
-	req.Header.Set("cookie", cookie)
-
-	resp, err := c.client.Do(req)
+	fullURL, err := buildURL(DeviceAPIPath, params)
 	if err != nil {
 		return nil, errcode.ErrCrawler
+	}
+
+	resp, err := c.doRequest(ctx, cookie, "GET", fullURL, nil)
+	if err != nil {
+		return nil, err
 	}
 	defer resp.Body.Close()
 
@@ -136,27 +174,22 @@ func (c *Crawler) getSeatInfos(ctx context.Context, cookie string, roomid string
 	return result, nil
 }
 
+// ReserveSeat 预约座位
 func (c *Crawler) ReserveSeat(ctx context.Context, cookie string, devid, start, end string) (string, error) {
-	baseURL := "http://kjyy.ccnu.edu.cn/ClientWeb/pro/ajax/reserve.aspx"
-
 	params := url.Values{}
-	params.Set("dev_id", devid)
-	params.Set("start", start)
-	params.Set("end", end)
-	params.Set("act", "set_resv")
+	params.Add("dev_id", devid)
+	params.Add("start", start)
+	params.Add("end", end)
+	params.Add("act", "set_resv")
 
-	fullURL := baseURL + "?" + params.Encode()
-
-	req, err := http.NewRequestWithContext(ctx, "GET", fullURL, nil)
-	if err != nil {
-		log.Fatal("创建请求失败:", err)
-	}
-
-	req.Header.Set("cookie", cookie)
-
-	resp, err := c.client.Do(req)
+	fullURL, err := buildURL(ReserveAPIPath, params)
 	if err != nil {
 		return "", errcode.ErrCrawler
+	}
+
+	resp, err := c.doRequest(ctx, cookie, "GET", fullURL, nil)
+	if err != nil {
+		return "", err
 	}
 	defer resp.Body.Close()
 
@@ -177,24 +210,19 @@ func (c *Crawler) ReserveSeat(ctx context.Context, cookie string, devid, start, 
 	return ReserveResp.Msg, nil
 }
 
+// GetRecord 获取预约记录
 func (c *Crawler) GetRecord(ctx context.Context, cookie string) ([]*biz.FutureRecords, error) {
-	baseURL := "http://kjyy.ccnu.edu.cn/ClientWeb/pro/ajax/reserve.aspx"
-
 	params := url.Values{}
-	params.Set("act", "get_my_resv")
+	params.Add("act", "get_my_resv")
 
-	fullURL := baseURL + "?" + params.Encode()
-
-	req, err := http.NewRequestWithContext(ctx, "GET", fullURL, nil)
-	if err != nil {
-		log.Fatal("创建请求失败:", err)
-	}
-
-	req.Header.Set("cookie", cookie)
-
-	resp, err := c.client.Do(req)
+	fullURL, err := buildURL(ReserveAPIPath, params)
 	if err != nil {
 		return nil, errcode.ErrCrawler
+	}
+
+	resp, err := c.doRequest(ctx, cookie, "GET", fullURL, nil)
+	if err != nil {
+		return nil, err
 	}
 	defer resp.Body.Close()
 
@@ -249,20 +277,13 @@ func (c *Crawler) GetRecord(ctx context.Context, cookie string) ([]*biz.FutureRe
 	return result, nil
 }
 
+// GetHistory 获取历史记录
 func (c *Crawler) GetHistory(ctx context.Context, cookie string) ([]*biz.HistoryRecords, error) {
 	fullURL := "http://kjyy.ccnu.edu.cn/clientweb/m/a/resvlist.aspx"
 
-	req, err := http.NewRequestWithContext(ctx, "GET", fullURL, nil)
+	resp, err := c.doRequest(ctx, cookie, "GET", fullURL, nil)
 	if err != nil {
-		log.Fatal("创建请求失败:", err)
-	}
-
-	req.Header.Set("cookie", cookie)
-
-	//todo:去重
-	resp, err := c.client.Do(req)
-	if err != nil {
-		return nil, errcode.ErrCrawler
+		return nil, err
 	}
 	defer resp.Body.Close()
 
@@ -298,19 +319,13 @@ func (c *Crawler) GetHistory(ctx context.Context, cookie string) ([]*biz.History
 	return records, nil
 }
 
+// GetCreditPoint 获取信用积分
 func (c *Crawler) GetCreditPoint(ctx context.Context, cookie string) (*biz.CreditPoints, error) {
 	fullURL := "http://kjyy.ccnu.edu.cn/clientweb/m/a/credit.aspx"
 
-	req, err := http.NewRequestWithContext(ctx, "GET", fullURL, nil)
+	resp, err := c.doRequest(ctx, cookie, "GET", fullURL, nil)
 	if err != nil {
-		log.Fatal("创建请求失败:", err)
-	}
-
-	req.Header.Set("cookie", cookie)
-
-	resp, err := c.client.Do(req)
-	if err != nil {
-		return nil, errcode.ErrCrawler
+		return nil, err
 	}
 	defer resp.Body.Close()
 
@@ -341,9 +356,7 @@ func (c *Crawler) GetCreditPoint(ctx context.Context, cookie string) (*biz.Credi
 		records = append(records, record)
 	})
 
-	var result *biz.CreditPoints
-
-	result = &biz.CreditPoints{
+	result := &biz.CreditPoints{
 		Summary: summary,
 		Records: records,
 	}
@@ -351,27 +364,22 @@ func (c *Crawler) GetCreditPoint(ctx context.Context, cookie string) (*biz.Credi
 	return result, nil
 }
 
+// GetDiscussion 获取研讨间信息
 func (c *Crawler) GetDiscussion(ctx context.Context, cookie string, classid, date string) ([]*biz.Discussion, error) {
-	baseURL := "http://kjyy.ccnu.edu.cn/ClientWeb/pro/ajax/device.aspx"
-
 	params := url.Values{}
-	params.Set("classkind", "1")
-	params.Set("class_id", classid)
-	params.Set("date", date)
-	params.Set("act", "get_rsv_sta")
+	params.Add("classkind", "1")
+	params.Add("class_id", classid)
+	params.Add("date", date)
+	params.Add("act", "get_rsv_sta")
 
-	fullURL := baseURL + "?" + params.Encode()
-
-	req, err := http.NewRequestWithContext(ctx, "GET", fullURL, nil)
-	if err != nil {
-		log.Fatal("创建请求失败:", err)
-	}
-
-	req.Header.Set("cookie", cookie)
-
-	resp, err := c.client.Do(req)
+	fullURL, err := buildURL(DeviceAPIPath, params)
 	if err != nil {
 		return nil, errcode.ErrCrawler
+	}
+
+	resp, err := c.doRequest(ctx, cookie, "GET", fullURL, nil)
+	if err != nil {
+		return nil, err
 	}
 	defer resp.Body.Close()
 
@@ -417,24 +425,19 @@ func (c *Crawler) GetDiscussion(ctx context.Context, cookie string, classid, dat
 	return result, nil
 }
 
+// SearchUser 搜索用户
 func (c *Crawler) SearchUser(ctx context.Context, cookie string, studentid string) (*biz.Search, error) {
-	baseURL := "http://kjyy.ccnu.edu.cn/ClientWeb/pro/ajax/data/searchAccount.aspx"
-
 	params := url.Values{}
-	params.Set("term", studentid)
+	params.Add("term", studentid)
 
-	fullURL := baseURL + "?" + params.Encode()
-
-	req, err := http.NewRequestWithContext(ctx, "GET", fullURL, nil)
-	if err != nil {
-		log.Fatal("创建请求失败:", err)
-	}
-
-	req.Header.Set("cookie", cookie)
-
-	resp, err := c.client.Do(req)
+	fullURL, err := buildURL(SearchAccountPath, params)
 	if err != nil {
 		return nil, errcode.ErrCrawler
+	}
+
+	resp, err := c.doRequest(ctx, cookie, "GET", fullURL, nil)
+	if err != nil {
+		return nil, err
 	}
 	defer resp.Body.Close()
 
@@ -450,35 +453,31 @@ func (c *Crawler) SearchUser(ctx context.Context, cookie string, studentid strin
 
 	return search[0], nil
 }
+
+// ReserveDiscussion 预约研讨间
 func (c *Crawler) ReserveDiscussion(ctx context.Context, cookie string, devid, labid, kindid, title, start, end string, list []string) (string, error) {
 	mbList := "$" + strings.Join(list, ",")
 
-	baseURL := "http://kjyy.ccnu.edu.cn/ClientWeb/pro/ajax/reserve.aspx"
-
 	params := url.Values{}
-	params.Set("dev_id", devid)
-	params.Set("lab_id", labid)
-	params.Set("kind_id", kindid)
-	params.Set("min_user", "3")
-	params.Set("max_user", "4")
-	params.Set("test_name", title)
-	params.Set("mb_list", mbList)
-	params.Set("start", start)
-	params.Set("end", end)
-	params.Set("act", "set_resv")
+	params.Add("dev_id", devid)
+	params.Add("lab_id", labid)
+	params.Add("kind_id", kindid)
+	params.Add("min_user", "3")
+	params.Add("max_user", "4")
+	params.Add("test_name", title)
+	params.Add("mb_list", mbList)
+	params.Add("start", start)
+	params.Add("end", end)
+	params.Add("act", "set_resv")
 
-	fullURL := baseURL + "?" + params.Encode()
-
-	req, err := http.NewRequestWithContext(ctx, "GET", fullURL, nil)
-	if err != nil {
-		log.Fatal("创建请求失败:", err)
-	}
-
-	req.Header.Set("cookie", cookie)
-
-	resp, err := c.client.Do(req)
+	fullURL, err := buildURL(ReserveAPIPath, params)
 	if err != nil {
 		return "", errcode.ErrCrawler
+	}
+
+	resp, err := c.doRequest(ctx, cookie, "GET", fullURL, nil)
+	if err != nil {
+		return "", err
 	}
 	defer resp.Body.Close()
 
@@ -499,25 +498,20 @@ func (c *Crawler) ReserveDiscussion(ctx context.Context, cookie string, devid, l
 	return ReserveResp.Msg, nil
 }
 
+// CancelReserve 取消预约
 func (c *Crawler) CancelReserve(ctx context.Context, cookie string, id string) (string, error) {
-	baseURL := "http://kjyy.ccnu.edu.cn/ClientWeb/pro/ajax/reserve.aspx"
-
 	params := url.Values{}
-	params.Set("act", "del_resv")
-	params.Set("id", id)
+	params.Add("act", "del_resv")
+	params.Add("id", id)
 
-	fullURL := baseURL + "?" + params.Encode()
-
-	req, err := http.NewRequestWithContext(ctx, "GET", fullURL, nil)
-	if err != nil {
-		log.Fatal("创建请求失败:", err)
-	}
-
-	req.Header.Set("cookie", cookie)
-
-	resp, err := c.client.Do(req)
+	fullURL, err := buildURL(ReserveAPIPath, params)
 	if err != nil {
 		return "", errcode.ErrCrawler
+	}
+
+	resp, err := c.doRequest(ctx, cookie, "GET", fullURL, nil)
+	if err != nil {
+		return "", err
 	}
 	defer resp.Body.Close()
 
