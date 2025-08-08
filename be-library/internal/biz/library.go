@@ -19,13 +19,13 @@ type LibraryBiz interface {
 }
 
 type LibraryCrawler interface {
-	GetSeatInfos(ctx context.Context, cookie string) (map[string][]*Seat, error)
-	ReserveSeat(ctx context.Context, cookie string, devid, start, end string) (string, error)
-	GetRecord(ctx context.Context, cookie string) ([]*FutureRecords, error)
-	GetHistory(ctx context.Context, cookie string) ([]*HistoryRecords, error)
-	GetCreditPoint(ctx context.Context, cookie string) (*CreditPoints, error)
-	GetDiscussion(ctx context.Context, cookie string, classid, date string) ([]*Discussion, error)
-	SearchUser(ctx context.Context, cookie string, studentid string) (*Search, error)
-	ReserveDiscussion(ctx context.Context, cookie string, devid, labid, kindid, title, start, end string, list []string) (string, error)
-	CancelReserve(ctx context.Context, cookie string, id string) (string, error)
+	GetSeatInfos(ctx context.Context, stuID string) (map[string][]*Seat, error)
+	ReserveSeat(ctx context.Context, stuID string, devid, start, end string) (string, error)
+	GetRecord(ctx context.Context, stuID string) ([]*FutureRecords, error)
+	GetHistory(ctx context.Context, stuID string) ([]*HistoryRecords, error)
+	GetCreditPoint(ctx context.Context, stuID string) (*CreditPoints, error)
+	GetDiscussion(ctx context.Context, stuID string, classid, date string) ([]*Discussion, error)
+	SearchUser(ctx context.Context, stuID string, studentid string) (*Search, error)
+	ReserveDiscussion(ctx context.Context, stuID string, devid, labid, kindid, title, start, end string, list []string) (string, error)
+	CancelReserve(ctx context.Context, stuID string, id string) (string, error)
 }

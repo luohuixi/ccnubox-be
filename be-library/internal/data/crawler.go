@@ -17,6 +17,7 @@ import (
 	"github.com/asynccnu/ccnubox-be/be-library/internal/client"
 	"github.com/asynccnu/ccnubox-be/be-library/internal/errcode"
 	"github.com/asynccnu/ccnubox-be/be-library/internal/model"
+	"github.com/asynccnu/ccnubox-be/be-library/pkg/tool"
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/tidwall/gjson"
 )
@@ -37,42 +38,32 @@ var (
 type Crawler struct {
 	log        *log.Helper
 	cookiePool *client.CookiePool
+	ccnu       biz.CCNUServiceProxy
+	waitTime   time.Duration
 }
 
 // NewLibraryCrawler 创建新的图书馆爬虫
-func NewLibraryCrawler(logger log.Logger, cookiePool *client.CookiePool) biz.LibraryCrawler {
+func NewLibraryCrawler(logger log.Logger, cookiePool *client.CookiePool, ccnu biz.CCNUServiceProxy, waitTime time.Duration) biz.LibraryCrawler {
 	return &Crawler{
 		log:        log.NewHelper(logger),
 		cookiePool: cookiePool,
+		ccnu:       ccnu,
+		waitTime:   waitTime,
 	}
 }
 
-// GetSeatInfos 获取座位信息
-func (c *Crawler) GetSeatInfos(ctx context.Context, cookie string) (map[string][]*biz.Seat, error) {
-	var wg sync.WaitGroup
-	results := make(map[string][]*biz.Seat)
-	mutex := &sync.Mutex{}
+func (c *Crawler) getClient(ctx context.Context, stuID string) (*client.CookieClient, error) {
+	return tool.Retry(func() (*client.CookieClient, error) {
+		timeoutCtx, cancel := context.WithTimeout(ctx, c.waitTime)
+		defer cancel()
 
-	for _, roomID := range biz.RoomIDs {
-		wg.Add(1)
-		go func(roomID string) {
-			defer wg.Done()
-			seats, err := c.getSeatInfos(ctx, cookie, roomID)
-			if err != nil {
-				c.log.Errorf("获取房间 %s 座位失败: %v", roomID, err)
-				mutex.Lock()
-				results[roomID] = nil
-				mutex.Unlock()
-				return // todo错误处理
-			}
-			mutex.Lock()
-			results[roomID] = seats
-			mutex.Unlock()
-		}(roomID)
-	}
+		cookie, err := c.ccnu.GetLibraryCookie(timeoutCtx, stuID)
+		if err != nil {
+			return nil, err
+		}
 
-	wg.Wait()
-	return results, nil
+		return c.cookiePool.GetClient(cookie)
+	})
 }
 
 // buildURL 构建带参数的URL
@@ -92,27 +83,58 @@ func buildURL(path string, params url.Values) (string, error) {
 }
 
 // doRequest 通用HTTP请求函数
-func (c *Crawler) doRequest(ctx context.Context, cookie, method, url string, body io.Reader) (*http.Response, error) {
-	req, err := http.NewRequestWithContext(ctx, method, url, body)
+func (c *Crawler) doRequest(ctx context.Context, client *client.CookieClient, method, url string, body io.Reader) (*http.Response, error) {
+	return tool.Retry(func() (*http.Response, error) {
+		req, err := http.NewRequestWithContext(ctx, method, url, body)
+		if err != nil {
+			return nil, fmt.Errorf("创建请求失败: %w", err)
+		}
+
+		resp, err := client.DoWithContext(ctx, req)
+		if err != nil {
+			return nil, errcode.ErrCrawler
+		}
+
+		return resp, nil
+	})
+}
+
+// GetSeatInfos 获取座位信息
+func (c *Crawler) GetSeatInfos(ctx context.Context, stuID string) (map[string][]*biz.Seat, error) {
+	cli, err := c.getClient(ctx, stuID)
 	if err != nil {
-		return nil, fmt.Errorf("创建请求失败: %w", err)
+		c.log.Errorf("Error getting client(stu_id:%v): %v", stuID, err)
+		return nil, err
 	}
 
-	client, err := c.cookiePool.GetClient(cookie)
-	if err != nil {
-		return nil, errcode.ErrCrawler
+	var wg sync.WaitGroup
+	results := make(map[string][]*biz.Seat)
+	mutex := &sync.Mutex{}
+
+	for _, roomID := range biz.RoomIDs {
+		wg.Add(1)
+		go func(roomID string) {
+			defer wg.Done()
+			seats, err := c.getSeatInfos(ctx, cli, roomID)
+			if err != nil {
+				c.log.Errorf("获取房间 %s 座位失败: %v", roomID, err)
+				mutex.Lock()
+				results[roomID] = nil
+				mutex.Unlock()
+				return // todo错误处理
+			}
+			mutex.Lock()
+			results[roomID] = seats
+			mutex.Unlock()
+		}(roomID)
 	}
 
-	resp, err := client.DoWithContext(ctx, req)
-	if err != nil {
-		return nil, errcode.ErrCrawler
-	}
-
-	return resp, nil
+	wg.Wait()
+	return results, nil
 }
 
 // getSeatInfos 获取指定房间的座位信息
-func (c *Crawler) getSeatInfos(ctx context.Context, cookie string, roomid string) ([]*biz.Seat, error) {
+func (c *Crawler) getSeatInfos(ctx context.Context, client *client.CookieClient, roomid string) ([]*biz.Seat, error) {
 	date := time.Now().Format("2006-01-02")
 
 	params := url.Values{}
@@ -126,7 +148,7 @@ func (c *Crawler) getSeatInfos(ctx context.Context, cookie string, roomid string
 		return nil, errcode.ErrCrawler
 	}
 
-	resp, err := c.doRequest(ctx, cookie, "GET", fullURL, nil)
+	resp, err := c.doRequest(ctx, client, "GET", fullURL, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -175,7 +197,13 @@ func (c *Crawler) getSeatInfos(ctx context.Context, cookie string, roomid string
 }
 
 // ReserveSeat 预约座位
-func (c *Crawler) ReserveSeat(ctx context.Context, cookie string, devid, start, end string) (string, error) {
+func (c *Crawler) ReserveSeat(ctx context.Context, stuID string, devid, start, end string) (string, error) {
+	cli, err := c.getClient(ctx, stuID)
+	if err != nil {
+		c.log.Errorf("Error getting client(stu_id:%v): %v", stuID, err)
+		return "", err
+	}
+
 	params := url.Values{}
 	params.Add("dev_id", devid)
 	params.Add("start", start)
@@ -187,7 +215,7 @@ func (c *Crawler) ReserveSeat(ctx context.Context, cookie string, devid, start, 
 		return "", errcode.ErrCrawler
 	}
 
-	resp, err := c.doRequest(ctx, cookie, "GET", fullURL, nil)
+	resp, err := c.doRequest(ctx, cli, "GET", fullURL, nil)
 	if err != nil {
 		return "", err
 	}
@@ -211,7 +239,13 @@ func (c *Crawler) ReserveSeat(ctx context.Context, cookie string, devid, start, 
 }
 
 // GetRecord 获取预约记录
-func (c *Crawler) GetRecord(ctx context.Context, cookie string) ([]*biz.FutureRecords, error) {
+func (c *Crawler) GetRecord(ctx context.Context, stuID string) ([]*biz.FutureRecords, error) {
+	cli, err := c.getClient(ctx, stuID)
+	if err != nil {
+		c.log.Errorf("Error getting client(stu_id:%v): %v", stuID, err)
+		return nil, err
+	}
+
 	params := url.Values{}
 	params.Add("act", "get_my_resv")
 
@@ -220,7 +254,7 @@ func (c *Crawler) GetRecord(ctx context.Context, cookie string) ([]*biz.FutureRe
 		return nil, errcode.ErrCrawler
 	}
 
-	resp, err := c.doRequest(ctx, cookie, "GET", fullURL, nil)
+	resp, err := c.doRequest(ctx, cli, "GET", fullURL, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -278,10 +312,16 @@ func (c *Crawler) GetRecord(ctx context.Context, cookie string) ([]*biz.FutureRe
 }
 
 // GetHistory 获取历史记录
-func (c *Crawler) GetHistory(ctx context.Context, cookie string) ([]*biz.HistoryRecords, error) {
+func (c *Crawler) GetHistory(ctx context.Context, stuID string) ([]*biz.HistoryRecords, error) {
+	cli, err := c.getClient(ctx, stuID)
+	if err != nil {
+		c.log.Errorf("Error getting client(stu_id:%v): %v", stuID, err)
+		return nil, err
+	}
+
 	fullURL := "http://kjyy.ccnu.edu.cn/clientweb/m/a/resvlist.aspx"
 
-	resp, err := c.doRequest(ctx, cookie, "GET", fullURL, nil)
+	resp, err := c.doRequest(ctx, cli, "GET", fullURL, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -320,10 +360,16 @@ func (c *Crawler) GetHistory(ctx context.Context, cookie string) ([]*biz.History
 }
 
 // GetCreditPoint 获取信用积分
-func (c *Crawler) GetCreditPoint(ctx context.Context, cookie string) (*biz.CreditPoints, error) {
+func (c *Crawler) GetCreditPoint(ctx context.Context, stuID string) (*biz.CreditPoints, error) {
+	cli, err := c.getClient(ctx, stuID)
+	if err != nil {
+		c.log.Errorf("Error getting client(stu_id:%v): %v", stuID, err)
+		return nil, err
+	}
+
 	fullURL := "http://kjyy.ccnu.edu.cn/clientweb/m/a/credit.aspx"
 
-	resp, err := c.doRequest(ctx, cookie, "GET", fullURL, nil)
+	resp, err := c.doRequest(ctx, cli, "GET", fullURL, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -365,7 +411,13 @@ func (c *Crawler) GetCreditPoint(ctx context.Context, cookie string) (*biz.Credi
 }
 
 // GetDiscussion 获取研讨间信息
-func (c *Crawler) GetDiscussion(ctx context.Context, cookie string, classid, date string) ([]*biz.Discussion, error) {
+func (c *Crawler) GetDiscussion(ctx context.Context, stuID string, classid, date string) ([]*biz.Discussion, error) {
+	cli, err := c.getClient(ctx, stuID)
+	if err != nil {
+		c.log.Errorf("Error getting client(stu_id:%v): %v", stuID, err)
+		return nil, err
+	}
+
 	params := url.Values{}
 	params.Add("classkind", "1")
 	params.Add("class_id", classid)
@@ -377,7 +429,7 @@ func (c *Crawler) GetDiscussion(ctx context.Context, cookie string, classid, dat
 		return nil, errcode.ErrCrawler
 	}
 
-	resp, err := c.doRequest(ctx, cookie, "GET", fullURL, nil)
+	resp, err := c.doRequest(ctx, cli, "GET", fullURL, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -426,7 +478,13 @@ func (c *Crawler) GetDiscussion(ctx context.Context, cookie string, classid, dat
 }
 
 // SearchUser 搜索用户
-func (c *Crawler) SearchUser(ctx context.Context, cookie string, studentid string) (*biz.Search, error) {
+func (c *Crawler) SearchUser(ctx context.Context, stuID string, studentid string) (*biz.Search, error) {
+	cli, err := c.getClient(ctx, stuID)
+	if err != nil {
+		c.log.Errorf("Error getting client(stu_id:%v): %v", stuID, err)
+		return nil, err
+	}
+
 	params := url.Values{}
 	params.Add("term", studentid)
 
@@ -435,7 +493,7 @@ func (c *Crawler) SearchUser(ctx context.Context, cookie string, studentid strin
 		return nil, errcode.ErrCrawler
 	}
 
-	resp, err := c.doRequest(ctx, cookie, "GET", fullURL, nil)
+	resp, err := c.doRequest(ctx, cli, "GET", fullURL, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -455,7 +513,13 @@ func (c *Crawler) SearchUser(ctx context.Context, cookie string, studentid strin
 }
 
 // ReserveDiscussion 预约研讨间
-func (c *Crawler) ReserveDiscussion(ctx context.Context, cookie string, devid, labid, kindid, title, start, end string, list []string) (string, error) {
+func (c *Crawler) ReserveDiscussion(ctx context.Context, stuID string, devid, labid, kindid, title, start, end string, list []string) (string, error) {
+	cli, err := c.getClient(ctx, stuID)
+	if err != nil {
+		c.log.Errorf("Error getting client(stu_id:%v): %v", stuID, err)
+		return "", err
+	}
+
 	mbList := "$" + strings.Join(list, ",")
 
 	params := url.Values{}
@@ -475,7 +539,7 @@ func (c *Crawler) ReserveDiscussion(ctx context.Context, cookie string, devid, l
 		return "", errcode.ErrCrawler
 	}
 
-	resp, err := c.doRequest(ctx, cookie, "GET", fullURL, nil)
+	resp, err := c.doRequest(ctx, cli, "GET", fullURL, nil)
 	if err != nil {
 		return "", err
 	}
@@ -499,7 +563,13 @@ func (c *Crawler) ReserveDiscussion(ctx context.Context, cookie string, devid, l
 }
 
 // CancelReserve 取消预约
-func (c *Crawler) CancelReserve(ctx context.Context, cookie string, id string) (string, error) {
+func (c *Crawler) CancelReserve(ctx context.Context, stuID string, id string) (string, error) {
+	cli, err := c.getClient(ctx, stuID)
+	if err != nil {
+		c.log.Errorf("Error getting client(stu_id:%v): %v", stuID, err)
+		return "", err
+	}
+
 	params := url.Values{}
 	params.Add("act", "del_resv")
 	params.Add("id", id)
@@ -509,7 +579,7 @@ func (c *Crawler) CancelReserve(ctx context.Context, cookie string, id string) (
 		return "", errcode.ErrCrawler
 	}
 
-	resp, err := c.doRequest(ctx, cookie, "GET", fullURL, nil)
+	resp, err := c.doRequest(ctx, cli, "GET", fullURL, nil)
 	if err != nil {
 		return "", err
 	}

@@ -27,7 +27,6 @@ import (
 // wireApp init kratos application.
 func wireApp(confServer *conf.Server, confData *conf.Data, confRegistry *conf.Registry, logger log.Logger) (*kratos.App, func(), error) {
 	cookiePool := client.NewCookiePoolProvider()
-	libraryCrawler := data.NewLibraryCrawler(logger, cookiePool)
 	etcdRegistry := registry.NewRegistrarServer(confRegistry, logger)
 	userServiceClient, err := client.NewClient(etcdRegistry, confRegistry, logger)
 	if err != nil {
@@ -35,7 +34,8 @@ func wireApp(confServer *conf.Server, confData *conf.Data, confRegistry *conf.Re
 	}
 	ccnuServiceProxy := client.NewCCNUServiceProxy(userServiceClient)
 	duration := biz.NewWaitTime(confServer)
-	libraryBiz := biz.NewLibraryBiz(libraryCrawler, ccnuServiceProxy, logger, duration)
+	libraryCrawler := data.NewLibraryCrawler(logger, cookiePool, ccnuServiceProxy, duration)
+	libraryBiz := biz.NewLibraryBiz(libraryCrawler, logger)
 	libraryService := service.NewLibraryService(libraryBiz, logger)
 	grpcServer := server.NewGRPCServer(confServer, libraryService, logger)
 	app := newApp(logger, grpcServer, etcdRegistry)
