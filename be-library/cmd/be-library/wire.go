@@ -28,7 +28,5 @@ func wireApp(*conf.Server, *conf.Data, *conf.Registry, log.Logger) (*kratos.App,
 		client.ProviderSet,
 		registry.ProviderSet,
 		newApp,
-		// 更接头化的解耦
-		wire.Bind(new(biz.DelayQueue), new(*data.DelayKafka)),
 	))
 }

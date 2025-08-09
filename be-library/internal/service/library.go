@@ -10,209 +10,49 @@ import (
 
 type LibraryService struct {
 	pb.UnimplementedLibraryServer
-	use biz.LibraryUsecase
+	biz biz.LibraryBiz
 	log *log.Helper
 }
 
-func NewLibraryService(use biz.LibraryUsecase, logger log.Logger) *LibraryService {
+func NewLibraryService(biz biz.LibraryBiz, logger log.Logger) *LibraryService {
 	return &LibraryService{
-		use: use,
+		biz: biz,
 		log: log.NewHelper(logger),
 	}
 }
 
 func (ls *LibraryService) GetSeat(ctx context.Context, req *pb.GetSeatRequest) (*pb.GetSeatResponse, error) {
-	// 调用 usecase 层方法，爬取(或获取数据)
-	data, err := ls.use.GetSeatFromCrawler(ctx, req.StuId)
-	if err != nil {
-		return nil, err
-	}
-
-	var seatResp pb.GetSeatResponse
-	for roomID, seats := range data {
-		room := &pb.RoomSeat{
-			RoomId: roomID,
-		}
-		for _, seat := range seats {
-			s := &pb.Seat{
-				LabName:  seat.LabName,
-				KindName: seat.KindName,
-				DevId:    seat.DevID,
-				DevName:  seat.DevName,
-			}
-			for _, ts := range seat.Ts {
-				s.Ts = append(s.Ts, &pb.TimeSlot{
-					Start:  ts.Start,
-					End:    ts.End,
-					State:  ts.State,
-					Owner:  ts.Owner,
-					Occupy: ts.Occupy,
-				})
-			}
-
-			room.Seats = append(room.Seats, s)
-		}
-
-		seatResp.RoomSeats = append(seatResp.RoomSeats, room)
-	}
-
-	return &seatResp, nil
+	return ls.biz.GetSeat(ctx, req.StuId)
 }
 
 func (ls *LibraryService) ReserveSeat(ctx context.Context, req *pb.ReserveSeatRequest) (*pb.ReserveSeatResponse, error) {
-	message, err := ls.use.ReserveFromCrawler(ctx, req.StuId, req.DevId, req.Start, req.End)
-	if err != nil {
-		return nil, err
-	}
-
-	return &pb.ReserveSeatResponse{
-		Message: message,
-	}, nil
+	return ls.biz.ReserveSeat(ctx, req.StuId, req.DevId, req.Start, req.End)
 }
 
 func (ls *LibraryService) GetSeatRecord(ctx context.Context, req *pb.GetSeatRecordRequest) (*pb.GetSeatRecordResponse, error) {
-	records, err := ls.use.GetRecordFromCrawler(ctx, req.StuId)
-	if err != nil {
-		return nil, err
-	}
-
-	var pbRecords []*pb.Record
-	for _, r := range records {
-		pbRecords = append(pbRecords, &pb.Record{
-			Id:       r.ID,
-			Owner:    r.Owner,
-			Start:    r.Start,
-			End:      r.End,
-			TimeDesc: r.TimeDesc,
-			States:   r.States,
-			DevName:  r.DevName,
-			RoomId:   r.RoomID,
-			RoomName: r.RoomName,
-			LabName:  r.LabName,
-		})
-	}
-
-	return &pb.GetSeatRecordResponse{
-		Record: pbRecords,
-	}, nil
+	return ls.biz.GetSeatRecord(ctx, req.StuId)
 }
 
 func (ls *LibraryService) GetHistory(ctx context.Context, req *pb.GetHistoryRequest) (*pb.GetHistoryResponse, error) {
-	history, err := ls.use.GetHistoryFromCrawler(ctx, req.StuId)
-	if err != nil {
-		return nil, err
-	}
-
-	var pbHistory []*pb.History
-	for _, h := range history {
-		pbHistory = append(pbHistory, &pb.History{
-			Place:      h.Place,
-			Floor:      h.Floor,
-			Status:     h.Status,
-			Date:       h.Date,
-			SubmitTime: h.SubmitTime,
-		})
-	}
-
-	return &pb.GetHistoryResponse{
-		History: pbHistory,
-	}, nil
+	return ls.biz.GetHistory(ctx, req.StuId)
 }
 
 func (ls *LibraryService) GetCreditPoint(ctx context.Context, req *pb.GetCreditPointRequest) (*pb.GetCreditPointResponse, error) {
-	creditPoints, err := ls.use.GetCreditPointFromCrawler(ctx, req.StuId)
-	if err != nil {
-		return nil, err
-	}
-
-	summary := &pb.CreditSummary{
-		System: creditPoints.Summary.System,
-		Remain: creditPoints.Summary.Remain,
-		Total:  creditPoints.Summary.Total,
-	}
-
-	var records []*pb.CreditRecord
-	for _, r := range creditPoints.Records {
-		records = append(records, &pb.CreditRecord{
-			Title:    r.Title,
-			Subtitle: r.Subtitle,
-			Location: r.Location,
-		})
-	}
-
-	return &pb.GetCreditPointResponse{
-		CreditSummary: summary,
-		CreditRecord:  records,
-	}, nil
+	return ls.biz.GetCreditPoint(ctx, req.StuId)
 }
 
 func (ls *LibraryService) GetDiscussion(ctx context.Context, req *pb.GetDiscussionRequest) (*pb.GetDiscussionResponse, error) {
-	discussions, err := ls.use.GetDiscussionFromCrawler(ctx, req.StuId, req.ClassId, req.Date)
-	if err != nil {
-		return nil, err
-	}
-
-	var pbDiscussions []*pb.Discussion
-	for _, d := range discussions {
-		var ts []*pb.DiscussionTS
-		for _, t := range d.TS {
-			ts = append(ts, &pb.DiscussionTS{
-				Start:  t.Start,
-				End:    t.End,
-				State:  t.State,
-				Title:  t.Title,
-				Owner:  t.Owner,
-				Occupy: t.Occupy,
-			})
-		}
-		pbDiscussions = append(pbDiscussions, &pb.Discussion{
-			LabId:    d.LabID,
-			LabName:  d.LabName,
-			KindId:   d.KindID,
-			KindName: d.KindName,
-			DevId:    d.DevID,
-			DevName:  d.DevName,
-			TS:       ts,
-		})
-	}
-
-	return &pb.GetDiscussionResponse{
-		Discussions: pbDiscussions,
-	}, nil
+	return ls.biz.GetDiscussion(ctx, req.StuId, req.ClassId, req.Date)
 }
 
 func (ls *LibraryService) SearchUser(ctx context.Context, req *pb.SearchUserRequest) (*pb.SearchUserResponse, error) {
-	user, err := ls.use.SearchUserFromCrawler(ctx, req.StuId, req.StudentId)
-	if err != nil {
-		return nil, err
-	}
-
-	return &pb.SearchUserResponse{
-		Id:    user.ID,
-		Pid:   user.Pid,
-		Name:  user.Name,
-		Label: user.Label,
-	}, nil
+	return ls.biz.SearchUser(ctx, req.StuId, req.StudentId)
 }
 
 func (ls *LibraryService) ReserveDiscussion(ctx context.Context, req *pb.ReserveDiscussionRequest) (*pb.ReserveDiscussionResponse, error) {
-	message, err := ls.use.ReserveDFromCrawler(ctx, req.StuId, req.DevId, req.LabId, req.KindId, req.Title, req.Start, req.End, req.List)
-	if err != nil {
-		return nil, err
-	}
-
-	return &pb.ReserveDiscussionResponse{
-		Message: message,
-	}, nil
+	return ls.biz.ReserveDiscussion(ctx, req.StuId, req.DevId, req.LabId, req.KindId, req.Title, req.Start, req.End, req.List)
 }
 
 func (ls *LibraryService) CancelReserve(ctx context.Context, req *pb.CancelReserveRequest) (*pb.CancelReserveResponse, error) {
-	message, err := ls.use.CancelFromCrawler(ctx, req.StuId, req.Id)
-	if err != nil {
-		return nil, err
-	}
-
-	return &pb.CancelReserveResponse{
-		Message: message,
-	}, nil
+	return ls.biz.CancelReserve(ctx, req.StuId, req.Id)
 }

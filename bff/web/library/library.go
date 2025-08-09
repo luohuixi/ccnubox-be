@@ -54,13 +54,13 @@ func (h *LibraryHandler) GetSeatInfos(ctx *gin.Context, uc ijwt.UserClaims) (web
 		return web.Response{}, errs.GET_SEAT_ERROR(err)
 	}
 
-	var roomList []Room
+	roomList := make([]Room, 0, len(res.RoomSeats))
 
 	for _, room := range res.RoomSeats {
-		var seatList []Seat
+		seatList := make([]Seat, 0, len(room.Seats))
 
 		for _, seat := range room.Seats {
-			var timeSlots []TimeSlot
+			timeSlots := make([]TimeSlot, 0, len(seat.Ts))
 			for _, ts := range seat.Ts {
 				timeSlots = append(timeSlots, TimeSlot{
 					Start:  ts.Start,
@@ -141,7 +141,7 @@ func (h *LibraryHandler) GetSeatRecord(ctx *gin.Context, uc ijwt.UserClaims) (we
 		return web.Response{}, errs.GET_SEAT_RECORD_ERROR(err)
 	}
 
-	var respRecords = make([]Record, 0, len(res.Record))
+	respRecords := make([]Record, 0, len(res.Record))
 	for _, record := range res.Record {
 		respRecords = append(respRecords, Record{
 			ID:       record.Id,
@@ -185,7 +185,7 @@ func (h *LibraryHandler) GetHistory(ctx *gin.Context, uc ijwt.UserClaims) (web.R
 		return web.Response{}, errs.GET_HISTORY_ERROR(err)
 	}
 
-	var HistoryRecords = make([]History, 0, len(res.History))
+	HistoryRecords := make([]History, 0, len(res.History))
 	for _, history := range res.History {
 		HistoryRecords = append(HistoryRecords, History{
 			Place:      history.Place,
@@ -230,7 +230,7 @@ func (h *LibraryHandler) GetCreditPoint(ctx *gin.Context, uc ijwt.UserClaims) (w
 		Total:  res.CreditSummary.Total,
 	}
 
-	var records []CreditRecord
+	records := make([]CreditRecord, 0, len(res.CreditRecord))
 	for _, record := range res.CreditRecord {
 		records = append(records, CreditRecord{
 			Title:    record.Title,
@@ -273,9 +273,9 @@ func (h *LibraryHandler) GetDiscussion(ctx *gin.Context, req GetDiscussionReques
 		return web.Response{}, errs.GET_DISCUSSION_ERROR(err)
 	}
 
-	var discussions []Discussion
+	discussions := make([]Discussion, 0, len(res.Discussions))
 	for _, d := range res.Discussions {
-		var ts []DiscussionTS
+		ts := make([]DiscussionTS, 0, len(d.TS))
 		for _, t := range d.TS {
 			ts = append(ts, DiscussionTS{
 				Start:  t.Start,
