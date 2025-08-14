@@ -111,7 +111,7 @@ func (c *Crawler) getSeatInfos(ctx context.Context, cookie string, roomid string
 	data.ForEach(func(_, item gjson.Result) bool {
 		seat := &biz.Seat{
 			LabName:  item.Get("labName").String(),
-			KindName: item.Get("kindName").String(),
+			RoomName: item.Get("kindName").String(),
 			DevID:    item.Get("devId").String(),
 			DevName:  item.Get("devName").String(),
 		}

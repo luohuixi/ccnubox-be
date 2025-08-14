@@ -1,5 +1,10 @@
 package biz
 
+import (
+	"context"
+	"time"
+)
+
 var RoomIDs = []string{
 	"100455820", // 主馆图书馆一楼-一楼综合学习室
 	"100455822", // 主馆图书馆二楼-二楼借阅室（一）
@@ -20,17 +25,48 @@ var RoomIDs = []string{
 }
 
 type Seat struct {
-	LabName  string
-	KindName string
-	DevID    string
-	DevName  string
+	LabName  string // 南湖分馆一楼
+	RoomID   string // room_id
+	RoomName string // 南湖分馆一楼开敞座位区
+	DevID    string // 101699849
+	DevName  string // N1245
 	Ts       []*TimeSlot
 }
 
 type TimeSlot struct {
-	Start  string
-	End    string
+	Start  time.Time
+	End    time.Time
 	State  string
 	Owner  string
 	Occupy bool
+}
+
+// SeatFilter 座位查询过滤器
+type SeatFilter struct {
+	RoomID    string
+	TimeStart string
+	TimeEnd   string
+}
+
+// SeatStatistics 座位统计信息
+type SeatStatistics struct {
+	Total     int64   `json:"total"`
+	Available int64   `json:"available"`
+	Partial   int64   `json:"partial"`
+	Busy      int64   `json:"busy"`
+	UsageRate float64 `json:"usageRate"`
+}
+
+type SeatRepo interface {
+	// 核心方法：从爬虫同步数据（要修改，应该是通过 crawler 直接将座位同步到里面）
+	SyncFromCrawler(ctx context.Context, roomID string, seats []*Seat) error
+
+	// 查询方法
+	Get(ctx context.Context, devID string) (*Seat, error)
+	GetByRoom(ctx context.Context, roomID string) ([]*Seat, error)
+	GetAvailableSeats(ctx context.Context, filter *SeatFilter) ([]*Seat, int64, error)
+	GetStatistics(ctx context.Context, roomID string) (*SeatStatistics, error)
+
+	// 更新方法
+	UpdateTimeSlots(ctx context.Context, devID string, timeSlots []*TimeSlot) error
 }

@@ -9,7 +9,7 @@ import (
 )
 
 // libraryUsecase struct + methods + NewLibraryUsecase
-
+// 这里应该是与座位
 type libraryUsecase struct {
 	crawler LibraryCrawler
 	ccnu    CCNUServiceProxy
