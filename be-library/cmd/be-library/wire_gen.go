@@ -35,7 +35,17 @@ func wireApp(confServer *conf.Server, confData *conf.Data, confRegistry *conf.Re
 	ccnuServiceProxy := client.NewCCNUServiceProxy(userServiceClient)
 	duration := biz.NewWaitTime(confServer)
 	libraryCrawler := data.NewLibraryCrawler(logger, cookiePool, ccnuServiceProxy, duration)
-	libraryBiz := biz.NewLibraryBiz(libraryCrawler, logger)
+	db, err := data.NewDB(confData)
+	if err != nil {
+		return nil, nil, err
+	}
+	dataData, err := data.NewData(confData, logger, db, libraryCrawler)
+	if err != nil {
+		return nil, nil, err
+	}
+	redisClient := data.NewRedisDB(confData, logger)
+	seatRepo := data.NewSeatRepo(dataData, logger, redisClient)
+	libraryBiz := biz.NewLibraryBiz(libraryCrawler, logger, seatRepo)
 	libraryService := service.NewLibraryService(libraryBiz, logger)
 	grpcServer := server.NewGRPCServer(confServer, libraryService, logger)
 	app := newApp(logger, grpcServer, etcdRegistry)

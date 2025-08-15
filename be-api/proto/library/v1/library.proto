@@ -14,6 +14,7 @@ service Library {
     rpc SearchUser (SearchUserRequest) returns (SearchUserResponse);
     rpc ReserveDiscussion (ReserveDiscussionRequest) returns (ReserveDiscussionResponse);
     rpc CancelReserve (CancelReserveRequest) returns (CancelReserveResponse);
+    rpc ReserveSeatRamdomly (ReserveSeatRamdonlyRequest) returns (ReserveSeatRamdonlyResponse);
 }
 
 // 获取座位信息
@@ -185,5 +186,17 @@ message CancelReserveRequest{
 }
 
 message CancelReserveResponse{
+    string message = 1;
+}
+
+// 随机选座
+message ReserveSeatRamdonlyRequest {
+    string start = 1;
+    string end = 2;
+    string stu_id = 3;
+    string room_id = 4;
+}
+
+message ReserveSeatRamdonlyResponse {
     string message = 1;
 }

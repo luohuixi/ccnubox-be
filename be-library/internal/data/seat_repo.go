@@ -23,40 +23,52 @@ type seat struct {
 }
 
 type timeSlot struct {
-	ID    uint      `gorm:"primaryKey;autoIncrement" json:"id"`
-	DevID uint      `gorm:"index;not null" json:"seat_id"`
-	Start time.Time `gorm:"type:timestamp;not null" json:"start"`
-	End   time.Time `gorm:"type:timestamp;not null" json:"end"`
+	ID    uint   `gorm:"primaryKey;autoIncrement" json:"id"`
+	DevID string `gorm:"index;not null" json:"seat_id"`
+	Start string `gorm:"not null" json:"start"`
+	End   string `gorm:"not null" json:"end"`
 }
 
-type seatRepo struct {
+type SeatRepo struct {
 	data *Data
 	log  *log.Helper
 }
 
-func NewSeatRepo(data *Data, logger log.Logger, rdb *redis.Client) *seatRepo {
-	return &seatRepo{
+func NewSeatRepo(data *Data, logger log.Logger, rdb *redis.Client) biz.SeatRepo {
+	return &SeatRepo{
 		log:  log.NewHelper(logger),
 		data: data,
 	}
 }
 
 // 将座位信息分块存入redis里
-func (r *seatRepo) SyncFromCrawlerInCache(ctx context.Context, roomID string, cookie string) error {
-	SeatJson, roomID, err := r.data.crawler.SeatJSONCrawler(ctx, cookie, roomID)
+// func (r *SeatRepo) SyncFromCrawlerInCache(ctx context.Context, roomID string, cookie string) error {
+// 	SeatJson, roomID, err := r.data.crawler.SeatJSONCrawler(ctx, cookie, roomID)
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	err = r.SeatToCache(ctx, SeatJson, roomID)
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	return nil
+// }
+
+func (r *SeatRepo) SyncSeatsIntoSQL(ctx context.Context, roomID string, stuID string, seats []*biz.Seat) error {
+	dataSeats, dataTimeslots := LotConvert2DataSeat(seats)
+	err := r.SaveSeatsAndTimeSlots(ctx, dataSeats, dataTimeslots)
 	if err != nil {
+		r.log.Errorf("save seats and timeslots failed(room_id: %v) stu_id: %v", roomID, stuID)
 		return err
 	}
 
-	err = r.SeatToCache(ctx, SeatJson, roomID)
-	if err != nil {
-		return err
-	}
-
+	r.log.Infof("save seats and timeslots successed(room_id: %v) stu_id: %v", roomID, stuID)
 	return nil
 }
 
-func (r *seatRepo) GetByRoom(ctx context.Context, roomID string) (string, error) {
+func (r *SeatRepo) GetByRoom(ctx context.Context, roomID string) (string, error) {
 	json, err := r.getSeatJSONFromCacheByDevID(ctx, roomID, false)
 	if err != nil {
 		return "", err
@@ -65,7 +77,7 @@ func (r *seatRepo) GetByRoom(ctx context.Context, roomID string) (string, error)
 }
 
 // 待优化
-func (r *seatRepo) FindFirstAvailableSeat(ctx context.Context, roomID string, start, end time.Time) (string, error) {
+func (r *SeatRepo) FindFirstAvailableSeat(ctx context.Context, roomID, start, end string) (string, error) {
 	var seatDevID string
 	// 待优化
 	subQuery := r.data.db.Model(&timeSlot{}).
@@ -91,7 +103,7 @@ func (r *seatRepo) FindFirstAvailableSeat(ctx context.Context, roomID string, st
 }
 
 // Get 获取单个座位信息
-func (r *seatRepo) Get(ctx context.Context, devID string) (*biz.Seat, error) {
+func (r *SeatRepo) Get(ctx context.Context, devID string) (*biz.Seat, error) {
 	// 先从缓存获取
 	cacheKey := fmt.Sprintf("seat:%s", devID)
 	cached, err := r.data.redis.Get(ctx, cacheKey).Result()
@@ -104,6 +116,17 @@ func (r *seatRepo) Get(ctx context.Context, devID string) (*biz.Seat, error) {
 
 	r.log.Errorf("Error getting seatInfo from redis")
 	// 从数据库获取兜底
+	result, err := r.getSeatFromSQL(ctx, devID)
+
+	// 写入缓存
+	if data, err := json.Marshal(result); err == nil {
+		r.data.redis.Set(ctx, cacheKey, data, 5*time.Minute)
+	}
+
+	return result, nil
+}
+
+func (r *SeatRepo) getSeatFromSQL(ctx context.Context, devID string) (*biz.Seat, error) {
 	var seatModel seat
 	if err := r.data.db.WithContext(ctx).
 		Where("dev_id = ?", devID).
@@ -119,17 +142,12 @@ func (r *seatRepo) Get(ctx context.Context, devID string) (*biz.Seat, error) {
 	}
 
 	// 转换为业务模型
-	result := r.toBizSeat(&seatModel, ts)
-
-	// 写入缓存
-	if data, err := json.Marshal(result); err == nil {
-		r.data.redis.Set(ctx, cacheKey, data, 5*time.Minute)
-	}
+	result := ConvertSeat2Biz(&seatModel, ts)
 
 	return result, nil
 }
 
-func (r *seatRepo) toBizSeat(s *seat, ts []timeSlot) *biz.Seat {
+func (r *SeatRepo) toBizSeat(s *seat, ts []timeSlot) *biz.Seat {
 	bizTs := make([]*biz.TimeSlot, len(ts))
 	for _, t := range ts {
 		bizT := &biz.TimeSlot{
@@ -151,3 +169,23 @@ func (r *seatRepo) toBizSeat(s *seat, ts []timeSlot) *biz.Seat {
 	return result
 }
 
+func (r *SeatRepo) SaveSeatsAndTimeSlots(ctx context.Context, seats []*seat, timeSlots []*timeSlot) error {
+	// 使用事务保证 seat timeSlot 插入数据一致性
+	return r.data.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// 批量插入 seat
+		if len(seats) > 0 {
+			if err := tx.Create(&seats).Error; err != nil {
+				return err
+			}
+		}
+
+		// 批量插入 timeSlot
+		if len(timeSlots) > 0 {
+			if err := tx.Create(&timeSlots).Error; err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+}

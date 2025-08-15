@@ -4,50 +4,44 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
-	"net/url"
 	"time"
-
-	"github.com/asynccnu/ccnubox-be/be-library/internal/errcode"
-	"github.com/go-kratos/kratos/v2/log"
 )
 
-func (c *Crawler) SeatJSONCrawler(ctx context.Context, cookie string, roomid string) (JSON string, roomID string, err error) {
-	baseURL := "http://kjyy.ccnu.edu.cn/ClientWeb/pro/ajax/device.aspx"
+// func (c *Crawler) SeatJSONCrawler(ctx context.Context, cookie string, roomid string) (JSON string, roomID string, err error) {
+// 	baseURL := "http://kjyy.ccnu.edu.cn/ClientWeb/pro/ajax/device.aspx"
 
-	date := time.Now().Format("2006-01-02")
+// 	date := time.Now().Format("2006-01-02")
 
-	params := url.Values{}
-	params.Set("classkind", "8")
-	params.Set("room_id", roomid)
-	params.Set("date", date)
-	params.Set("act", "get_rsv_sta")
+// 	params := url.Values{}
+// 	params.Set("classkind", "8")
+// 	params.Set("room_id", roomid)
+// 	params.Set("date", date)
+// 	params.Set("act", "get_rsv_sta")
 
-	fullURL := baseURL + "?" + params.Encode()
+// 	fullURL := baseURL + "?" + params.Encode()
 
-	req, err := http.NewRequestWithContext(ctx, "GET", fullURL, nil)
-	if err != nil {
-		log.Fatal("创建请求失败:", err)
-	}
+// 	req, err := http.NewRequestWithContext(ctx, "GET", fullURL, nil)
+// 	if err != nil {
+// 		log.Fatal("创建请求失败:", err)
+// 	}
 
-	req.Header.Set("cookie", cookie)
+// 	req.Header.Set("cookie", cookie)
 
-	resp, err := c.client.Do(req)
-	if err != nil {
-		return "", "", errcode.ErrCrawler
-	}
-	defer resp.Body.Close()
+// 	resp, err := c.client.Do(req)
+// 	if err != nil {
+// 		return "", "", errcode.ErrCrawler
+// 	}
+// 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", "", err
-	}
+// 	body, err := io.ReadAll(resp.Body)
+// 	if err != nil {
+// 		return "", "", err
+// 	}
 
-	return string(body), "", err
-}
+// 	return string(body), "", err
+// }
 
-func (c *seatRepo) SeatToCache(ctx context.Context, JSON string, roomID string) error {
+func (c *SeatRepo) SeatToCache(ctx context.Context, JSON string, roomID string) error {
 	// 用 map 解析最外层，只取 data
 	var parsed map[string]json.RawMessage
 	err := json.Unmarshal([]byte(JSON), &parsed)
@@ -101,7 +95,7 @@ func (c *seatRepo) SeatToCache(ctx context.Context, JSON string, roomID string) 
 }
 
 // 布尔为真即查询单个座位，布尔为假即查询一整个房间
-func (r *seatRepo) getSeatJSONFromCacheByDevID(ctx context.Context, ID string, DevOrRoom bool) (string, error) {
+func (r *SeatRepo) getSeatJSONFromCacheByDevID(ctx context.Context, ID string, DevOrRoom bool) (string, error) {
 	if true {
 		val, err := r.data.redis.Get(ctx, fmt.Sprintf("seat:%s", ID)).Result()
 		if err != nil {
@@ -119,7 +113,7 @@ func (r *seatRepo) getSeatJSONFromCacheByDevID(ctx context.Context, ID string, D
 }
 
 // 单个座位的 JSON 解码为结构体
-func (r *seatRepo) seatJsonToSeat(ctx context.Context, JSON string) (*seat, error) {
+func (r *SeatRepo) seatJsonToSeat(ctx context.Context, JSON string) (*seat, error) {
 	var seat seat
 	err := json.Unmarshal([]byte(JSON), &seat)
 	if err != nil {
@@ -129,7 +123,7 @@ func (r *seatRepo) seatJsonToSeat(ctx context.Context, JSON string) (*seat, erro
 }
 
 // 清除座位缓存
-func (r *seatRepo) clearSeatCache(ctx context.Context, devID string) {
+func (r *SeatRepo) clearSeatCache(ctx context.Context, devID string) {
 	keys := []string{
 		fmt.Sprintf("seat:%s", devID),
 	}
@@ -139,7 +133,7 @@ func (r *seatRepo) clearSeatCache(ctx context.Context, devID string) {
 }
 
 // 清除房间缓存
-func (r *seatRepo) clearRoomCache(ctx context.Context, roomID string) {
+func (r *SeatRepo) clearRoomCache(ctx context.Context, roomID string) {
 	keys := []string{
 		fmt.Sprintf("room:%s", roomID),
 	}

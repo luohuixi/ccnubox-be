@@ -2,7 +2,6 @@ package biz
 
 import (
 	"context"
-	"time"
 )
 
 var RoomIDs = []string{
@@ -34,8 +33,8 @@ type Seat struct {
 }
 
 type TimeSlot struct {
-	Start  time.Time
-	End    time.Time
+	Start  string
+	End    string
 	State  string
 	Owner  string
 	Occupy bool
@@ -59,14 +58,15 @@ type SeatStatistics struct {
 
 type SeatRepo interface {
 	// 核心方法：从爬虫同步数据（要修改，应该是通过 crawler 直接将座位同步到里面）
-	SyncFromCrawler(ctx context.Context, roomID string, seats []*Seat) error
+	SyncSeatsIntoSQL(ctx context.Context, roomID string, stuID string, seats []*Seat) error
 
 	// 查询方法
-	Get(ctx context.Context, devID string) (*Seat, error)
-	GetByRoom(ctx context.Context, roomID string) ([]*Seat, error)
-	GetAvailableSeats(ctx context.Context, filter *SeatFilter) ([]*Seat, int64, error)
-	GetStatistics(ctx context.Context, roomID string) (*SeatStatistics, error)
+	// Get(ctx context.Context, devID string) (*Seat, error)
+	// GetByRoom(ctx context.Context, roomID string) ([]*Seat, error)
+	// GetAvailableSeats(ctx context.Context, filter *SeatFilter) ([]*Seat, int64, error)
+	// GetStatistics(ctx context.Context, roomID string) (*SeatStatistics, error)
+	FindFirstAvailableSeat(ctx context.Context, roomID, start, end string) (string, error)
 
 	// 更新方法
-	UpdateTimeSlots(ctx context.Context, devID string, timeSlots []*TimeSlot) error
+	// UpdateTimeSlots(ctx context.Context, devID string, timeSlots []*TimeSlot) error
 }
