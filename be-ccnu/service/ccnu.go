@@ -8,7 +8,6 @@ import (
 	"github.com/asynccnu/ccnubox-be/be-ccnu/crawler"
 	"github.com/asynccnu/ccnubox-be/be-ccnu/pkg/errorx"
 	"github.com/asynccnu/ccnubox-be/be-ccnu/tool"
-	"net/http"
 )
 
 // 定义错误,这里将kratos的error作为一个重要部分传入,此处的错误并不直接在service中去捕获,而是选择在更底层的爬虫去捕获,因为爬虫的错误处理非常复杂
@@ -30,27 +29,26 @@ func (c *ccnuService) GetXKCookie(ctx context.Context, studentId string, passwor
 
 	//初始化client
 	var (
-		client              = crawler.NewCrawlerClient(c.timeout)
-		ug                  = crawler.NewUnderGrad()
+		ug                  = crawler.NewUnderGrad(crawler.NewCrawlerClient(c.timeout))
 		isInCorrectPASSWORD = false //用于判断是否是账号密码错误
 	)
 
 	params, err := tool.Retry(func() (*crawler.AccountRequestParams, error) {
-		return ug.GetParamsFromHtml(client)
+		return ug.GetParamsFromHtml(ctx)
 	})
 	if err != nil {
 		return "", err
 	}
 
 	//此处比较特殊由于账号密码错误是必然无效的请求,应当直接返回
-	client, err = tool.Retry(func() (*http.Client, error) {
-		loginClient, err := ug.LoginCCNUPassport(ctx, client, studentId, password, params)
+	_, err = tool.Retry(func() (string, error) {
+		err := ug.LoginCCNUPassport(ctx, studentId, password, params)
 		if errors.Is(err, crawler.INCorrectPASSWORD) {
 			// 标识账号密码错误,强制结束
 			isInCorrectPASSWORD = true
-			return client, nil
+			return "", nil
 		}
-		return loginClient, err
+		return "", err
 	})
 	//如果密码有误
 	if isInCorrectPASSWORD {
@@ -61,16 +59,18 @@ func (c *ccnuService) GetXKCookie(ctx context.Context, studentId string, passwor
 		return "", err
 	}
 
-	client, err = tool.Retry(func() (*http.Client, error) {
-		return ug.LoginUnderGradSystem(client)
+	_, err = tool.Retry(func() (string, error) {
+		err := ug.LoginUnderGradSystem(ctx)
+		if err != nil {
+			return "", err
+		}
+		return "", nil
 	})
 	if err != nil {
 		return "", err
 	}
 
-	cookie, err := tool.Retry(func() (string, error) {
-		return ug.GetCookieFromUnderGradSystem(client)
-	})
+	cookie, err := ug.GetCookieFromUnderGradSystem()
 	if err != nil {
 		return "", err
 	}
@@ -83,26 +83,25 @@ func (c *ccnuService) LoginCCNU(ctx context.Context, studentId string, password 
 	if len(studentId) > 4 && studentId[4] == '1' {
 		//研究生
 		var (
-			client              = crawler.NewCrawlerClient(c.timeout)
-			pg                  = crawler.NewPostGraduate()
+			pg                  = crawler.NewPostGraduate(crawler.NewCrawlerClient(c.timeout))
 			isInCorrectPASSWORD = false //用于判断是否是账号密码错误
 
 		)
 		pubkey, err := tool.Retry(func() (*rsa.PublicKey, error) {
-			return pg.FetchPublicKey(client)
+			return pg.FetchPublicKey(ctx)
 		})
 		if err != nil {
 			return false, err
 		}
 
-		client, err = tool.Retry(func() (*http.Client, error) {
-			loginClient, err := pg.LoginPostgraduateSystem(client, studentId, password, pubkey)
+		_, err = tool.Retry(func() (string, error) {
+			err := pg.LoginPostgraduateSystem(ctx, studentId, password, pubkey)
 			if errors.Is(err, crawler.INCorrectPASSWORD) {
 				// 标识账号密码错误,强制结束
 				isInCorrectPASSWORD = true
-				return loginClient, nil
+				return "", nil
 			}
-			return loginClient, err
+			return "", err
 		})
 		//如果密码有误
 		if isInCorrectPASSWORD {
@@ -117,27 +116,26 @@ func (c *ccnuService) LoginCCNU(ctx context.Context, studentId string, password 
 	} else if len(studentId) > 4 && studentId[4] == '2' {
 		//本科生
 		var (
-			client              = crawler.NewCrawlerClient(c.timeout)
-			ug                  = crawler.NewUnderGrad()
+			ug                  = crawler.NewUnderGrad(crawler.NewCrawlerClient(c.timeout))
 			isInCorrectPASSWORD = false //用于判断是否是账号密码错误
 		)
 
 		params, err := tool.Retry(func() (*crawler.AccountRequestParams, error) {
-			return ug.GetParamsFromHtml(client)
+			return ug.GetParamsFromHtml(ctx)
 		})
 		if err != nil {
 			return false, err
 		}
 
 		//此处比较特殊由于账号密码错误是必然无效的请求,应当直接返回
-		client, err = tool.Retry(func() (*http.Client, error) {
-			loginClient, err := ug.LoginCCNUPassport(ctx, client, studentId, password, params)
+		_, err = tool.Retry(func() (string, error) {
+			err := ug.LoginCCNUPassport(ctx, studentId, password, params)
 			if errors.Is(err, crawler.INCorrectPASSWORD) {
 				// 标识账号密码错误,强制结束
 				isInCorrectPASSWORD = true
-				return client, nil
+				return "", nil
 			}
-			return loginClient, err
+			return "", err
 		})
 		//如果密码有误
 		if isInCorrectPASSWORD {

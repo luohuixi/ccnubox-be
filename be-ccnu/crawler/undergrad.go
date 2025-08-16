@@ -13,18 +13,23 @@ import (
 
 const (
 	loginCCNUPassPortURL = "https://account.ccnu.edu.cn/cas/login"
-	pgUrl                = "http://xk.ccnu.edu.cn/jwglxt"
+	CASURL               = loginCCNUPassPortURL + "?service=https://bkzhjw.ccnu.edu.cn/jsxsd/framework/xsMainV.htmlx"
+	pgUrl                = "https://bkzhjw.ccnu.edu.cn/jsxsd/"
 )
 
 // 存放本科生院相关的爬虫
-type UnderGrad struct{}
+type UnderGrad struct {
+	client *http.Client
+}
 
-func NewUnderGrad() *UnderGrad {
-	return &UnderGrad{}
+func NewUnderGrad(client *http.Client) *UnderGrad {
+	return &UnderGrad{
+		client: client,
+	}
 }
 
 // 1.前置请求,从html中提取相关参数
-func (c *UnderGrad) GetParamsFromHtml(client *http.Client) (*AccountRequestParams, error) {
+func (c *UnderGrad) GetParamsFromHtml(ctx context.Context) (*AccountRequestParams, error) {
 	var JSESSIONID string
 	var lt string
 	var execution string
@@ -33,13 +38,13 @@ func (c *UnderGrad) GetParamsFromHtml(client *http.Client) (*AccountRequestParam
 	params := &AccountRequestParams{}
 
 	// 初始化 http request
-	request, err := http.NewRequest("GET", loginCCNUPassPortURL, nil)
+	request, err := http.NewRequestWithContext(ctx, "GET", loginCCNUPassPortURL, nil)
 	if err != nil {
 		return params, err
 	}
 
 	// 发起请求
-	resp, err := client.Do(request)
+	resp, err := c.client.Do(request)
 	if err != nil {
 		return params, err
 	}
@@ -47,7 +52,6 @@ func (c *UnderGrad) GetParamsFromHtml(client *http.Client) (*AccountRequestParam
 
 	// 读取 MsgContent
 	body, err := io.ReadAll(resp.Body)
-
 	if err != nil {
 		return params, err
 	}
@@ -80,7 +84,6 @@ func (c *UnderGrad) GetParamsFromHtml(client *http.Client) (*AccountRequestParam
 	if len(execArr) != 2 {
 		return params, errors.New("Can not get execution")
 	}
-
 	execution = execArr[1]
 
 	_eventIdArr := _eventIdReg.FindStringSubmatch(bodyStr)
@@ -99,8 +102,7 @@ func (c *UnderGrad) GetParamsFromHtml(client *http.Client) (*AccountRequestParam
 }
 
 // 2.登陆ccnu通行证
-func (c *UnderGrad) LoginCCNUPassport(ctx context.Context, client *http.Client, studentId string, password string, params *AccountRequestParams) (*http.Client, error) {
-
+func (c *UnderGrad) LoginCCNUPassport(ctx context.Context, studentId string, password string, params *AccountRequestParams) error {
 	v := url.Values{}
 	v.Set("username", studentId)
 	v.Set("password", password)
@@ -109,96 +111,75 @@ func (c *UnderGrad) LoginCCNUPassport(ctx context.Context, client *http.Client, 
 	v.Set("_eventId", params._eventId)
 	v.Set("submit", params.submit)
 
-	request, err := http.NewRequest("POST", loginCCNUPassPortURL+";jsessionid="+params.JSESSIONID, strings.NewReader(v.Encode()))
+	urlstr := loginCCNUPassPortURL + ";jsessionid=" + params.JSESSIONID
+	request, err := http.NewRequestWithContext(ctx, "POST", urlstr, strings.NewReader(v.Encode()))
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	request.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.109 Safari/537.36")
-	request.WithContext(ctx)
 
-	//发送请求
-	resp, err := client.Do(request)
+	resp, err := c.client.Do(request)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer resp.Body.Close()
 
 	res, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	//如果捕获到关键字说明是账号密码错误
 	if strings.Contains(string(res), "您输入的用户名或密码有误") {
-		return nil, INCorrectPASSWORD
+		return errors.New("用户名或密码错误")
 	}
 
-	// 如果没有捕获到账号密码错误但是也没设置设置Cookie,说明是你师系统有问题
 	if len(resp.Header.Get("Set-Cookie")) == 0 {
-		return nil, err
+		return errors.New("登录失败，未返回 Cookie")
 	}
 
-	////获取 Cookie 中的 CASTGC，这是用于单点登录的凭证
-	//var CASTGC string
-	//for _, cookie := range resp.Cookies() {
-	//	if cookie.Name == "CASTGC" {
-	//		CASTGC = cookie.Value
-	//	}
-	//}
-	//if CASTGC == "" {
-	//	return client, "", err
-	//}
-
-	return client, nil
+	return nil
 }
 
 // 3.LoginPUnderGradSystem 教务系统模拟登录
-func (c *UnderGrad) LoginUnderGradSystem(client *http.Client) (*http.Client, error) {
+func (c *UnderGrad) LoginUnderGradSystem(ctx context.Context) error {
 
-	//华师本科生院登陆
-	request, err := http.NewRequest("GET", loginCCNUPassPortURL+"?service=http%3A%2F%2Fxk.ccnu.edu.cn%2Fsso%2Fpziotlogin", nil)
+	request, err := http.NewRequestWithContext(ctx, "POST", CASURL, nil)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	request.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.109 Safari/537.36")
 
-	resp, err := client.Do(request)
+	resp, err := c.client.Do(request)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer resp.Body.Close()
 
-	return client, nil
+	return nil
 }
 
-// 4. GetCookieFromUnderGradSystem 返回本科生院的Cookie
-func (c *UnderGrad) GetCookieFromUnderGradSystem(client *http.Client) (string, error) {
-
-	// 构造用于获取 Cookie 的 URL（即请求时的登录 URL）
-	u, err := url.Parse(pgUrl)
+// 4.GetCookieFromUnderGradSystem 从教务系统中提取Cookie
+func (c *UnderGrad) GetCookieFromUnderGradSystem() (string, error) {
+	parsedURL, err := url.Parse(pgUrl)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("解析 URL 出错: %v", err)
 	}
 
-	// 从 CookieJar 中获取这个域名的 Cookie
-	cookies := client.Jar.Cookies(u)
-	if len(cookies) == 0 {
-		return "", errors.New("no cookies found after login")
-	}
+	cookies := c.client.Jar.Cookies(parsedURL)
 
-	// 拼接所有 Cookie 为字符串格式
-	var cookieStr string
-	for _, cookie := range cookies {
-		if cookie.Name == "JSESSIONID" {
-			cookieStr = cookie.Value
+	var cookieStr strings.Builder
+	for i, cookie := range cookies {
+		cookieStr.WriteString(cookie.Name)
+		cookieStr.WriteString("=")
+		cookieStr.WriteString(cookie.Value)
+		if i != len(cookies)-1 {
+			cookieStr.WriteString("; ")
 		}
 	}
 
-	// 返回拼接好的 Cookie 字符串
-	return fmt.Sprintf("JSESSIONID=%s", cookieStr), nil
-
+	return cookieStr.String(), nil
 }
 
 type AccountRequestParams struct {
