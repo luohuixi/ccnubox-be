@@ -2,6 +2,7 @@ package data
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -10,7 +11,6 @@ import (
 	"github.com/asynccnu/ccnubox-be/be-classlist/internal/errcode"
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/jinzhu/copier"
-
 )
 
 // MaxNum 每个学期最多允许添加的课程数量
@@ -100,7 +100,6 @@ func (cla ClassRepo) GetClassesFromLocal(ctx context.Context, stuID, year, semes
 
 	return classInfosBiz, nil
 }
-
 
 // GetSpecificClassInfo 获取特定课程信息
 func (cla ClassRepo) GetSpecificClassInfo(ctx context.Context, classID string) (*biz.ClassInfo, error) {
@@ -270,6 +269,10 @@ func (cla ClassRepo) UpdateClass(ctx context.Context, stuID, year, semester, old
 
 // SaveClass 保存课程[删除原本的，添加新的，主要是为了防止感知不到原本的和新增的之间有差异]
 func (cla ClassRepo) SaveClass(ctx context.Context, stuID, year, semester string, classInfos []*biz.ClassInfo, scs []*biz.StudentCourse) error {
+	if len(classInfos) == 0 || len(scs) == 0 {
+		return errors.New("classInfos or scs is empty")
+	}
+
 	key := cla.Sac.Cache.GenerateClassInfosKey(stuID, year, semester)
 
 	err := cla.ClaRepo.Cache.DeleteClassInfoFromCache(ctx, key)
@@ -347,7 +350,7 @@ func (cla ClassRepo) GetAddedClasses(ctx context.Context, stuID, year, semester 
 }
 
 // IsClassOfficial 检查课程是否为官方课程
-func (cla ClassRepo) IsClassOfficial(ctx context.Context,stuID,year,semester,classID string) bool {
+func (cla ClassRepo) IsClassOfficial(ctx context.Context, stuID, year, semester, classID string) bool {
 	isManuallyAddedCourse := cla.Sac.DB.CheckManualCourseStatus(ctx, stuID, year, semester, classID)
 	return !isManuallyAddedCourse
 }
