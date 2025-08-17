@@ -32,8 +32,8 @@ func Test_extractCourseInfo(t *testing.T) {
 
 func Test_Crawler2(t *testing.T) {
 	c := NewClassCrawler2(test.NewLogger())
-	test_cookie := "bzb_jsxsd=3E32EA47C5848F74CDC0DF2FC15F2141; __root_domain_v=.ccnu.edu.cn; _qddaz=QD.813351615258360; SERVERID=jw1; bzb_njw=A7B26A39D263A42418262D2E84DD7EDC; SERVERIDgld=pc1"
-	a, b, err := c.GetClassInfosForUndergraduate(context.Background(), "2023214414", "2025", "1", test_cookie)
+	test_cookie := "bzb_jsxsd=87616EFB6DC3EBDCA7E3E9CE8667612B"
+	a, b, err := c.GetClassInfosForUndergraduate(context.Background(), "2023214414", "2024", "2", test_cookie)
 	if err != nil {
 		t.Fatalf("failed to crawl: %v", err)
 	}
