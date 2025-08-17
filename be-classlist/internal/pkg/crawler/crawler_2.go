@@ -2,6 +2,7 @@ package crawler
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/asynccnu/ccnubox-be/be-classlist/internal/biz"
@@ -141,7 +142,10 @@ func (c *Crawler2) extractCourses(year, semester, html string) ([]*biz.ClassInfo
 				classInfo.WeekDuration = tool.FormatWeeks(tool.ParseWeeks(classInfo.Weeks))
 				classInfo.Day = int64(weekdayMap[c.parseDay(str)])
 			case 4:
-				classInfo.ClassWhen = c.parseClassWhen(str)
+				classInfo.ClassWhen, err = c.parseClassWhen(str)
+				if err != nil {
+					c.log.Errorf("parseClassWhen: %v", err)
+				}
 			case 5:
 				classInfo.Credit = c.parseCredit(str)
 			}
@@ -220,11 +224,20 @@ func (c *Crawler2) parseDay(s string) string {
 	return "星期一"
 }
 
-func (c *Crawler2) parseClassWhen(s string) string {
+func (c *Crawler2) parseClassWhen(s string) (string, error) {
 	parts := strings.Split(strings.TrimSuffix(s, "小节"), "~")
-	start := strings.TrimLeft(parts[0], "0")
-	end := strings.TrimLeft(parts[1], "0")
-	return start + "-" + end
+	var start, end string
+	if len(parts) == 0 {
+		return "", errors.New("classWhen is not like 1-2 or 2")
+	}
+	if len(parts) == 1 {
+		start = strings.TrimLeft(parts[0], "0")
+		end = start
+		return start + "-" + end, nil
+	}
+	start = strings.TrimLeft(parts[0], "0")
+	end = strings.TrimLeft(parts[1], "0")
+	return start + "-" + end, nil
 }
 
 func (c *Crawler2) parseCredit(s string) float64 {
