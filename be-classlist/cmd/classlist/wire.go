@@ -31,7 +31,7 @@ func wireApp(*conf.Server, *conf.Data, *conf.Registry, *conf.SchoolDay, *os.File
 		service.ProviderSet,
 		client.ProviderSet,
 		newApp,
-		wire.Bind(new(biz.ClassCrawler), new(*crawler.Crawler)),
+		wire.Bind(new(biz.ClassCrawler), new(*crawler.Crawler2)),
 		wire.Bind(new(biz.RefreshLogRepo), new(*data.RefreshLogRepo)),
 		wire.Bind(new(biz.DelayQueue), new(*data.DelayKafka)),
 		wire.Bind(new(biz.CCNUServiceProxy), new(*client.CCNUService)),
