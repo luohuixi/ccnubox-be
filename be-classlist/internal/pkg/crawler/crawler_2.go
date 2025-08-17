@@ -119,7 +119,7 @@ func (c *Crawler2) extractCourses(year, semester, html string) ([]*biz.ClassInfo
 
 	var classInfos []*biz.ClassInfo
 
-	doc.Find(".qz-tooltip").Each(func(i int, selection *goquery.Selection) {
+	doc.Find("li.qz-toolitiplists").Each(func(i int, selection *goquery.Selection) {
 		var classInfo biz.ClassInfo
 
 		classInfo.Year, classInfo.Semester = year, semester
