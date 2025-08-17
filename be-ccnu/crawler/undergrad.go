@@ -132,7 +132,7 @@ func (c *UnderGrad) LoginCCNUPassport(ctx context.Context, studentId string, pas
 	}
 
 	if strings.Contains(string(res), "您输入的用户名或密码有误") {
-		return errors.New("用户名或密码错误")
+		return INCorrectPASSWORD
 	}
 
 	if len(resp.Header.Get("Set-Cookie")) == 0 {
