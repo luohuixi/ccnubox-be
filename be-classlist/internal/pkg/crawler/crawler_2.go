@@ -134,7 +134,7 @@ func (c *Crawler2) extractCourses(year, semester, html string) ([]*biz.ClassInfo
 			case 1:
 				classInfo.Teacher = str
 			case 2:
-				classInfo.Where = str
+				classInfo.Where = c.parseClassRoom(str)
 			case 3:
 				classInfo.WeekDuration = c.parseWeekDuration(str)
 				classInfo.Weeks = c.parseWeeks(classInfo.WeekDuration)
@@ -245,4 +245,15 @@ func (c *Crawler2) parseCredit(s string) float64 {
 	numStr := strings.TrimSuffix(s, "学分")
 	credits, _ := strconv.ParseFloat(numStr, 64)
 	return credits
+}
+
+// 从字符串中提取合法的教室号
+func (c *Crawler2) parseClassRoom(s string) string {
+	// 正则匹配：楼号只能是 3,7,8,9,10 或 n，后跟 3 位数字
+	re := regexp.MustCompile(`((?:3|7|8|9|10|n)\d{3})$`)
+	match := re.FindString(s)
+	if match == "" {
+		return s
+	}
+	return match
 }
