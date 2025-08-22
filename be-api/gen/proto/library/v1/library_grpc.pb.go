@@ -19,15 +19,16 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Library_GetSeat_FullMethodName           = "/library.v1.Library/GetSeat"
-	Library_ReserveSeat_FullMethodName       = "/library.v1.Library/ReserveSeat"
-	Library_GetSeatRecord_FullMethodName     = "/library.v1.Library/GetSeatRecord"
-	Library_GetHistory_FullMethodName        = "/library.v1.Library/GetHistory"
-	Library_GetCreditPoint_FullMethodName    = "/library.v1.Library/GetCreditPoint"
-	Library_GetDiscussion_FullMethodName     = "/library.v1.Library/GetDiscussion"
-	Library_SearchUser_FullMethodName        = "/library.v1.Library/SearchUser"
-	Library_ReserveDiscussion_FullMethodName = "/library.v1.Library/ReserveDiscussion"
-	Library_CancelReserve_FullMethodName     = "/library.v1.Library/CancelReserve"
+	Library_GetSeat_FullMethodName             = "/library.v1.Library/GetSeat"
+	Library_ReserveSeat_FullMethodName         = "/library.v1.Library/ReserveSeat"
+	Library_GetSeatRecord_FullMethodName       = "/library.v1.Library/GetSeatRecord"
+	Library_GetHistory_FullMethodName          = "/library.v1.Library/GetHistory"
+	Library_GetCreditPoint_FullMethodName      = "/library.v1.Library/GetCreditPoint"
+	Library_GetDiscussion_FullMethodName       = "/library.v1.Library/GetDiscussion"
+	Library_SearchUser_FullMethodName          = "/library.v1.Library/SearchUser"
+	Library_ReserveDiscussion_FullMethodName   = "/library.v1.Library/ReserveDiscussion"
+	Library_CancelReserve_FullMethodName       = "/library.v1.Library/CancelReserve"
+	Library_ReserveSeatRamdomly_FullMethodName = "/library.v1.Library/ReserveSeatRamdomly"
 )
 
 // LibraryClient is the client API for Library service.
@@ -43,6 +44,7 @@ type LibraryClient interface {
 	SearchUser(ctx context.Context, in *SearchUserRequest, opts ...grpc.CallOption) (*SearchUserResponse, error)
 	ReserveDiscussion(ctx context.Context, in *ReserveDiscussionRequest, opts ...grpc.CallOption) (*ReserveDiscussionResponse, error)
 	CancelReserve(ctx context.Context, in *CancelReserveRequest, opts ...grpc.CallOption) (*CancelReserveResponse, error)
+	ReserveSeatRamdomly(ctx context.Context, in *ReserveSeatRamdonlyRequest, opts ...grpc.CallOption) (*ReserveSeatRamdonlyResponse, error)
 }
 
 type libraryClient struct {
@@ -143,6 +145,16 @@ func (c *libraryClient) CancelReserve(ctx context.Context, in *CancelReserveRequ
 	return out, nil
 }
 
+func (c *libraryClient) ReserveSeatRamdomly(ctx context.Context, in *ReserveSeatRamdonlyRequest, opts ...grpc.CallOption) (*ReserveSeatRamdonlyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ReserveSeatRamdonlyResponse)
+	err := c.cc.Invoke(ctx, Library_ReserveSeatRamdomly_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // LibraryServer is the server API for Library service.
 // All implementations must embed UnimplementedLibraryServer
 // for forward compatibility.
@@ -156,6 +168,7 @@ type LibraryServer interface {
 	SearchUser(context.Context, *SearchUserRequest) (*SearchUserResponse, error)
 	ReserveDiscussion(context.Context, *ReserveDiscussionRequest) (*ReserveDiscussionResponse, error)
 	CancelReserve(context.Context, *CancelReserveRequest) (*CancelReserveResponse, error)
+	ReserveSeatRamdomly(context.Context, *ReserveSeatRamdonlyRequest) (*ReserveSeatRamdonlyResponse, error)
 	mustEmbedUnimplementedLibraryServer()
 }
 
@@ -192,6 +205,9 @@ func (UnimplementedLibraryServer) ReserveDiscussion(context.Context, *ReserveDis
 }
 func (UnimplementedLibraryServer) CancelReserve(context.Context, *CancelReserveRequest) (*CancelReserveResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CancelReserve not implemented")
+}
+func (UnimplementedLibraryServer) ReserveSeatRamdomly(context.Context, *ReserveSeatRamdonlyRequest) (*ReserveSeatRamdonlyResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReserveSeatRamdomly not implemented")
 }
 func (UnimplementedLibraryServer) mustEmbedUnimplementedLibraryServer() {}
 func (UnimplementedLibraryServer) testEmbeddedByValue()                 {}
@@ -376,6 +392,24 @@ func _Library_CancelReserve_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Library_ReserveSeatRamdomly_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReserveSeatRamdonlyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LibraryServer).ReserveSeatRamdomly(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Library_ReserveSeatRamdomly_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LibraryServer).ReserveSeatRamdomly(ctx, req.(*ReserveSeatRamdonlyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Library_ServiceDesc is the grpc.ServiceDesc for Library service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -418,6 +452,10 @@ var Library_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CancelReserve",
 			Handler:    _Library_CancelReserve_Handler,
+		},
+		{
+			MethodName: "ReserveSeatRamdomly",
+			Handler:    _Library_ReserveSeatRamdomly_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

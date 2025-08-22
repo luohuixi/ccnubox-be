@@ -9,15 +9,17 @@ import (
 
 type libraryBiz struct {
 	crawler   LibraryCrawler
+	SeatRepo  SeatRepo
 	converter *Converter
 	log       *log.Helper
 }
 
-func NewLibraryBiz(crawler LibraryCrawler, logger log.Logger) LibraryBiz {
+func NewLibraryBiz(crawler LibraryCrawler, logger log.Logger, seatRepo SeatRepo) LibraryBiz {
 	return &libraryBiz{
 		crawler:   crawler,
 		converter: NewConverter(),
 		log:       log.NewHelper(logger),
+		SeatRepo:  seatRepo,
 	}
 }
 
@@ -118,4 +120,21 @@ func (b *libraryBiz) CancelReserve(ctx context.Context, stuID, id string) (*pb.C
 		return nil, err
 	}
 	return &pb.CancelReserveResponse{Message: message}, nil
+}
+
+func (b *libraryBiz) ReserveSeatRamdomly(ctx context.Context, stuID, roomID, start, end string) (*pb.ReserveSeatRamdonlyResponse, error) {
+	seatDevID, err := b.SeatRepo.FindFirstAvailableSeat(ctx, roomID, start, end)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := b.ReserveSeat(ctx, stuID, seatDevID, start, end)
+	if err != nil {
+		b.log.Errorf("Ramdonly reserve(stu_id:%v id:%v) failed: %v", stuID, seatDevID, err)
+		return nil, err
+	}
+
+	return &pb.ReserveSeatRamdonlyResponse{
+		Message: resp.Message,
+	}, err
 }

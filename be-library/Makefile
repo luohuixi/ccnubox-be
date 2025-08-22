@@ -80,3 +80,19 @@ help:
 	{ lastLine = $$0 }' $(MAKEFILE_LIST)
 
 .DEFAULT_GOAL := help
+
+.PHONY: curd
+
+curd:
+	@echo "Generating CRUD for all SQL files..."
+	@mkdir -p internal/data/data
+	@for sql_file in internal/data/sql/*.sql; do \
+		if [ -f "$$sql_file" ]; then \
+			echo "Processing $$sql_file"; \
+			goctl model mysql ddl -src "$$sql_file" -dir ./internal/data/data -c --cache=false; \
+		fi \
+	done
+	@echo "Moving generated models to internal/data/cruds..."
+	@find internal/data/data -name "*.go" -exec mv {} internal/data/cruds \;
+	@rm -rf internal/data/data
+	@echo "All SQL files processed."

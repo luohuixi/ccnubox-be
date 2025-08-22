@@ -137,3 +137,13 @@ type ReserveDiscussionRequest struct {
 type CancelReserveRequest struct {
 	ID string `form:"id" binding:"required"`
 }
+
+type ReserveSeatRamdonlyRequest struct {
+	DevID string `json:"dev_id"`
+	Start string `json:"start"`
+	End   string `json:"end"`
+}
+
+type ReserveSeatRamdonlyResponse struct {
+	Message string `json:"message"`
+}

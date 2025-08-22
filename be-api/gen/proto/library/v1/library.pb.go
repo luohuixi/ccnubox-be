@@ -1658,6 +1658,119 @@ func (x *CancelReserveResponse) GetMessage() string {
 	return ""
 }
 
+// 随机选座
+type ReserveSeatRamdonlyRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Start         string                 `protobuf:"bytes,1,opt,name=start,proto3" json:"start,omitempty"`
+	End           string                 `protobuf:"bytes,2,opt,name=end,proto3" json:"end,omitempty"`
+	StuId         string                 `protobuf:"bytes,3,opt,name=stu_id,json=stuId,proto3" json:"stu_id,omitempty"`
+	RoomId        string                 `protobuf:"bytes,4,opt,name=room_id,json=roomId,proto3" json:"room_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReserveSeatRamdonlyRequest) Reset() {
+	*x = ReserveSeatRamdonlyRequest{}
+	mi := &file_library_v1_library_proto_msgTypes[27]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReserveSeatRamdonlyRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReserveSeatRamdonlyRequest) ProtoMessage() {}
+
+func (x *ReserveSeatRamdonlyRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_library_v1_library_proto_msgTypes[27]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReserveSeatRamdonlyRequest.ProtoReflect.Descriptor instead.
+func (*ReserveSeatRamdonlyRequest) Descriptor() ([]byte, []int) {
+	return file_library_v1_library_proto_rawDescGZIP(), []int{27}
+}
+
+func (x *ReserveSeatRamdonlyRequest) GetStart() string {
+	if x != nil {
+		return x.Start
+	}
+	return ""
+}
+
+func (x *ReserveSeatRamdonlyRequest) GetEnd() string {
+	if x != nil {
+		return x.End
+	}
+	return ""
+}
+
+func (x *ReserveSeatRamdonlyRequest) GetStuId() string {
+	if x != nil {
+		return x.StuId
+	}
+	return ""
+}
+
+func (x *ReserveSeatRamdonlyRequest) GetRoomId() string {
+	if x != nil {
+		return x.RoomId
+	}
+	return ""
+}
+
+type ReserveSeatRamdonlyResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Message       string                 `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReserveSeatRamdonlyResponse) Reset() {
+	*x = ReserveSeatRamdonlyResponse{}
+	mi := &file_library_v1_library_proto_msgTypes[28]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReserveSeatRamdonlyResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReserveSeatRamdonlyResponse) ProtoMessage() {}
+
+func (x *ReserveSeatRamdonlyResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_library_v1_library_proto_msgTypes[28]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReserveSeatRamdonlyResponse.ProtoReflect.Descriptor instead.
+func (*ReserveSeatRamdonlyResponse) Descriptor() ([]byte, []int) {
+	return file_library_v1_library_proto_rawDescGZIP(), []int{28}
+}
+
+func (x *ReserveSeatRamdonlyResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
 var File_library_v1_library_proto protoreflect.FileDescriptor
 
 const file_library_v1_library_proto_rawDesc = "" +
@@ -1778,7 +1891,14 @@ const file_library_v1_library_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x15\n" +
 	"\x06stu_id\x18\x02 \x01(\tR\x05stuId\"1\n" +
 	"\x15CancelReserveResponse\x12\x18\n" +
-	"\amessage\x18\x01 \x01(\tR\amessage2\xf4\x05\n" +
+	"\amessage\x18\x01 \x01(\tR\amessage\"t\n" +
+	"\x1aReserveSeatRamdonlyRequest\x12\x14\n" +
+	"\x05start\x18\x01 \x01(\tR\x05start\x12\x10\n" +
+	"\x03end\x18\x02 \x01(\tR\x03end\x12\x15\n" +
+	"\x06stu_id\x18\x03 \x01(\tR\x05stuId\x12\x17\n" +
+	"\aroom_id\x18\x04 \x01(\tR\x06roomId\"7\n" +
+	"\x1bReserveSeatRamdonlyResponse\x12\x18\n" +
+	"\amessage\x18\x01 \x01(\tR\amessage2\xdc\x06\n" +
 	"\aLibrary\x12B\n" +
 	"\aGetSeat\x12\x1a.library.v1.GetSeatRequest\x1a\x1b.library.v1.GetSeatResponse\x12N\n" +
 	"\vReserveSeat\x12\x1e.library.v1.ReserveSeatRequest\x1a\x1f.library.v1.ReserveSeatResponse\x12T\n" +
@@ -1790,7 +1910,8 @@ const file_library_v1_library_proto_rawDesc = "" +
 	"\n" +
 	"SearchUser\x12\x1d.library.v1.SearchUserRequest\x1a\x1e.library.v1.SearchUserResponse\x12`\n" +
 	"\x11ReserveDiscussion\x12$.library.v1.ReserveDiscussionRequest\x1a%.library.v1.ReserveDiscussionResponse\x12T\n" +
-	"\rCancelReserve\x12 .library.v1.CancelReserveRequest\x1a!.library.v1.CancelReserveResponseBFZDgithub.com/asynccnu/ccnubox-be/be-api/gen/proto/library/v1;libraryv1b\x06proto3"
+	"\rCancelReserve\x12 .library.v1.CancelReserveRequest\x1a!.library.v1.CancelReserveResponse\x12f\n" +
+	"\x13ReserveSeatRamdomly\x12&.library.v1.ReserveSeatRamdonlyRequest\x1a'.library.v1.ReserveSeatRamdonlyResponseBFZDgithub.com/asynccnu/ccnubox-be/be-api/gen/proto/library/v1;libraryv1b\x06proto3"
 
 var (
 	file_library_v1_library_proto_rawDescOnce sync.Once
@@ -1804,35 +1925,37 @@ func file_library_v1_library_proto_rawDescGZIP() []byte {
 	return file_library_v1_library_proto_rawDescData
 }
 
-var file_library_v1_library_proto_msgTypes = make([]protoimpl.MessageInfo, 27)
+var file_library_v1_library_proto_msgTypes = make([]protoimpl.MessageInfo, 29)
 var file_library_v1_library_proto_goTypes = []any{
-	(*GetSeatRequest)(nil),            // 0: library.v1.GetSeatRequest
-	(*GetSeatResponse)(nil),           // 1: library.v1.GetSeatResponse
-	(*RoomSeat)(nil),                  // 2: library.v1.RoomSeat
-	(*Seat)(nil),                      // 3: library.v1.Seat
-	(*TimeSlot)(nil),                  // 4: library.v1.TimeSlot
-	(*ReserveSeatRequest)(nil),        // 5: library.v1.ReserveSeatRequest
-	(*ReserveSeatResponse)(nil),       // 6: library.v1.ReserveSeatResponse
-	(*GetSeatRecordRequest)(nil),      // 7: library.v1.GetSeatRecordRequest
-	(*GetSeatRecordResponse)(nil),     // 8: library.v1.GetSeatRecordResponse
-	(*Record)(nil),                    // 9: library.v1.Record
-	(*GetHistoryRequest)(nil),         // 10: library.v1.GetHistoryRequest
-	(*GetHistoryResponse)(nil),        // 11: library.v1.GetHistoryResponse
-	(*History)(nil),                   // 12: library.v1.History
-	(*GetCreditPointRequest)(nil),     // 13: library.v1.GetCreditPointRequest
-	(*GetCreditPointResponse)(nil),    // 14: library.v1.GetCreditPointResponse
-	(*CreditSummary)(nil),             // 15: library.v1.CreditSummary
-	(*CreditRecord)(nil),              // 16: library.v1.CreditRecord
-	(*GetDiscussionRequest)(nil),      // 17: library.v1.GetDiscussionRequest
-	(*GetDiscussionResponse)(nil),     // 18: library.v1.GetDiscussionResponse
-	(*Discussion)(nil),                // 19: library.v1.Discussion
-	(*DiscussionTS)(nil),              // 20: library.v1.DiscussionTS
-	(*SearchUserRequest)(nil),         // 21: library.v1.SearchUserRequest
-	(*SearchUserResponse)(nil),        // 22: library.v1.SearchUserResponse
-	(*ReserveDiscussionRequest)(nil),  // 23: library.v1.ReserveDiscussionRequest
-	(*ReserveDiscussionResponse)(nil), // 24: library.v1.ReserveDiscussionResponse
-	(*CancelReserveRequest)(nil),      // 25: library.v1.CancelReserveRequest
-	(*CancelReserveResponse)(nil),     // 26: library.v1.CancelReserveResponse
+	(*GetSeatRequest)(nil),              // 0: library.v1.GetSeatRequest
+	(*GetSeatResponse)(nil),             // 1: library.v1.GetSeatResponse
+	(*RoomSeat)(nil),                    // 2: library.v1.RoomSeat
+	(*Seat)(nil),                        // 3: library.v1.Seat
+	(*TimeSlot)(nil),                    // 4: library.v1.TimeSlot
+	(*ReserveSeatRequest)(nil),          // 5: library.v1.ReserveSeatRequest
+	(*ReserveSeatResponse)(nil),         // 6: library.v1.ReserveSeatResponse
+	(*GetSeatRecordRequest)(nil),        // 7: library.v1.GetSeatRecordRequest
+	(*GetSeatRecordResponse)(nil),       // 8: library.v1.GetSeatRecordResponse
+	(*Record)(nil),                      // 9: library.v1.Record
+	(*GetHistoryRequest)(nil),           // 10: library.v1.GetHistoryRequest
+	(*GetHistoryResponse)(nil),          // 11: library.v1.GetHistoryResponse
+	(*History)(nil),                     // 12: library.v1.History
+	(*GetCreditPointRequest)(nil),       // 13: library.v1.GetCreditPointRequest
+	(*GetCreditPointResponse)(nil),      // 14: library.v1.GetCreditPointResponse
+	(*CreditSummary)(nil),               // 15: library.v1.CreditSummary
+	(*CreditRecord)(nil),                // 16: library.v1.CreditRecord
+	(*GetDiscussionRequest)(nil),        // 17: library.v1.GetDiscussionRequest
+	(*GetDiscussionResponse)(nil),       // 18: library.v1.GetDiscussionResponse
+	(*Discussion)(nil),                  // 19: library.v1.Discussion
+	(*DiscussionTS)(nil),                // 20: library.v1.DiscussionTS
+	(*SearchUserRequest)(nil),           // 21: library.v1.SearchUserRequest
+	(*SearchUserResponse)(nil),          // 22: library.v1.SearchUserResponse
+	(*ReserveDiscussionRequest)(nil),    // 23: library.v1.ReserveDiscussionRequest
+	(*ReserveDiscussionResponse)(nil),   // 24: library.v1.ReserveDiscussionResponse
+	(*CancelReserveRequest)(nil),        // 25: library.v1.CancelReserveRequest
+	(*CancelReserveResponse)(nil),       // 26: library.v1.CancelReserveResponse
+	(*ReserveSeatRamdonlyRequest)(nil),  // 27: library.v1.ReserveSeatRamdonlyRequest
+	(*ReserveSeatRamdonlyResponse)(nil), // 28: library.v1.ReserveSeatRamdonlyResponse
 }
 var file_library_v1_library_proto_depIdxs = []int32{
 	2,  // 0: library.v1.GetSeatResponse.room_seats:type_name -> library.v1.RoomSeat
@@ -1853,17 +1976,19 @@ var file_library_v1_library_proto_depIdxs = []int32{
 	21, // 15: library.v1.Library.SearchUser:input_type -> library.v1.SearchUserRequest
 	23, // 16: library.v1.Library.ReserveDiscussion:input_type -> library.v1.ReserveDiscussionRequest
 	25, // 17: library.v1.Library.CancelReserve:input_type -> library.v1.CancelReserveRequest
-	1,  // 18: library.v1.Library.GetSeat:output_type -> library.v1.GetSeatResponse
-	6,  // 19: library.v1.Library.ReserveSeat:output_type -> library.v1.ReserveSeatResponse
-	8,  // 20: library.v1.Library.GetSeatRecord:output_type -> library.v1.GetSeatRecordResponse
-	11, // 21: library.v1.Library.GetHistory:output_type -> library.v1.GetHistoryResponse
-	14, // 22: library.v1.Library.GetCreditPoint:output_type -> library.v1.GetCreditPointResponse
-	18, // 23: library.v1.Library.GetDiscussion:output_type -> library.v1.GetDiscussionResponse
-	22, // 24: library.v1.Library.SearchUser:output_type -> library.v1.SearchUserResponse
-	24, // 25: library.v1.Library.ReserveDiscussion:output_type -> library.v1.ReserveDiscussionResponse
-	26, // 26: library.v1.Library.CancelReserve:output_type -> library.v1.CancelReserveResponse
-	18, // [18:27] is the sub-list for method output_type
-	9,  // [9:18] is the sub-list for method input_type
+	27, // 18: library.v1.Library.ReserveSeatRamdomly:input_type -> library.v1.ReserveSeatRamdonlyRequest
+	1,  // 19: library.v1.Library.GetSeat:output_type -> library.v1.GetSeatResponse
+	6,  // 20: library.v1.Library.ReserveSeat:output_type -> library.v1.ReserveSeatResponse
+	8,  // 21: library.v1.Library.GetSeatRecord:output_type -> library.v1.GetSeatRecordResponse
+	11, // 22: library.v1.Library.GetHistory:output_type -> library.v1.GetHistoryResponse
+	14, // 23: library.v1.Library.GetCreditPoint:output_type -> library.v1.GetCreditPointResponse
+	18, // 24: library.v1.Library.GetDiscussion:output_type -> library.v1.GetDiscussionResponse
+	22, // 25: library.v1.Library.SearchUser:output_type -> library.v1.SearchUserResponse
+	24, // 26: library.v1.Library.ReserveDiscussion:output_type -> library.v1.ReserveDiscussionResponse
+	26, // 27: library.v1.Library.CancelReserve:output_type -> library.v1.CancelReserveResponse
+	28, // 28: library.v1.Library.ReserveSeatRamdomly:output_type -> library.v1.ReserveSeatRamdonlyResponse
+	19, // [19:29] is the sub-list for method output_type
+	9,  // [9:19] is the sub-list for method input_type
 	9,  // [9:9] is the sub-list for extension type_name
 	9,  // [9:9] is the sub-list for extension extendee
 	0,  // [0:9] is the sub-list for field type_name
@@ -1880,7 +2005,7 @@ func file_library_v1_library_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_library_v1_library_proto_rawDesc), len(file_library_v1_library_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   27,
+			NumMessages:   29,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

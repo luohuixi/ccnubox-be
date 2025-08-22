@@ -1,6 +1,7 @@
 go 1.23.7
 
 use (
+	./be-library
 	be-api
 	be-banner
 	be-calendar
@@ -12,7 +13,6 @@ use (
 	be-elecprice
 	be-feed
 	be-grade
-	be-library
 	be-infosum
 	be-user
 	be-website

@@ -56,3 +56,7 @@ func (ls *LibraryService) ReserveDiscussion(ctx context.Context, req *pb.Reserve
 func (ls *LibraryService) CancelReserve(ctx context.Context, req *pb.CancelReserveRequest) (*pb.CancelReserveResponse, error) {
 	return ls.biz.CancelReserve(ctx, req.StuId, req.Id)
 }
+
+func (ls *LibraryService) ReserveSeatRamdomly(ctx context.Context, req *pb.ReserveSeatRamdonlyRequest) (*pb.ReserveSeatRamdonlyResponse, error) {
+	return ls.biz.ReserveSeatRamdomly(ctx, req.StuId, req.RoomId, req.Start, req.End)
+}

@@ -106,7 +106,7 @@ func (c *Converter) ConvertSeats(src []*Seat) []*pb.Seat {
 	for _, seat := range src {
 		result = append(result, &pb.Seat{
 			LabName:  seat.LabName,
-			KindName: seat.KindName,
+			KindName: seat.RoomName,
 			DevId:    seat.DevID,
 			DevName:  seat.DevName,
 			Ts:       c.ConvertTimeSlots(seat.Ts),
