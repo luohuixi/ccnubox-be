@@ -13,8 +13,11 @@ import (
 
 const (
 	loginCCNUPassPortURL = "https://account.ccnu.edu.cn/cas/login"
-	CASURL               = loginCCNUPassPortURL + "?service=https://bkzhjw.ccnu.edu.cn/jsxsd/framework/xsMainV.htmlx"
-	pgUrl                = "https://bkzhjw.ccnu.edu.cn/jsxsd/"
+	//新的网址
+	CASURL = loginCCNUPassPortURL + "?service=https://bkzhjw.ccnu.edu.cn/jsxsd/framework/xsMainV.htmlx"
+	pgUrl  = "https://bkzhjw.ccnu.edu.cn/jsxsd/"
+	//CASURL = loginCCNUPassPortURL + "?service=http://xk.ccnu.edu.cn/jwglxt"
+	//pgUrl  = "http://xk.ccnu.edu.cn/jwglxt"
 )
 
 // 存放本科生院相关的爬虫
