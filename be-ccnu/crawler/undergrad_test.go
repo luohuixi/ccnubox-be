@@ -14,7 +14,7 @@ func Test_GetCookie(t *testing.T) {
 	if err != nil {
 		return
 	}
-	err = ug.LoginCCNUPassport(ctx, "id", "pw", html)
+	err = ug.LoginCCNUPassport(ctx, "2023215153", "Sjn3265926531", html)
 	if err != nil {
 		return
 	}

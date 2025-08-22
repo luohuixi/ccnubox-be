@@ -13,8 +13,11 @@ import (
 
 const (
 	loginCCNUPassPortURL = "https://account.ccnu.edu.cn/cas/login"
-	CASURL               = loginCCNUPassPortURL + "?service=https://bkzhjw.ccnu.edu.cn/jsxsd/framework/xsMainV.htmlx"
-	pgUrl                = "https://bkzhjw.ccnu.edu.cn/jsxsd/"
+
+	//CASURL               = loginCCNUPassPortURL + "?service=https://bkzhjw.ccnu.edu.cn/jsxsd/framework/xsMainV.htmlx"
+	//pgUrl                = "https://bkzhjw.ccnu.edu.cn/jsxsd/"
+	CASURL = loginCCNUPassPortURL + "?service=http%3A%2F%2Fxk.ccnu.edu.cn%2Fsso%2Fpziotlogin"
+	pgUrl  = "http://xk.ccnu.edu.cn/jwglxt"
 )
 
 // 存放本科生院相关的爬虫
@@ -156,7 +159,11 @@ func (c *UnderGrad) LoginUnderGradSystem(ctx context.Context) error {
 		return err
 	}
 	defer resp.Body.Close()
-
+	res, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+	fmt.Println(string(res))
 	return nil
 }
 
