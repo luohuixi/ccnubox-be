@@ -2,6 +2,10 @@ package service
 
 import (
 	"context"
+	"fmt"
+	"github.com/asynccnu/ccnubox-be/be-grade/crawler"
+	"github.com/asynccnu/ccnubox-be/be-grade/events/producer"
+	"github.com/asynccnu/ccnubox-be/be-grade/events/topic"
 	"golang.org/x/sync/singleflight"
 	"time"
 
@@ -16,7 +20,7 @@ import (
 
 var (
 	ErrGetGrade = func(err error) error {
-		return errorx.New(gradev1.ErrorGetGradeError("获取成绩失败"), "dao", err)
+		return errorx.New(gradev1.ErrorGetGradeError("获取成绩失败"), "data", err)
 	}
 )
 
@@ -24,90 +28,152 @@ type GradeService interface {
 	GetGradeByTerm(ctx context.Context, req *domain.GetGradeByTermReq) ([]domain.Grade, error)
 	GetGradeScore(ctx context.Context, studentId string) ([]domain.TypeOfGradeScore, error)
 	GetUpdateScore(ctx context.Context, studentId string) ([]domain.Grade, error)
+	UpdateDetailScore(ctx context.Context, need domain.NeedDetailGrade) error
 }
 
 type gradeService struct {
 	userClient userv1.UserServiceClient
+	producer   producer.Producer
 	gradeDAO   dao.GradeDAO
 	l          logger.Logger
 	sf         singleflight.Group
 }
 
-func NewGradeService(gradeDAO dao.GradeDAO, l logger.Logger, userClient userv1.UserServiceClient) GradeService {
-	return &gradeService{gradeDAO: gradeDAO, l: l, userClient: userClient}
+func NewGradeService(
+	producer producer.Producer,
+	gradeDAO dao.GradeDAO,
+	l logger.Logger,
+	userClient userv1.UserServiceClient,
+) GradeService {
+	return &gradeService{
+		producer:   producer,
+		gradeDAO:   gradeDAO,
+		l:          l,
+		userClient: userClient,
+	}
 }
 
 func (s *gradeService) GetGradeByTerm(ctx context.Context, req *domain.GetGradeByTermReq) ([]domain.Grade, error) {
-	grades, err := s.getGradeWithSingleFlight(ctx, req.StudentID, req.Refresh)
-	if err != nil {
-		return nil, err
-	}
-	return modelConvDomainAndFilter(grades, req.Terms, req.Kcxzmcs), nil
-}
+	var (
+		grades    []model.Grade
+		fetchdata FetchGrades
+		err       error
+	)
 
-func (s *gradeService) GetGradeScore(ctx context.Context, studentId string) ([]domain.TypeOfGradeScore, error) {
-	grades, err := s.getGradeWithSingleFlight(ctx, studentId, false)
-	if err != nil {
-		return nil, err
-	}
-	return aggregateGradeScore(grades), nil
-}
+	if req.Refresh {
 
-func (s *gradeService) GetUpdateScore(ctx context.Context, studentId string) ([]domain.Grade, error) {
-	grades, err := s.fetchGradesFromRemote(ctx, studentId)
-	if err != nil || len(grades) == 0 {
-		return nil, ErrGetGrade(err)
-	}
-
-	updated, err := s.gradeDAO.BatchInsertOrUpdate(context.Background(), grades)
-	if err != nil {
-		s.l.Warn("更新成绩失败", logger.Error(err))
-		return nil, ErrGetGrade(err)
-	}
-
-	for _, g := range updated {
-		s.l.Info("更新成绩成功", logger.String("studentId", g.Studentid), logger.String("课程", g.Kcmc))
-	}
-	return modelConvDomain(updated), nil
-}
-
-func (s *gradeService) getGradeWithSingleFlight(ctx context.Context, studentId string, refresh bool) ([]model.Grade, error) {
-	if refresh {
-		_, grades, err := s.fetchGradesFromRemoteAndUpdate(ctx, studentId, true)
-		if err != nil || len(grades) == 0 {
+		//如果要求强制更新的话就需要去拉取远程数据
+		fetchdata, err = s.fetchGradesWithSingleFlight(ctx, req.StudentID)
+		if err != nil || len(fetchdata.final) == 0 {
 			s.l.Warn("从ccnu获取成绩失败!", logger.Error(err))
-			grades, err = s.gradeDAO.FindGrades(context.Background(), studentId, 0, 0)
+			//拉取失败本地作为兜底
+			grades, err = s.gradeDAO.FindGrades(ctx, req.StudentID, 0, 0)
 			if err != nil {
+				return nil, err
+			}
+			return modelConvDomainAndFilter(grades, req.Terms, req.Kcxzmcs), nil
+		}
+
+		grades = fetchdata.final
+		return modelConvDomainAndFilter(grades, req.Terms, req.Kcxzmcs), nil
+
+	} else {
+
+		//如果成功直接返回结果
+		grades, err = s.gradeDAO.FindGrades(ctx, req.StudentID, 0, 0)
+		if err != nil || len(grades) == 0 {
+			//失败尝试从远程拉取
+			fetchdata, err = s.fetchGradesWithSingleFlight(ctx, req.StudentID)
+			if err != nil {
+				s.l.Warn("从ccnu获取成绩失败!", logger.Error(err))
 				return nil, ErrGetGrade(err)
 			}
-		}
-		return grades, nil
-	}
+			grades = fetchdata.final
 
-	//从数据库获取数据
-	grades, err := s.gradeDAO.FindGrades(ctx, studentId, 0, 0)
-	if err == nil && len(grades) > 0 {
-		//如果有成绩进行异步更新
+			return modelConvDomainAndFilter(grades, req.Terms, req.Kcxzmcs), nil
+		}
+
+		//异步更新结果
 		go func() {
-			_, _, err := s.fetchGradesFromRemoteAndUpdate(context.Background(), studentId, true)
+			fetchdata, err = s.fetchGradesWithSingleFlight(context.Background(), req.StudentID)
 			if err != nil {
 				s.l.Warn("从ccnu获取成绩失败!", logger.Error(err))
 			}
 		}()
-		return grades, nil
-	}
 
-	//如果没成绩尝试获取最新成绩
-	s.l.Info("数据库中无成绩或查询失败，尝试从ccnu获取", logger.Error(err))
-	_, grades, err = s.fetchGradesFromRemoteAndUpdate(ctx, studentId, false)
-	if err != nil {
-		return nil, ErrGetGrade(err)
+		return modelConvDomainAndFilter(grades, req.Terms, req.Kcxzmcs), nil
 	}
-
-	return grades, nil
 }
 
-func (s *gradeService) fetchGradesFromRemote(ctx context.Context, studentId string) ([]model.Grade, error) {
+func (s *gradeService) GetGradeScore(ctx context.Context, studentId string) ([]domain.TypeOfGradeScore, error) {
+	//如果成功直接返回结果
+	grades, err := s.gradeDAO.FindGrades(ctx, studentId, 0, 0)
+	if err != nil || len(grades) == 0 {
+		//失败尝试从远程拉取
+		fetchdata, err := s.fetchGradesWithSingleFlight(ctx, studentId)
+		if err != nil || len(fetchdata.final) == 0 {
+			s.l.Warn("从ccnu获取成绩失败!", logger.Error(err))
+			return nil, ErrGetGrade(err)
+		}
+		return aggregateGradeScore(fetchdata.final), nil
+	}
+
+	//异步更新结果
+	go func() {
+		fetchdata, err := s.fetchGradesWithSingleFlight(context.Background(), studentId)
+		if err != nil || len(fetchdata.final) == 0 {
+			s.l.Warn("从ccnu获取成绩失败!", logger.Error(err))
+		}
+	}()
+
+	return aggregateGradeScore(grades), nil
+}
+
+func (s *gradeService) GetUpdateScore(ctx context.Context, studentId string) ([]domain.Grade, error) {
+	grades, err := s.fetchGradesWithSingleFlight(ctx, studentId)
+	if err != nil || len(grades.update) == 0 {
+		return nil, ErrGetGrade(err)
+	}
+	return modelConvDomain(grades.update), nil
+}
+
+func (s *gradeService) UpdateDetailScore(ctx context.Context, need domain.NeedDetailGrade) error {
+	ug, err := s.newUGWithCookie(ctx, need.StudentID)
+	if err != nil {
+		return err
+	}
+
+	grades := need.Grades
+	for i, grade := range grades {
+		detail, err := ug.GetDetail(ctx, grade.StudentId, grade.JxbId, grade.KcId, grade.Cj)
+		if err == crawler.COOKIE_TIMEOUT {
+			ug, err = s.newUGWithCookie(ctx, need.StudentID)
+			if err != nil {
+				return err
+			}
+			detail, err = ug.GetDetail(ctx, grade.StudentId, grade.JxbId, grade.KcId, grade.Cj)
+		}
+
+		if err != nil {
+			s.l.Warn(fmt.Sprintf("获取详细分数失败! 学号:%s,教学班id:%s,课程id:%s,总分:%f", grade.StudentId, grade.JxbId, grade.KcId, grade.Cj), logger.Error(err))
+			continue
+		}
+		grade.RegularGradePercent = detail.Cjxm1bl
+		grade.RegularGrade = detail.Cjxm1
+		grade.FinalGradePercent = detail.Cjxm3bl
+		grade.FinalGrade = detail.Cjxm3
+		grades[i] = grade
+	}
+
+	_, err = s.gradeDAO.BatchInsertOrUpdate(ctx, grades, true)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *gradeService) fetchGradesWithSingleFlight(ctx context.Context, studentId string) (FetchGrades, error) {
 	key := studentId
 
 	result, err, _ := s.sf.Do(key, func() (interface{}, error) {
@@ -115,66 +181,87 @@ func (s *gradeService) fetchGradesFromRemote(ctx context.Context, studentId stri
 		defer cancel()
 
 		start := time.Now()
-		cookieResp, err := s.userClient.GetCookie(ctx, &userv1.GetCookieRequest{StudentId: studentId})
+		ug, err := s.newUGWithCookie(ctx, studentId)
+		if err != nil {
+			return nil, fmt.Errorf("创建带cookie的ug实例失败:%w", err)
+		}
+
+		remote, err := ug.GetGrade(ctx, 0, 0, 300)
+		if err == crawler.COOKIE_TIMEOUT {
+			ug, err = s.newUGWithCookie(ctx, studentId)
+			if err != nil {
+				return nil, fmt.Errorf("创建带cookie的ug实例失败:%w", err)
+			}
+			remote, err = ug.GetGrade(ctx, 0, 0, 300)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		s.l.Info("获取成绩耗时", logger.String("耗时", time.Since(start).String()))
+		grades := aggregateGrade(remote)
+		// 插入并更新数据,这里不比较详细数据,因为更新会导致问题
+		update, err := s.gradeDAO.BatchInsertOrUpdate(ctx, grades, false)
 		if err != nil {
 			return nil, err
 		}
 
-		grades, err := GetGrade(ctx, cookieResp.GetCookie(), 0, 0, 300)
-		if err == COOKIE_TIMEOUT {
-			cookieResp, err = s.userClient.GetCookie(ctx, &userv1.GetCookieRequest{StudentId: studentId})
-			if err != nil {
-				return nil, err
-			}
-			return GetGrade(ctx, cookieResp.GetCookie(), 0, 0, 300)
+		for _, g := range update {
+			s.l.Info("更新成绩成功", logger.String("studentId", g.StudentId), logger.String("课程", g.Kcmc))
 		}
-		s.l.Info("获取成绩耗时", logger.String("耗时", time.Since(start).String()))
 
-		return grades, err
+		// 读取数据库,已经有的数据要使用已经存在的(因为平时成绩已经获取到了)
+		final, err := s.gradeDAO.FindGrades(ctx, studentId, 0, 0)
+		if err != nil {
+			return nil, err
+		}
+
+		var needDetailgrades []model.Grade
+		for _, g := range final {
+			if g.RegularGradePercent == RegularGradePercentMSG && g.FinalGradePercent == FinalGradePercentMAG {
+				needDetailgrades = append(needDetailgrades, g)
+			}
+		}
+
+		err = s.producer.SendMessage(topic.GradeDetailEvent, domain.NeedDetailGrade{
+			StudentID: studentId,
+			Grades:    needDetailgrades,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		fetchGrades := FetchGrades{
+			update: update,
+			final:  final,
+		}
+
+		return fetchGrades, err
 	})
 
-	grades, ok := result.([]model.Grade)
+	fetchGrades, ok := result.(FetchGrades)
 	if !ok {
 		s.l.Warn("类型断言失败", logger.Error(err))
 	}
 
-	return grades, err
+	return fetchGrades, err
 
 }
 
-func (s *gradeService) updateGrades(grades []model.Grade) ([]model.Grade, error) {
-	updated, err := s.gradeDAO.BatchInsertOrUpdate(context.Background(), grades)
+func (s *gradeService) newUGWithCookie(ctx context.Context, studentId string) (*crawler.UnderGrad, error) {
+	cookieResp, err := s.userClient.GetCookie(ctx, &userv1.GetCookieRequest{StudentId: studentId})
 	if err != nil {
-		return nil, err
+		return &crawler.UnderGrad{}, err
 	}
 
-	for _, g := range updated {
-		s.l.Info("更新成绩成功", logger.String("studentId", g.Studentid), logger.String("课程", g.Kcmc))
-	}
-	return updated, nil
-}
-
-func (s *gradeService) fetchGradesFromRemoteAndUpdate(ctx context.Context, studentId string, isAsyc bool) (updated []model.Grade, grades []model.Grade, err error) {
-
-	remote, err := s.fetchGradesFromRemote(ctx, studentId)
+	grad, err := crawler.NewUnderGrad(
+		crawler.NewCrawlerClientWithCookieJar(
+			30*time.Second,
+			crawler.NewJarWithCookie(crawler.PG_URL, cookieResp.Cookie),
+		),
+	)
 	if err != nil {
-		return nil, nil, err
+		return &crawler.UnderGrad{}, fmt.Errorf("创建ug爬虫实例失败:%w", err)
 	}
-
-	if isAsyc {
-		go func() {
-			_, err := s.updateGrades(remote)
-			if err != nil {
-				s.l.Warn("异步更新成绩失败", logger.Error(err))
-			}
-		}()
-		return nil, remote, nil
-	}
-
-	update, err := s.updateGrades(remote)
-	if err != nil {
-		return nil, remote, err
-	}
-
-	return update, remote, nil
+	return grad, nil
 }
