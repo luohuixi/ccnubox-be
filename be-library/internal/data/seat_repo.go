@@ -8,7 +8,6 @@ import (
 
 	"github.com/asynccnu/ccnubox-be/be-library/internal/biz"
 	"github.com/go-kratos/kratos/v2/log"
-	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 )
 
@@ -34,7 +33,7 @@ type SeatRepo struct {
 	log  *log.Helper
 }
 
-func NewSeatRepo(data *Data, logger log.Logger, rdb *redis.Client) biz.SeatRepo {
+func NewSeatRepo(data *Data, logger log.Logger) biz.SeatRepo {
 	return &SeatRepo{
 		log:  log.NewHelper(logger),
 		data: data,

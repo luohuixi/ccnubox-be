@@ -28,11 +28,12 @@ type Data struct {
 }
 
 // NewData .
-func NewData(c *conf.Data, logger log.Logger, db *gorm.DB, crawler biz.LibraryCrawler) (*Data, error) {
+func NewData(c *conf.Data, logger log.Logger, db *gorm.DB, crawler biz.LibraryCrawler, rdb *redis.Client) (*Data, error) {
 	data := &Data{
 		log:     log.NewHelper(logger),
 		db:      db,
 		crawler: crawler,
+		redis:   rdb,
 	}
 
 	return data, nil
