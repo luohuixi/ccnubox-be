@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
+
+	"github.com/asynccnu/ccnubox-be/be-library/internal/data/DO"
 )
 
 // func (c *Crawler) SeatJSONCrawler(ctx context.Context, cookie string, roomid string) (JSON string, roomID string, err error) {
@@ -113,8 +115,8 @@ func (r *SeatRepo) getSeatJSONFromCacheByDevID(ctx context.Context, ID string, D
 }
 
 // 单个座位的 JSON 解码为结构体
-func (r *SeatRepo) seatJsonToSeat(ctx context.Context, JSON string) (*seat, error) {
-	var seat seat
+func (r *SeatRepo) seatJsonToSeat(ctx context.Context, JSON string) (*DO.Seat, error) {
+	var seat DO.Seat
 	err := json.Unmarshal([]byte(JSON), &seat)
 	if err != nil {
 		return nil, err

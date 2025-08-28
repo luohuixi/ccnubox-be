@@ -7,26 +7,10 @@ import (
 	"time"
 
 	"github.com/asynccnu/ccnubox-be/be-library/internal/biz"
+	"github.com/asynccnu/ccnubox-be/be-library/internal/data/DO"
 	"github.com/go-kratos/kratos/v2/log"
 	"gorm.io/gorm"
 )
-
-type seat struct {
-	ID       uint   `gorm:"primaryKey;autoIncrement" json:"id"`
-	LabName  string `gorm:"size:100;not null" json:"lab_name"`
-	RoomID   string `gorm:"size:100;not null" json:"kind_id"`
-	RoomName string `gorm:"size:150;not null" json:"kind_name"`
-	DevID    string `gorm:"size:50;not null;uniqueIndex" json:"dev_id"`
-	DevName  string `gorm:"size:50;not null" json:"dev_name"`
-	Status   string `json:"status"`
-}
-
-type timeSlot struct {
-	ID    uint   `gorm:"primaryKey;autoIncrement" json:"id"`
-	DevID string `gorm:"index;not null" json:"seat_id"`
-	Start string `gorm:"not null" json:"start"`
-	End   string `gorm:"not null" json:"end"`
-}
 
 type SeatRepo struct {
 	data *Data
@@ -79,14 +63,14 @@ func (r *SeatRepo) GetByRoom(ctx context.Context, roomID string) (string, error)
 func (r *SeatRepo) FindFirstAvailableSeat(ctx context.Context, roomID, start, end string) (string, error) {
 	var seatDevID string
 	// 待优化
-	subQuery := r.data.db.Model(&timeSlot{}).
+	subQuery := r.data.db.Model(&DO.TimeSlot{}).
 		Select("1").
 		Where("time_slots.dev_id = seats.id").
 		Where("start < ?", end).
 		Where("end > ?", start)
 
 	err := r.data.db.WithContext(ctx).
-		Model(&seat{}).
+		Model(&DO.Seat{}).
 		Where("room_id = ?", roomID).
 		Where("NOT EXISTS (?)", subQuery).
 		Limit(1).
@@ -126,7 +110,7 @@ func (r *SeatRepo) Get(ctx context.Context, devID string) (*biz.Seat, error) {
 }
 
 func (r *SeatRepo) getSeatFromSQL(ctx context.Context, devID string) (*biz.Seat, error) {
-	var seatModel seat
+	var seatModel DO.Seat
 	if err := r.data.db.WithContext(ctx).
 		Where("dev_id = ?", devID).
 		First(&seatModel).Error; err != nil {
@@ -146,7 +130,7 @@ func (r *SeatRepo) getSeatFromSQL(ctx context.Context, devID string) (*biz.Seat,
 	return result, nil
 }
 
-func (r *SeatRepo) toBizSeat(s *seat, ts []timeSlot) *biz.Seat {
+func (r *SeatRepo) toBizSeat(s *DO.Seat, ts []*DO.TimeSlot) *biz.Seat {
 	bizTs := make([]*biz.TimeSlot, len(ts))
 	for _, t := range ts {
 		bizT := &biz.TimeSlot{
@@ -168,7 +152,7 @@ func (r *SeatRepo) toBizSeat(s *seat, ts []timeSlot) *biz.Seat {
 	return result
 }
 
-func (r *SeatRepo) SaveSeatsAndTimeSlots(ctx context.Context, seats []*seat, timeSlots []*timeSlot) error {
+func (r *SeatRepo) SaveSeatsAndTimeSlots(ctx context.Context, seats []*DO.Seat, timeSlots []*DO.TimeSlot) error {
 	// 使用事务保证 seat timeSlot 插入数据一致性
 	return r.data.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		// 批量插入 seat

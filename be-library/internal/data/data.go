@@ -7,6 +7,7 @@ import (
 
 	"github.com/asynccnu/ccnubox-be/be-library/internal/biz"
 	"github.com/asynccnu/ccnubox-be/be-library/internal/conf"
+	"github.com/asynccnu/ccnubox-be/be-library/internal/data/DO"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -17,7 +18,7 @@ import (
 )
 
 // ProviderSet is data providers.
-var ProviderSet = wire.NewSet(NewData, NewLibraryCrawler, NewSeatRepo, NewDB, NewRedisDB)
+var ProviderSet = wire.NewSet(NewData, NewLibraryCrawler, NewSeatRepo, NewRecordRepo, NewDB, NewRedisDB)
 
 // Data 做CURD时使用该框架
 type Data struct {
@@ -54,7 +55,7 @@ func NewDB(c *conf.Data) (*gorm.DB, error) {
 		return nil, fmt.Errorf("failed to connect database: %w", err)
 	}
 
-	if err := db.AutoMigrate(&seat{}, &timeSlot{}); err != nil {
+	if err := db.AutoMigrate(&DO.Seat{}, &DO.TimeSlot{}, &DO.FutureRecord{}, &DO.HistoryRecord{}); err != nil {
 		return nil, fmt.Errorf("auto migrate failed: %w", err)
 	}
 
