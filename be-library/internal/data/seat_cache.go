@@ -6,41 +6,51 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/asynccnu/ccnubox-be/be-library/internal/biz"
 	"github.com/asynccnu/ccnubox-be/be-library/internal/data/DO"
 )
 
+const (
+	cacheKeyRoomSeatsFmt = "lib:room:%s:seats"
+	cacheKeyRoomTsFmt    = "lib:room:%s:seats:ts"
+	// 硬过期，保证夜间不丢缓存
+	hardTTL = 24 * time.Hour
+	// 软过期，超时则视为需要刷新
+	freshness = 30 * time.Second
+)
+
 // func (c *Crawler) SeatJSONCrawler(ctx context.Context, cookie string, roomid string) (JSON string, roomID string, err error) {
-// 	baseURL := "http://kjyy.ccnu.edu.cn/ClientWeb/pro/ajax/device.aspx"
+//  baseURL := "http://kjyy.ccnu.edu.cn/ClientWeb/pro/ajax/device.aspx"
 
-// 	date := time.Now().Format("2006-01-02")
+//  date := time.Now().Format("2006-01-02")
 
-// 	params := url.Values{}
-// 	params.Set("classkind", "8")
-// 	params.Set("room_id", roomid)
-// 	params.Set("date", date)
-// 	params.Set("act", "get_rsv_sta")
+//  params := url.Values{}
+//  params.Set("classkind", "8")
+//  params.Set("room_id", roomid)
+//  params.Set("date", date)
+//  params.Set("act", "get_rsv_sta")
 
-// 	fullURL := baseURL + "?" + params.Encode()
+//  fullURL := baseURL + "?" + params.Encode()
 
-// 	req, err := http.NewRequestWithContext(ctx, "GET", fullURL, nil)
-// 	if err != nil {
-// 		log.Fatal("创建请求失败:", err)
-// 	}
+//  req, err := http.NewRequestWithContext(ctx, "GET", fullURL, nil)
+//  if err != nil {
+//     log.Fatal("创建请求失败:", err)
+//  }
 
-// 	req.Header.Set("cookie", cookie)
+//  req.Header.Set("cookie", cookie)
 
-// 	resp, err := c.client.Do(req)
-// 	if err != nil {
-// 		return "", "", errcode.ErrCrawler
-// 	}
-// 	defer resp.Body.Close()
+//  resp, err := c.client.Do(req)
+//  if err != nil {
+//     return "", "", errcode.ErrCrawler
+//  }
+//  defer resp.Body.Close()
 
-// 	body, err := io.ReadAll(resp.Body)
-// 	if err != nil {
-// 		return "", "", err
-// 	}
+//  body, err := io.ReadAll(resp.Body)
+//  if err != nil {
+//     return "", "", err
+//  }
 
-// 	return string(body), "", err
+//  return string(body), "", err
 // }
 
 func (c *SeatRepo) SeatToCache(ctx context.Context, JSON string, roomID string) error {
@@ -142,4 +152,92 @@ func (r *SeatRepo) clearRoomCache(ctx context.Context, roomID string) {
 	for _, key := range keys {
 		r.data.redis.Del(ctx, key)
 	}
+}
+
+// 封装：单座位缓存 get/set/del
+func (r *SeatRepo) getSeatCache(ctx context.Context, devID string) (*biz.Seat, bool, error) {
+	key := fmt.Sprintf("seat:%s", devID)
+	val, err := r.data.redis.Get(ctx, key).Bytes()
+	if err != nil || len(val) == 0 {
+		return nil, false, nil
+	}
+	var s biz.Seat
+	if err := json.Unmarshal(val, &s); err != nil {
+		return nil, false, err
+	}
+	return &s, true, nil
+}
+
+func (r *SeatRepo) setSeatCache(ctx context.Context, devID string, seat *biz.Seat, ttl time.Duration) error {
+	key := fmt.Sprintf("seat:%s", devID)
+	b, err := json.Marshal(seat)
+	if err != nil {
+		return err
+	}
+	return r.data.redis.Set(ctx, key, b, ttl).Err()
+}
+
+func (r *SeatRepo) delSeatCache(ctx context.Context, devID string) error {
+	key := fmt.Sprintf("seat:%s", devID)
+	return r.data.redis.Del(ctx, key).Err()
+}
+
+// 房间级缓存 key 生成（与 seat_repo.go 中的 fmt 保持一致）
+func (r *SeatRepo) cacheRoomSeatsKey(roomID string) string {
+	return fmt.Sprintf(cacheKeyRoomSeatsFmt, roomID)
+}
+func (r *SeatRepo) cacheRoomTsKey(roomID string) string {
+	return fmt.Sprintf(cacheKeyRoomTsFmt, roomID)
+}
+
+// 封装：房间级缓存 get/set/del（seats + ts）
+func (r *SeatRepo) getRoomSeatsCache(ctx context.Context, roomID string) ([]*biz.Seat, time.Time, bool, error) {
+	seatsKey := r.cacheRoomSeatsKey(roomID)
+	tsKey := r.cacheRoomTsKey(roomID)
+
+	// 读取 seats
+	raw, err := r.data.redis.Get(ctx, seatsKey).Bytes()
+	if err != nil || len(raw) == 0 {
+		return nil, time.Time{}, false, nil
+	}
+	var seats []*biz.Seat
+	if err := json.Unmarshal(raw, &seats); err != nil {
+		return nil, time.Time{}, false, err
+	}
+
+	// 读取 ts
+	tsStr, err := r.data.redis.Get(ctx, tsKey).Result()
+	if err != nil || tsStr == "" {
+		return seats, time.Time{}, true, nil
+	}
+	ts, err := time.Parse(time.RFC3339Nano, tsStr)
+	if err != nil {
+		return seats, time.Time{}, true, nil
+	}
+
+	return seats, ts, true, nil
+}
+
+func (r *SeatRepo) setRoomSeatsCache(ctx context.Context, roomID string, seats []*biz.Seat, ts time.Time) error {
+	seatsKey := r.cacheRoomSeatsKey(roomID)
+	tsKey := r.cacheRoomTsKey(roomID)
+
+	b, err := json.Marshal(seats)
+	if err != nil {
+		return err
+	}
+	if err := r.data.redis.Set(ctx, seatsKey, b, hardTTL).Err(); err != nil {
+		return err
+	}
+	if err := r.data.redis.Set(ctx, tsKey, ts.Format(time.RFC3339Nano), hardTTL).Err(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *SeatRepo) delRoomSeatsCache(ctx context.Context, roomID string) error {
+	seatsKey := r.cacheRoomSeatsKey(roomID)
+	tsKey := r.cacheRoomTsKey(roomID)
+	_, err := r.data.redis.Del(ctx, seatsKey, tsKey).Result()
+	return err
 }
