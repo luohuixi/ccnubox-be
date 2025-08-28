@@ -10,14 +10,17 @@ import (
 
 type LibraryService struct {
 	pb.UnimplementedLibraryServer
-	biz biz.LibraryBiz
-	log *log.Helper
+	biz       biz.LibraryBiz
+	comment   biz.CommentRepo
+	converter Converter
+	log       *log.Helper
 }
 
-func NewLibraryService(biz biz.LibraryBiz, logger log.Logger) *LibraryService {
+func NewLibraryService(biz biz.LibraryBiz, logger log.Logger, comment biz.CommentRepo) *LibraryService {
 	return &LibraryService{
-		biz: biz,
-		log: log.NewHelper(logger),
+		biz:     biz,
+		comment: comment,
+		log:     log.NewHelper(logger),
 	}
 }
 
@@ -57,6 +60,39 @@ func (ls *LibraryService) CancelReserve(ctx context.Context, req *pb.CancelReser
 	return ls.biz.CancelReserve(ctx, req.StuId, req.Id)
 }
 
-func (ls *LibraryService) ReserveSeatRamdomly(ctx context.Context, req *pb.ReserveSeatRamdonlyRequest) (*pb.ReserveSeatRamdonlyResponse, error) {
-	return ls.biz.ReserveSeatRamdomly(ctx, req.StuId, req.RoomId, req.Start, req.End)
+func (ls *LibraryService) ReserveSeatRandomly(ctx context.Context, req *pb.ReserveSeatRamdonlyRequest) (*pb.ReserveSeatRamdonlyResponse, error) {
+	return ls.biz.ReserveSeatRandomly(ctx, req.StuId, req.RoomId, req.Start, req.End)
+}
+
+func (ls *LibraryService) CreateComment(ctx context.Context, req *pb.CreateCommentReq) (*pb.Resp, error) {
+	msg, err := ls.comment.CreateComment(&biz.CreateCommentReq{
+		SeatID:   req.SeatId,
+		Content:  req.Content,
+		Rating:   int(req.Rating),
+		Username: req.Username,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.Resp{
+		Message: msg,
+	}, nil
+}
+
+func (ls *LibraryService) GetComments(ctx context.Context, req *pb.ID) (*pb.GetCommentResp, error) {
+	comments, err := ls.comment.GetCommentsBySeatID(int(req.Id))
+
+	result := ls.converter.ConvertMessages(comments)
+
+	return result, err
+}
+
+func (ls *LibraryService) DeleteComment(ctx context.Context, req *pb.ID) (*pb.Resp, error) {
+	msg, err := ls.comment.DeleteComment(int(req.Id))
+
+	return &pb.Resp{
+		Message: msg,
+	}, err
 }

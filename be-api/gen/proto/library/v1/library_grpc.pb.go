@@ -28,7 +28,10 @@ const (
 	Library_SearchUser_FullMethodName          = "/library.v1.Library/SearchUser"
 	Library_ReserveDiscussion_FullMethodName   = "/library.v1.Library/ReserveDiscussion"
 	Library_CancelReserve_FullMethodName       = "/library.v1.Library/CancelReserve"
-	Library_ReserveSeatRamdomly_FullMethodName = "/library.v1.Library/ReserveSeatRamdomly"
+	Library_ReserveSeatRandomly_FullMethodName = "/library.v1.Library/ReserveSeatRandomly"
+	Library_CreateComment_FullMethodName       = "/library.v1.Library/CreateComment"
+	Library_GetComments_FullMethodName         = "/library.v1.Library/GetComments"
+	Library_DeleteComment_FullMethodName       = "/library.v1.Library/DeleteComment"
 )
 
 // LibraryClient is the client API for Library service.
@@ -44,7 +47,10 @@ type LibraryClient interface {
 	SearchUser(ctx context.Context, in *SearchUserRequest, opts ...grpc.CallOption) (*SearchUserResponse, error)
 	ReserveDiscussion(ctx context.Context, in *ReserveDiscussionRequest, opts ...grpc.CallOption) (*ReserveDiscussionResponse, error)
 	CancelReserve(ctx context.Context, in *CancelReserveRequest, opts ...grpc.CallOption) (*CancelReserveResponse, error)
-	ReserveSeatRamdomly(ctx context.Context, in *ReserveSeatRamdonlyRequest, opts ...grpc.CallOption) (*ReserveSeatRamdonlyResponse, error)
+	ReserveSeatRandomly(ctx context.Context, in *ReserveSeatRamdonlyRequest, opts ...grpc.CallOption) (*ReserveSeatRamdonlyResponse, error)
+	CreateComment(ctx context.Context, in *CreateCommentReq, opts ...grpc.CallOption) (*Resp, error)
+	GetComments(ctx context.Context, in *ID, opts ...grpc.CallOption) (*GetCommentResp, error)
+	DeleteComment(ctx context.Context, in *ID, opts ...grpc.CallOption) (*Resp, error)
 }
 
 type libraryClient struct {
@@ -145,10 +151,40 @@ func (c *libraryClient) CancelReserve(ctx context.Context, in *CancelReserveRequ
 	return out, nil
 }
 
-func (c *libraryClient) ReserveSeatRamdomly(ctx context.Context, in *ReserveSeatRamdonlyRequest, opts ...grpc.CallOption) (*ReserveSeatRamdonlyResponse, error) {
+func (c *libraryClient) ReserveSeatRandomly(ctx context.Context, in *ReserveSeatRamdonlyRequest, opts ...grpc.CallOption) (*ReserveSeatRamdonlyResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ReserveSeatRamdonlyResponse)
-	err := c.cc.Invoke(ctx, Library_ReserveSeatRamdomly_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Library_ReserveSeatRandomly_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *libraryClient) CreateComment(ctx context.Context, in *CreateCommentReq, opts ...grpc.CallOption) (*Resp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Resp)
+	err := c.cc.Invoke(ctx, Library_CreateComment_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *libraryClient) GetComments(ctx context.Context, in *ID, opts ...grpc.CallOption) (*GetCommentResp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetCommentResp)
+	err := c.cc.Invoke(ctx, Library_GetComments_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *libraryClient) DeleteComment(ctx context.Context, in *ID, opts ...grpc.CallOption) (*Resp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Resp)
+	err := c.cc.Invoke(ctx, Library_DeleteComment_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -168,7 +204,10 @@ type LibraryServer interface {
 	SearchUser(context.Context, *SearchUserRequest) (*SearchUserResponse, error)
 	ReserveDiscussion(context.Context, *ReserveDiscussionRequest) (*ReserveDiscussionResponse, error)
 	CancelReserve(context.Context, *CancelReserveRequest) (*CancelReserveResponse, error)
-	ReserveSeatRamdomly(context.Context, *ReserveSeatRamdonlyRequest) (*ReserveSeatRamdonlyResponse, error)
+	ReserveSeatRandomly(context.Context, *ReserveSeatRamdonlyRequest) (*ReserveSeatRamdonlyResponse, error)
+	CreateComment(context.Context, *CreateCommentReq) (*Resp, error)
+	GetComments(context.Context, *ID) (*GetCommentResp, error)
+	DeleteComment(context.Context, *ID) (*Resp, error)
 	mustEmbedUnimplementedLibraryServer()
 }
 
@@ -206,8 +245,17 @@ func (UnimplementedLibraryServer) ReserveDiscussion(context.Context, *ReserveDis
 func (UnimplementedLibraryServer) CancelReserve(context.Context, *CancelReserveRequest) (*CancelReserveResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CancelReserve not implemented")
 }
-func (UnimplementedLibraryServer) ReserveSeatRamdomly(context.Context, *ReserveSeatRamdonlyRequest) (*ReserveSeatRamdonlyResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ReserveSeatRamdomly not implemented")
+func (UnimplementedLibraryServer) ReserveSeatRandomly(context.Context, *ReserveSeatRamdonlyRequest) (*ReserveSeatRamdonlyResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReserveSeatRandomly not implemented")
+}
+func (UnimplementedLibraryServer) CreateComment(context.Context, *CreateCommentReq) (*Resp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateComment not implemented")
+}
+func (UnimplementedLibraryServer) GetComments(context.Context, *ID) (*GetCommentResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetComments not implemented")
+}
+func (UnimplementedLibraryServer) DeleteComment(context.Context, *ID) (*Resp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteComment not implemented")
 }
 func (UnimplementedLibraryServer) mustEmbedUnimplementedLibraryServer() {}
 func (UnimplementedLibraryServer) testEmbeddedByValue()                 {}
@@ -392,20 +440,74 @@ func _Library_CancelReserve_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Library_ReserveSeatRamdomly_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Library_ReserveSeatRandomly_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ReserveSeatRamdonlyRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(LibraryServer).ReserveSeatRamdomly(ctx, in)
+		return srv.(LibraryServer).ReserveSeatRandomly(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Library_ReserveSeatRamdomly_FullMethodName,
+		FullMethod: Library_ReserveSeatRandomly_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(LibraryServer).ReserveSeatRamdomly(ctx, req.(*ReserveSeatRamdonlyRequest))
+		return srv.(LibraryServer).ReserveSeatRandomly(ctx, req.(*ReserveSeatRamdonlyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Library_CreateComment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateCommentReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LibraryServer).CreateComment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Library_CreateComment_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LibraryServer).CreateComment(ctx, req.(*CreateCommentReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Library_GetComments_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ID)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LibraryServer).GetComments(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Library_GetComments_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LibraryServer).GetComments(ctx, req.(*ID))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Library_DeleteComment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ID)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LibraryServer).DeleteComment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Library_DeleteComment_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LibraryServer).DeleteComment(ctx, req.(*ID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -454,8 +556,20 @@ var Library_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Library_CancelReserve_Handler,
 		},
 		{
-			MethodName: "ReserveSeatRamdomly",
-			Handler:    _Library_ReserveSeatRamdomly_Handler,
+			MethodName: "ReserveSeatRandomly",
+			Handler:    _Library_ReserveSeatRandomly_Handler,
+		},
+		{
+			MethodName: "CreateComment",
+			Handler:    _Library_CreateComment_Handler,
+		},
+		{
+			MethodName: "GetComments",
+			Handler:    _Library_GetComments_Handler,
+		},
+		{
+			MethodName: "DeleteComment",
+			Handler:    _Library_DeleteComment_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

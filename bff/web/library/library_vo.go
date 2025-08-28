@@ -147,3 +147,24 @@ type ReserveSeatRamdonlyRequest struct {
 type ReserveSeatRamdonlyResponse struct {
 	Message string `json:"message"`
 }
+
+// 评论相关
+type Comment struct {
+	ID        int    `json:"id"`         // 评论ID
+	SeatID    string `json:"seat_id"`    // 关联座位
+	Username  string `json:"user_id"`    // 发表评论的用户
+	Content   string `json:"content"`    // 评论内容
+	Rating    int    `json:"rating"`     // 评分（1-5）
+	CreatedAt string `json:"created_at"` // 创建时间
+}
+
+type CreateCommentReq struct {
+	SeatID   string `json:"seat_id"`
+	Content  string `json:"content"`
+	Rating   int    `json:"rating"`
+	Username string `json:"username"`
+}
+
+type IDreq struct {
+	ID int `json:"id" form:"id"`
+}

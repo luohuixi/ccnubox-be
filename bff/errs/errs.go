@@ -359,4 +359,16 @@ var (
 	CANCEL_DISCUSSION_ERROR = func(err error) error {
 		return errorx.New(http.StatusInternalServerError, INTERNAL_SERVER_ERROR_CODE, "取消研讨间失败!", "Library", err)
 	}
+
+	CREATE_COMMENT_ERROR = func(err error) error {
+		return errorx.New(http.StatusInternalServerError, INTERNAL_SERVER_ERROR_CODE, "创建评论失败!", "Library", err)
+	}
+
+	GET_COMMENT_ERROR = func(err error) error {
+		return errorx.New(http.StatusInternalServerError, INTERNAL_SERVER_ERROR_CODE, "获取评论失败!", "Library", err)
+	}
+
+	DELETE_COMMENT_ERROR = func(err error) error {
+		return errorx.New(http.StatusInternalServerError, INTERNAL_SERVER_ERROR_CODE, "删除评论失败!", "Library", err)
+	}
 )

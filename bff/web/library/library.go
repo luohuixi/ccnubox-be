@@ -32,6 +32,9 @@ func (h *LibraryHandler) RegisterRoutes(s *gin.RouterGroup, authMiddleware gin.H
 	sg.POST("/search_user", authMiddleware, ginx.WrapClaimsAndReq(h.SearchUser))
 	sg.POST("/reserve_discussion", authMiddleware, ginx.WrapClaimsAndReq(h.ReserveDiscussion))
 	sg.POST("/cancel_reserve", authMiddleware, ginx.WrapClaimsAndReq(h.CancelReserve))
+	sg.POST("/create_comment", authMiddleware, ginx.WrapClaimsAndReq(h.CreateComment))
+	sg.GET("/get_comments", authMiddleware, ginx.WrapClaimsAndReq(h.GetComments))
+	sg.GET("/delete_comment", authMiddleware, ginx.WrapClaimsAndReq(h.DeleteComment))
 }
 
 // GetSeatInfos 获取图书馆座位信息
@@ -395,5 +398,46 @@ func (h *LibraryHandler) CancelReserve(ctx *gin.Context, req CancelReserveReques
 
 	return web.Response{
 		Msg: "Success",
+	}, nil
+}
+
+func (h *LibraryHandler) CreateComment(ctx *gin.Context, req CreateCommentReq, uc ijwt.UserClaims) (web.Response, error) {
+	// 不知道用户名到底要不要实现，这里直接用学号代替了先
+	msg, err := h.LibraryClient.CreateComment(ctx, &libraryv1.CreateCommentReq{
+		SeatId:   req.SeatID,
+		Content:  req.Content,
+		Rating:   int64(req.Rating),
+		Username: uc.StudentId,
+	})
+	if err != nil {
+		return web.Response{}, errs.CREATE_COMMENT_ERROR(err)
+	}
+
+	return web.Response{
+		Msg: msg.Message,
+	}, nil
+}
+
+func (h *LibraryHandler) GetComments(ctx *gin.Context, req IDreq, uc ijwt.UserClaims) (web.Response, error) {
+
+	comments, err := h.LibraryClient.GetComments(ctx, &libraryv1.ID{Id: int64(req.ID)})
+	if err != nil {
+		return web.Response{}, errs.GET_COMMENT_ERROR(err)
+	}
+
+	return web.Response{
+		Msg:  "Success",
+		Data: comments.Comment,
+	}, nil
+}
+
+func (h *LibraryHandler) DeleteComment(ctx *gin.Context, req IDreq, uc ijwt.UserClaims) (web.Response, error) {
+	msg, err := h.LibraryClient.DeleteComment(ctx, &libraryv1.ID{Id: int64(req.ID)})
+	if err != nil {
+		return web.Response{}, errs.DELETE_COMMENT_ERROR(err)
+	}
+
+	return web.Response{
+		Msg: msg.Message,
 	}, nil
 }
