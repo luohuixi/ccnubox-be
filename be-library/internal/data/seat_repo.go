@@ -8,7 +8,6 @@ import (
 
 	"github.com/asynccnu/ccnubox-be/be-library/internal/biz"
 	"github.com/go-kratos/kratos/v2/log"
-	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 )
 
@@ -30,24 +29,20 @@ type timeSlot struct {
 }
 
 type SeatRepo struct {
-	data    *Data
-	crawler *Crawler
-	rdb     *redis.Client
-	log     *log.Helper
+	data *Data
+	log  *log.Helper
 }
 
-func NewSeatRepo(data *Data, logger log.Logger, rdb *redis.Client, crawler *Crawler) biz.SeatRepo {
+func NewSeatRepo(data *Data, logger log.Logger) biz.SeatRepo {
 	return &SeatRepo{
-		log:     log.NewHelper(logger),
-		data:    data,
-		rdb:     rdb,
-		crawler: crawler,
+		log:  log.NewHelper(logger),
+		data: data,
 	}
 }
 
 // 弄个管理员账号来进行持续爬虫
 func (r *SeatRepo) SaveRoomSeatsInRedis(ctx context.Context, stuID string) error {
-	allSeats, err := r.crawler.GetSeatInfos(ctx, stuID)
+	allSeats, err := r.data.crawler.GetSeatInfos(ctx, stuID)
 	if err != nil {
 		return err
 	}
@@ -70,7 +65,7 @@ func (r *SeatRepo) SaveRoomSeatsInRedis(ctx context.Context, stuID string) error
 
 		// 存入 Redis
 		// RoomID : {N1111: json1 N2222: json2}
-		err := r.rdb.HSet(ctx, key, seats).Err()
+		err := r.data.redis.HSet(ctx, key, seats).Err()
 		if err != nil {
 			r.log.Errorf("HSet room:%s error: %v", roomId, err)
 			return err
@@ -84,7 +79,7 @@ func (r *SeatRepo) SaveRoomSeatsInRedis(ctx context.Context, stuID string) error
 func (r *SeatRepo) getRoomSeats(ctx context.Context, roomID int) ([]*biz.Seat, error) {
 	roomKey := fmt.Sprintf("room:%d", roomID)
 
-	data, err := r.rdb.HGetAll(ctx, roomKey).Result()
+	data, err := r.data.redis.HGetAll(ctx, roomKey).Result()
 	if err != nil {
 		r.log.Errorf("get seatinfo from redis error (room_id := %s)", roomKey)
 		return nil, err
