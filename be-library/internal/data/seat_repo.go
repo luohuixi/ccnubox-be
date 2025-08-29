@@ -30,15 +30,75 @@ type timeSlot struct {
 }
 
 type SeatRepo struct {
-	data *Data
-	log  *log.Helper
+	data    *Data
+	crawler *Crawler
+	rdb     *redis.Client
+	log     *log.Helper
 }
 
-func NewSeatRepo(data *Data, logger log.Logger, rdb *redis.Client) biz.SeatRepo {
+func NewSeatRepo(data *Data, logger log.Logger, rdb *redis.Client, crawler *Crawler) biz.SeatRepo {
 	return &SeatRepo{
-		log:  log.NewHelper(logger),
-		data: data,
+		log:     log.NewHelper(logger),
+		data:    data,
+		rdb:     rdb,
+		crawler: crawler,
 	}
+}
+
+// 弄个管理员账号来进行持续爬虫
+func (r *SeatRepo) SaveRoomSeatsInRedis(ctx context.Context, stuID string) error {
+	allSeats, err := r.crawler.GetSeatInfos(ctx, stuID)
+	if err != nil {
+		return err
+	}
+
+	// 按房间存储 房间里的所有座位数据
+	for roomId, seats := range allSeats {
+		key := fmt.Sprintf("room:%s", roomId)
+
+		// seatID : seatJson
+		hash := make(map[string]string)
+		for _, seat := range seats {
+			seatID := seat.DevID
+			seatJson, err := json.Marshal(seat)
+			if err != nil {
+				r.log.Errorf("marshal seat error := %v", err)
+				return err
+			}
+			hash[seatID] = string(seatJson)
+		}
+
+		// 存入 Redis
+		// RoomID : {N1111: json1 N2222: json2}
+		err := r.rdb.HSet(ctx, key, seats).Err()
+		if err != nil {
+			r.log.Errorf("HSet room:%s error: %v", roomId, err)
+			return err
+		}
+	}
+
+	r.log.Infof("All seats saved in Redis successfully")
+	return nil
+}
+
+func (r *SeatRepo) getRoomSeats(ctx context.Context, roomID int) ([]*biz.Seat, error) {
+	roomKey := fmt.Sprintf("room:%d", roomID)
+
+	data, err := r.rdb.HGetAll(ctx, roomKey).Result()
+	if err != nil {
+		r.log.Errorf("get seatinfo from redis error (room_id := %s)", roomKey)
+		return nil, err
+	}
+
+	seats := []*biz.Seat{}
+	for _, v := range data {
+		var s biz.Seat
+		err := json.Unmarshal([]byte(v), &s)
+		if err == nil {
+			seats = append(seats, &s)
+		}
+	}
+	return seats, nil
 }
 
 // 将座位信息分块存入redis里
