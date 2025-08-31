@@ -29,20 +29,23 @@ type timeSlot struct {
 }
 
 type SeatRepo struct {
-	data *Data
-	log  *log.Helper
+	data    *Data
+	crawler biz.LibraryCrawler
+	log     *log.Helper
 }
 
-func NewSeatRepo(data *Data, logger log.Logger) biz.SeatRepo {
+func NewSeatRepo(data *Data, logger log.Logger, crawler biz.LibraryCrawler) biz.SeatRepo {
 	return &SeatRepo{
-		log:  log.NewHelper(logger),
-		data: data,
+		log:     log.NewHelper(logger),
+		data:    data,
+		crawler: crawler,
 	}
 }
 
 // 弄个管理员账号来进行持续爬虫
 func (r *SeatRepo) SaveRoomSeatsInRedis(ctx context.Context, stuID string) error {
-	allSeats, err := r.data.crawler.GetSeatInfos(ctx, stuID)
+	// 要不要写 ttl?
+	allSeats, err := r.crawler.GetSeatInfos(ctx, stuID)
 	if err != nil {
 		return err
 	}
@@ -65,7 +68,7 @@ func (r *SeatRepo) SaveRoomSeatsInRedis(ctx context.Context, stuID string) error
 
 		// 存入 Redis
 		// RoomID : {N1111: json1 N2222: json2}
-		err := r.data.redis.HSet(ctx, key, seats).Err()
+		err := r.data.redis.HSet(ctx, key, hash).Err()
 		if err != nil {
 			r.log.Errorf("HSet room:%s error: %v", roomId, err)
 			return err
@@ -76,8 +79,8 @@ func (r *SeatRepo) SaveRoomSeatsInRedis(ctx context.Context, stuID string) error
 	return nil
 }
 
-func (r *SeatRepo) getRoomSeats(ctx context.Context, roomID int) ([]*biz.Seat, error) {
-	roomKey := fmt.Sprintf("room:%d", roomID)
+func (r *SeatRepo) GetRoomSeats(ctx context.Context, roomID string) ([]*biz.Seat, error) {
+	roomKey := fmt.Sprintf("room:%s", roomID)
 
 	data, err := r.data.redis.HGetAll(ctx, roomKey).Result()
 	if err != nil {
