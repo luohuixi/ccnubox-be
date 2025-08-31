@@ -2,6 +2,7 @@ package client
 
 import (
 	"time"
+
 	"github.com/google/wire"
 )
 
@@ -11,7 +12,7 @@ func NewCookiePoolProvider() *CookiePool {
 }
 
 var ProviderSet = wire.NewSet(
-	NewClient, 
+	NewClient,
 	NewCCNUServiceProxy,
 	NewCookiePoolProvider, // 新增CookiePool provider
 )

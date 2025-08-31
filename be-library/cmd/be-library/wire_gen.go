@@ -39,12 +39,12 @@ func wireApp(confServer *conf.Server, confData *conf.Data, confRegistry *conf.Re
 	if err != nil {
 		return nil, nil, err
 	}
-	dataData, err := data.NewData(confData, logger, db, libraryCrawler)
+	redisClient := data.NewRedisDB(confData, logger)
+	dataData, err := data.NewData(confData, logger, db, libraryCrawler, redisClient)
 	if err != nil {
 		return nil, nil, err
 	}
-	redisClient := data.NewRedisDB(confData, logger)
-	seatRepo := data.NewSeatRepo(dataData, logger, redisClient)
+	seatRepo := data.NewSeatRepo(dataData, logger)
 	libraryBiz := biz.NewLibraryBiz(libraryCrawler, logger, seatRepo)
 	libraryService := service.NewLibraryService(libraryBiz, logger)
 	grpcServer := server.NewGRPCServer(confServer, libraryService, logger)

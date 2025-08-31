@@ -1,18 +1,21 @@
-package biz
+package service
 
-import pb "github.com/asynccnu/ccnubox-be/be-api/gen/proto/library/v1"
+import (
+	pb "github.com/asynccnu/ccnubox-be/be-api/gen/proto/library/v1"
+	"github.com/asynccnu/ccnubox-be/be-library/internal/biz"
+)
 
-type Converter struct{}
+type Assembler struct{}
 
-func NewConverter() *Converter {
-	return &Converter{}
+func NewAssembler() *Assembler {
+	return &Assembler{}
 }
 
-func (c *Converter) ConvertTimeSlots(src []*TimeSlot) []*pb.TimeSlot {
+func (a *Assembler) ConvertTimeSlots(src []*biz.TimeSlot) []*pb.TimeSlot {
 	if len(src) == 0 {
 		return nil
 	}
-	result := make([]*pb.TimeSlot, 0, len(src)) // 预分配容量
+	result := make([]*pb.TimeSlot, 0, len(src))
 	for _, ts := range src {
 		result = append(result, &pb.TimeSlot{
 			Start:  ts.Start,
@@ -25,7 +28,7 @@ func (c *Converter) ConvertTimeSlots(src []*TimeSlot) []*pb.TimeSlot {
 	return result
 }
 
-func (c *Converter) ConvertDiscussionTS(src []*DiscussionTS) []*pb.DiscussionTS {
+func (a *Assembler) ConvertDiscussionTS(src []*biz.DiscussionTS) []*pb.DiscussionTS {
 	if len(src) == 0 {
 		return nil
 	}
@@ -43,7 +46,7 @@ func (c *Converter) ConvertDiscussionTS(src []*DiscussionTS) []*pb.DiscussionTS 
 	return result
 }
 
-func (c *Converter) ConvertRecords(src []*FutureRecords) []*pb.Record {
+func (a *Assembler) ConvertRecords(src []*biz.FutureRecords) []*pb.Record {
 	if len(src) == 0 {
 		return nil
 	}
@@ -65,7 +68,7 @@ func (c *Converter) ConvertRecords(src []*FutureRecords) []*pb.Record {
 	return result
 }
 
-func (c *Converter) ConvertHistory(src []*HistoryRecords) []*pb.History {
+func (a *Assembler) ConvertHistory(src []*biz.HistoryRecords) []*pb.History {
 	if len(src) == 0 {
 		return nil
 	}
@@ -82,7 +85,7 @@ func (c *Converter) ConvertHistory(src []*HistoryRecords) []*pb.History {
 	return result
 }
 
-func (c *Converter) ConvertCreditRecords(src []*CreditRecord) []*pb.CreditRecord {
+func (a *Assembler) ConvertCreditRecords(src []*biz.CreditRecord) []*pb.CreditRecord {
 	if len(src) == 0 {
 		return nil
 	}
@@ -97,8 +100,7 @@ func (c *Converter) ConvertCreditRecords(src []*CreditRecord) []*pb.CreditRecord
 	return result
 }
 
-// 复合转换函数
-func (c *Converter) ConvertSeats(src []*Seat) []*pb.Seat {
+func (a *Assembler) ConvertSeats(src []*biz.Seat) []*pb.Seat {
 	if len(src) == 0 {
 		return nil
 	}
@@ -109,13 +111,13 @@ func (c *Converter) ConvertSeats(src []*Seat) []*pb.Seat {
 			KindName: seat.RoomName,
 			DevId:    seat.DevID,
 			DevName:  seat.DevName,
-			Ts:       c.ConvertTimeSlots(seat.Ts),
+			Ts:       a.ConvertTimeSlots(seat.Ts),
 		})
 	}
 	return result
 }
 
-func (c *Converter) ConvertDiscussions(src []*Discussion) []*pb.Discussion {
+func (a *Assembler) ConvertDiscussions(src []*biz.Discussion) []*pb.Discussion {
 	if len(src) == 0 {
 		return nil
 	}
@@ -128,14 +130,13 @@ func (c *Converter) ConvertDiscussions(src []*Discussion) []*pb.Discussion {
 			KindName: d.KindName,
 			DevId:    d.DevID,
 			DevName:  d.DevName,
-			TS:       c.ConvertDiscussionTS(d.TS),
+			TS:       a.ConvertDiscussionTS(d.TS),
 		})
 	}
 	return result
 }
 
-// 完整响应转换
-func (c *Converter) ConvertGetSeatResponse(data map[string][]*Seat) *pb.GetSeatResponse {
+func (a *Assembler) ConvertGetSeatResponse(data map[string][]*biz.Seat) *pb.GetSeatResponse {
 	if len(data) == 0 {
 		return &pb.GetSeatResponse{}
 	}
@@ -145,7 +146,7 @@ func (c *Converter) ConvertGetSeatResponse(data map[string][]*Seat) *pb.GetSeatR
 	for roomID, seats := range data {
 		result.RoomSeats = append(result.RoomSeats, &pb.RoomSeat{
 			RoomId: roomID,
-			Seats:  c.ConvertSeats(seats),
+			Seats:  a.ConvertSeats(seats),
 		})
 	}
 	return result
