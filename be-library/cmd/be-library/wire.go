@@ -9,6 +9,7 @@ import (
 	"github.com/asynccnu/ccnubox-be/be-library/internal/biz"
 	"github.com/asynccnu/ccnubox-be/be-library/internal/client"
 	"github.com/asynccnu/ccnubox-be/be-library/internal/conf"
+	"github.com/asynccnu/ccnubox-be/be-library/internal/crawler"
 	"github.com/asynccnu/ccnubox-be/be-library/internal/data"
 	"github.com/asynccnu/ccnubox-be/be-library/internal/registry"
 	"github.com/asynccnu/ccnubox-be/be-library/internal/server"
@@ -27,6 +28,7 @@ func wireApp(*conf.Server, *conf.Data, *conf.Registry, log.Logger) (*kratos.App,
 		service.ProviderSet,
 		client.ProviderSet,
 		registry.ProviderSet,
+		crawler.ProviderSet,
 		newApp,
 	))
 }

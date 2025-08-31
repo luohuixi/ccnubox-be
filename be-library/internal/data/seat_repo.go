@@ -44,7 +44,8 @@ func NewSeatRepo(data *Data, logger log.Logger, crawler biz.LibraryCrawler) biz.
 
 // 弄个管理员账号来进行持续爬虫
 func (r *SeatRepo) SaveRoomSeatsInRedis(ctx context.Context, stuID string) error {
-	// 要不要写 ttl?
+	ttl := 1 * time.Minute
+
 	allSeats, err := r.crawler.GetSeatInfos(ctx, stuID)
 	if err != nil {
 		return err
@@ -71,6 +72,13 @@ func (r *SeatRepo) SaveRoomSeatsInRedis(ctx context.Context, stuID string) error
 		err := r.data.redis.HSet(ctx, key, hash).Err()
 		if err != nil {
 			r.log.Errorf("HSet room:%s error: %v", roomId, err)
+			return err
+		}
+
+		// 设置 TTL , 过时自动删除捏
+		err = r.data.redis.Expire(ctx, key, ttl).Err()
+		if err != nil {
+			r.log.Errorf("Expire room:%s error: %v", roomId, err)
 			return err
 		}
 	}

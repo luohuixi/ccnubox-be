@@ -7,16 +7,17 @@ server:
 
 data:
   database:
-    source: "root:password@tcp(localhost:3306)/library?charset=utf8mb4&parseTime=True&loc=Local"
+    source: "root:password@tcp(localhost:3307)/library?charset=utf8mb4&parseTime=True&loc=Local"
   redis:
     network: "tcp"
     addr: "127.0.0.1:6379"
     read_timeout: "3s"
     write_timeout: "3s"
+    password: "youpassword"
 
 registry:
   etcd:
-    addr: "localhost:2379"
+    addr: "127.0.0.1:2379"
     username: ""
     password: ""
   usersvc: "discovery:///user"
@@ -24,7 +25,7 @@ registry:
 zaplog:
   log_level: "info"
   log_format: "json"
-  log_path: "/logs"
+  log_path: "./logs"
   log_file_name: "app.log"
   log_file_max_size: 100
   log_file_max_backups: 30

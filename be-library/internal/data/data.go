@@ -17,22 +17,21 @@ import (
 )
 
 // ProviderSet is data providers.
-var ProviderSet = wire.NewSet(NewData, NewLibraryCrawler, NewSeatRepo, NewDB, NewRedisDB, NewCommentRepo)
+var ProviderSet = wire.NewSet(NewData, NewSeatRepo, NewDB, NewRedisDB, NewCommentRepo)
 
 // Data 做CURD时使用该框架
 type Data struct {
-	db      *gorm.DB
-	log     *log.Helper
-	crawler biz.LibraryCrawler
-	redis   *redis.Client
+	db    *gorm.DB
+	log   *log.Helper
+	redis *redis.Client
 }
 
 // NewData .
-func NewData(c *conf.Data, logger log.Logger, db *gorm.DB, crawler biz.LibraryCrawler) (*Data, error) {
+func NewData(c *conf.Data, logger log.Logger, db *gorm.DB, redis *redis.Client) (*Data, error) {
 	data := &Data{
-		log:     log.NewHelper(logger),
-		db:      db,
-		crawler: crawler,
+		log:   log.NewHelper(logger),
+		db:    db,
+		redis: redis,
 	}
 
 	return data, nil

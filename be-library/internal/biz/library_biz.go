@@ -122,7 +122,7 @@ func (b *libraryBiz) CancelReserve(ctx context.Context, stuID, id string) (*pb.C
 	return &pb.CancelReserveResponse{Message: message}, nil
 }
 
-func (b *libraryBiz) ReserveSeatRamdomly(ctx context.Context, stuID, roomID, start, end string) (*pb.ReserveSeatRamdonlyResponse, error) {
+func (b *libraryBiz) ReserveSeatRandomly(ctx context.Context, stuID, roomID, start, end string) (*pb.ReserveSeatRamdonlyResponse, error) {
 	seatDevID, err := b.SeatRepo.FindFirstAvailableSeat(ctx, roomID, start, end)
 	if err != nil {
 		return nil, err

@@ -84,9 +84,9 @@ func TestSaveRoomSeatsInRediss(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-}	
+}
 
-func TestFindFirstAvailableSeat_WithConfigDB(t *testing.T) {
+func TestGetSeat(t *testing.T) {
 	ctx := context.Background()
 	roomID := "101699179"
 
@@ -95,5 +95,7 @@ func TestFindFirstAvailableSeat_WithConfigDB(t *testing.T) {
 		panic(err)
 	}
 
-	fmt.Println(seats)
+	for _, seat := range seats {
+		fmt.Println(seat)
+	}
 }

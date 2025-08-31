@@ -1,42 +1,28 @@
 package biz
 
-// import (
-// 	"time"
+import "github.com/go-kratos/kratos/v2/log"
 
-// )
+type FavouriteUsecase struct {
+	FavoriteRepo FavoriteRepo
+	SeatRepo     SeatRepo
 
-// type FavouriteUsecase struct {
-// 	FavoriteModel data.FavoriteModel
-// 	SeatTimeSlotsModel data.SeatTimeSlotsModel
-// 	SeatsModel data.SeatsModel
+	log *log.Helper
+}
 
-// 	log      *log.Helper
-// }
+func NewFavouriteUsecase(favouriteRepo FavoriteRepo, seatRepo SeatRepo, logger log.Logger) *FavouriteUsecase {
+	uc := &FavouriteUsecase{
+		FavoriteRepo: favouriteRepo,
+		SeatRepo:     seatRepo,
 
-// func NewFavouriteUsecase(, ccnu CCNUServiceProxy, logger log.Logger, cf *conf.Server,
-// 	que DelayQueue) LibraryUsecase {
-// 	waitTime := 1200 * time.Millisecond
+		log: log.NewHelper(logger),
+	}
 
-// 	if cf.Grpc.Timeout.Seconds > 0 {
-// 		waitTime = cf.Grpc.Timeout.AsDuration()
-// 	}
+	return uc
+}
 
-// 	uc := &libraryUsecase{
-// 		crawler:  crawler,
-// 		ccnu:     ccnu,
-// 		log:      log.NewHelper(logger),
-// 		waitTime: waitTime,
-// 		Que:      que,
-// 	}
+func (u *FavouriteUsecase) AddFavourite() () {}
+func (u *FavouriteUsecase) GetFavourite() () {}
 
-// 	go func() {
-// 		if err := uc.Que.Consume("be-library-refresh-retry", uc.handleRetryMsg); err != nil {
-// 			uc.log.Errorf("Error consuming retry message: %v", err)
-// 		}
-// 	}()
-
-// 	return uc
-// }
 
 // func (u *libraryUsecase) SeatToFavourite(seat *Seat, studentID string) *FavoriteSeat {
 // 	return &FavoriteSeat{

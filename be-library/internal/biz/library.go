@@ -16,7 +16,7 @@ type LibraryBiz interface {
 	SearchUser(ctx context.Context, stuID, studentID string) (*pb.SearchUserResponse, error)
 	ReserveDiscussion(ctx context.Context, stuID, devID, labID, kindID, title, start, end string, list []string) (*pb.ReserveDiscussionResponse, error)
 	CancelReserve(ctx context.Context, stuID, id string) (*pb.CancelReserveResponse, error)
-	ReserveSeatRamdomly(ctx context.Context, stuID, roomID, start, end string) (*pb.ReserveSeatRamdonlyResponse, error)
+	ReserveSeatRandomly(ctx context.Context, stuID, roomID, start, end string) (*pb.ReserveSeatRamdonlyResponse, error)
 }
 
 type LibraryCrawler interface {

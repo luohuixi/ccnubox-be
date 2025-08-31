@@ -27,8 +27,8 @@ type Seat struct {
 	LabName  string // 南湖分馆一楼
 	RoomID   string // room_id
 	RoomName string // 南湖分馆一楼开敞座位区
-	DevID    string // 101699849
-	DevName  string // N1245
+	DevID    string // 101699849 或称 seatid
+	DevName  string // N1245 或称 seatname
 	Ts       []*TimeSlot
 }
 
