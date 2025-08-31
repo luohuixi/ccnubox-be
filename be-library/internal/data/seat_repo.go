@@ -44,7 +44,7 @@ func NewSeatRepo(data *Data, logger log.Logger, crawler biz.LibraryCrawler) biz.
 
 // 弄个管理员账号来进行持续爬虫
 func (r *SeatRepo) SaveRoomSeatsInRedis(ctx context.Context, stuID string) error {
-	ttl := 1 * time.Minute
+	ttl := r.data.cfg.Redis.Ttl
 
 	allSeats, err := r.crawler.GetSeatInfos(ctx, stuID)
 	if err != nil {
@@ -87,7 +87,7 @@ func (r *SeatRepo) SaveRoomSeatsInRedis(ctx context.Context, stuID string) error
 	return nil
 }
 
-func (r *SeatRepo) GetRoomSeats(ctx context.Context, roomID string) ([]*biz.Seat, error) {
+func (r *SeatRepo) GetSeatsByRoom(ctx context.Context, roomID string) ([]*biz.Seat, error) {
 	roomKey := fmt.Sprintf("room:%s", roomID)
 
 	data, err := r.data.redis.HGetAll(ctx, roomKey).Result()
@@ -107,42 +107,7 @@ func (r *SeatRepo) GetRoomSeats(ctx context.Context, roomID string) ([]*biz.Seat
 	return seats, nil
 }
 
-// 将座位信息分块存入redis里
-// func (r *SeatRepo) SyncFromCrawlerInCache(ctx context.Context, roomID string, cookie string) error {
-// 	SeatJson, roomID, err := r.data.crawler.SeatJSONCrawler(ctx, cookie, roomID)
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	err = r.SeatToCache(ctx, SeatJson, roomID)
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	return nil
-// }
-
-func (r *SeatRepo) SyncSeatsIntoSQL(ctx context.Context, roomID string, stuID string, seats []*biz.Seat) error {
-	dataSeats, dataTimeslots := LotConvert2DataSeat(seats)
-	err := r.SaveSeatsAndTimeSlots(ctx, dataSeats, dataTimeslots)
-	if err != nil {
-		r.log.Errorf("save seats and timeslots failed(room_id: %v) stu_id: %v", roomID, stuID)
-		return err
-	}
-
-	r.log.Infof("save seats and timeslots successed(room_id: %v) stu_id: %v", roomID, stuID)
-	return nil
-}
-
-func (r *SeatRepo) GetByRoom(ctx context.Context, roomID string) (string, error) {
-	json, err := r.getSeatJSONFromCacheByDevID(ctx, roomID, false)
-	if err != nil {
-		return "", err
-	}
-	return json, nil
-}
-
-// 待优化
+// 待优化x
 func (r *SeatRepo) FindFirstAvailableSeat(ctx context.Context, roomID, start, end string) (string, error) {
 	var seatDevID string
 	// 待优化

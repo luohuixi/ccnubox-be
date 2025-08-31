@@ -14,6 +14,7 @@ data:
     read_timeout: "3s"
     write_timeout: "3s"
     password: "youpassword"
+    ttl: "60s"
 
 registry:
   etcd:

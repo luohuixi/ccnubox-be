@@ -525,6 +525,7 @@ type Data_Redis struct {
 	ReadTimeout   *durationpb.Duration   `protobuf:"bytes,3,opt,name=read_timeout,json=readTimeout,proto3" json:"read_timeout,omitempty"`
 	WriteTimeout  *durationpb.Duration   `protobuf:"bytes,4,opt,name=write_timeout,json=writeTimeout,proto3" json:"write_timeout,omitempty"`
 	Password      string                 `protobuf:"bytes,5,opt,name=password,proto3" json:"password,omitempty"`
+	Ttl           *durationpb.Duration   `protobuf:"bytes,6,opt,name=ttl,proto3" json:"ttl,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -594,6 +595,13 @@ func (x *Data_Redis) GetPassword() string {
 	return ""
 }
 
+func (x *Data_Redis) GetTtl() *durationpb.Duration {
+	if x != nil {
+		return x.Ttl
+	}
+	return nil
+}
+
 var File_conf_conf_proto protoreflect.FileDescriptor
 
 const file_conf_conf_proto_rawDesc = "" +
@@ -611,18 +619,19 @@ const file_conf_conf_proto_rawDesc = "" +
 	"\x04GRPC\x12\x18\n" +
 	"\anetwork\x18\x01 \x01(\tR\anetwork\x12\x12\n" +
 	"\x04addr\x18\x02 \x01(\tR\x04addr\x123\n" +
-	"\atimeout\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\atimeout\"\xe1\x02\n" +
+	"\atimeout\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\atimeout\"\x8e\x03\n" +
 	"\x04Data\x125\n" +
 	"\bdatabase\x18\x01 \x01(\v2\x19.kratos.api.Data.DatabaseR\bdatabase\x12,\n" +
 	"\x05redis\x18\x02 \x01(\v2\x16.kratos.api.Data.RedisR\x05redis\x1a\"\n" +
 	"\bDatabase\x12\x16\n" +
-	"\x06source\x18\x02 \x01(\tR\x06source\x1a\xcf\x01\n" +
+	"\x06source\x18\x02 \x01(\tR\x06source\x1a\xfc\x01\n" +
 	"\x05Redis\x12\x18\n" +
 	"\anetwork\x18\x01 \x01(\tR\anetwork\x12\x12\n" +
 	"\x04addr\x18\x02 \x01(\tR\x04addr\x12<\n" +
 	"\fread_timeout\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\vreadTimeout\x12>\n" +
 	"\rwrite_timeout\x18\x04 \x01(\v2\x19.google.protobuf.DurationR\fwriteTimeout\x12\x1a\n" +
-	"\bpassword\x18\x05 \x01(\tR\bpassword\"\xc8\x02\n" +
+	"\bpassword\x18\x05 \x01(\tR\bpassword\x12+\n" +
+	"\x03ttl\x18\x06 \x01(\v2\x19.google.protobuf.DurationR\x03ttl\"\xc8\x02\n" +
 	"\rZapLogConfigs\x12\x1b\n" +
 	"\tlog_level\x18\x01 \x01(\tR\blogLevel\x12\x1d\n" +
 	"\n" +
@@ -680,11 +689,12 @@ var file_conf_conf_proto_depIdxs = []int32{
 	9,  // 8: kratos.api.Server.GRPC.timeout:type_name -> google.protobuf.Duration
 	9,  // 9: kratos.api.Data.Redis.read_timeout:type_name -> google.protobuf.Duration
 	9,  // 10: kratos.api.Data.Redis.write_timeout:type_name -> google.protobuf.Duration
-	11, // [11:11] is the sub-list for method output_type
-	11, // [11:11] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	9,  // 11: kratos.api.Data.Redis.ttl:type_name -> google.protobuf.Duration
+	12, // [12:12] is the sub-list for method output_type
+	12, // [12:12] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_conf_conf_proto_init() }

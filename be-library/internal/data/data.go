@@ -23,6 +23,7 @@ var ProviderSet = wire.NewSet(NewData, NewSeatRepo, NewDB, NewRedisDB, NewCommen
 type Data struct {
 	db    *gorm.DB
 	log   *log.Helper
+	cfg   *conf.Data
 	redis *redis.Client
 }
 
@@ -32,6 +33,7 @@ func NewData(c *conf.Data, logger log.Logger, db *gorm.DB, redis *redis.Client) 
 		log:   log.NewHelper(logger),
 		db:    db,
 		redis: redis,
+		cfg:   c,
 	}
 
 	return data, nil
