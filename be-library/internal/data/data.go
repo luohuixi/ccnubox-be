@@ -7,6 +7,7 @@ import (
 
 	"github.com/asynccnu/ccnubox-be/be-library/internal/biz"
 	"github.com/asynccnu/ccnubox-be/be-library/internal/conf"
+	"github.com/asynccnu/ccnubox-be/be-library/internal/data/DO"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -27,12 +28,12 @@ type Data struct {
 	redis *redis.Client
 }
 
-// NewData .
-func NewData(c *conf.Data, logger log.Logger, db *gorm.DB, redis *redis.Client) (*Data, error) {
+// NewData
+func NewData(c *conf.Data, logger log.Logger, db *gorm.DB, rdb *redis.Client) (*Data, error) {
 	data := &Data{
 		log:   log.NewHelper(logger),
 		db:    db,
-		redis: redis,
+		redis: rdb,
 		cfg:   c,
 	}
 
@@ -54,7 +55,7 @@ func NewDB(c *conf.Data) (*gorm.DB, error) {
 		return nil, fmt.Errorf("failed to connect database: %w", err)
 	}
 
-	if err := db.AutoMigrate(&seat{}, &timeSlot{}, &biz.Comment{}); err != nil {
+	if err := db.AutoMigrate(&DO.Seat{}, &DO.TimeSlot{}, &DO.FutureRecord{}, &DO.HistoryRecord{}, &biz.Comment{}); err != nil {
 		return nil, fmt.Errorf("auto migrate failed: %w", err)
 	}
 

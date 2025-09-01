@@ -11,7 +11,7 @@ import (
 
 // biz = domain + usecase
 // ProviderSet is biz providers.
-var ProviderSet = wire.NewSet(NewLibraryBiz, NewConverter, NewWaitTime, NewCommentUsecase)
+var ProviderSet = wire.NewSet(NewLibraryBiz, NewWaitTime, NewCommentUsecase)
 
 // NewWaitTime 提供等待时间配置
 func NewWaitTime(cf *conf.Server) time.Duration {

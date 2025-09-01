@@ -4,33 +4,20 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/asynccnu/ccnubox-be/be-library/internal/biz"
+	"github.com/asynccnu/ccnubox-be/be-library/internal/data/DO"
 	"github.com/go-kratos/kratos/v2/log"
+	"golang.org/x/sync/singleflight"
 	"gorm.io/gorm"
 )
 
-type seat struct {
-	ID       uint   `gorm:"primaryKey;autoIncrement" json:"id"`
-	LabName  string `gorm:"size:100;not null" json:"lab_name"`
-	RoomID   string `gorm:"size:100;not null" json:"kind_id"`
-	RoomName string `gorm:"size:150;not null" json:"kind_name"`
-	DevID    string `gorm:"size:50;not null;uniqueIndex" json:"dev_id"`
-	DevName  string `gorm:"size:50;not null" json:"dev_name"`
-	Status   string `json:"status"`
-}
-
-type timeSlot struct {
-	ID    uint   `gorm:"primaryKey;autoIncrement" json:"id"`
-	DevID string `gorm:"index;not null" json:"seat_id"`
-	Start string `gorm:"not null" json:"start"`
-	End   string `gorm:"not null" json:"end"`
-}
-
 type SeatRepo struct {
 	data    *Data
-	crawler biz.LibraryCrawler
 	log     *log.Helper
+	sf      singleflight.Group
+	crawler biz.LibraryCrawler
 }
 
 func NewSeatRepo(data *Data, logger log.Logger, crawler biz.LibraryCrawler) biz.SeatRepo {
@@ -110,14 +97,14 @@ func (r *SeatRepo) GetSeatsByRoom(ctx context.Context, roomID string) ([]*biz.Se
 func (r *SeatRepo) FindFirstAvailableSeat(ctx context.Context, roomID, start, end string) (string, error) {
 	var seatDevID string
 	// 待优化
-	subQuery := r.data.db.Model(&timeSlot{}).
+	subQuery := r.data.db.Model(&DO.TimeSlot{}).
 		Select("1").
 		Where("time_slots.dev_id = seats.id").
 		Where("start < ?", end).
 		Where("end > ?", start)
-	
+
 	err := r.data.db.WithContext(ctx).
-		Model(&seat{}).
+		Model(&DO.Seat{}).
 		Where("room_id = ?", roomID).
 		Where("NOT EXISTS (?)", subQuery).
 		Limit(1).
@@ -153,7 +140,7 @@ func (r *SeatRepo) FindFirstAvailableSeat(ctx context.Context, roomID, start, en
 // 	return result, nil
 // }
 
-func (r *SeatRepo) toBizSeat(s *seat, ts []timeSlot) *biz.Seat {
+func (r *SeatRepo) toBizSeat(s *DO.Seat, ts []*DO.TimeSlot) *biz.Seat {
 	bizTs := make([]*biz.TimeSlot, len(ts))
 	for _, t := range ts {
 		bizT := &biz.TimeSlot{
@@ -175,7 +162,7 @@ func (r *SeatRepo) toBizSeat(s *seat, ts []timeSlot) *biz.Seat {
 	return result
 }
 
-func (r *SeatRepo) SaveSeatsAndTimeSlots(ctx context.Context, seats []*seat, timeSlots []*timeSlot) error {
+func (r *SeatRepo) SaveSeatsAndTimeSlots(ctx context.Context, seats []*DO.Seat, timeSlots []*DO.TimeSlot) error {
 	// 使用事务保证 seat timeSlot 插入数据一致性
 	return r.data.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		// 批量插入 seat
@@ -194,4 +181,80 @@ func (r *SeatRepo) SaveSeatsAndTimeSlots(ctx context.Context, seats []*seat, tim
 
 		return nil
 	})
+}
+
+// GetSeatInfos 按楼层查缓存
+func (r *SeatRepo) GetSeatInfos(ctx context.Context, stuID string) (map[string][]*biz.Seat, error) {
+	now := time.Now()
+	result := make(map[string][]*biz.Seat, len(biz.RoomIDs))
+
+	// 是否有房间命中缓存
+	hitAny := false
+	// 是否需要后台刷新
+	needRefresh := false
+
+	for _, roomID := range biz.RoomIDs {
+		seats, ts, ok, err := r.getRoomSeatsCache(ctx, roomID)
+		if err != nil {
+			r.log.Warnf("get room seats cache(room_id:%s) err: %v", roomID, err)
+			needRefresh = true
+			continue
+		}
+		if !ok {
+			needRefresh = true
+			continue
+		}
+
+		// 命中缓存
+		result[roomID] = seats
+		hitAny = true
+
+		// 判断软过期
+		if ts.IsZero() || now.Sub(ts) > freshness {
+			needRefresh = true
+		}
+	}
+
+	if hitAny {
+		// 返回缓存同时在后台刷新
+		if needRefresh {
+			go func() {
+				bgCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+				defer cancel()
+				_, _, _ = r.sf.Do("lib:getSeatInfos:refresh", func() (interface{}, error) {
+					_, err := r.refreshAll(bgCtx, stuID)
+					return nil, err
+				})
+			}()
+		}
+		return result, nil
+	}
+
+	// 走到这里说明完全没有缓存,阻塞一次并拉取座位信息
+	val, err, _ := r.sf.Do("lib:getSeatInfos:refresh", func() (interface{}, error) {
+		ctx2, cancel := context.WithTimeout(ctx, 30*time.Second)
+		defer cancel()
+		return r.refreshAll(ctx2, stuID)
+	})
+	if err != nil {
+		return nil, err
+	}
+	return val.(map[string][]*biz.Seat), nil
+}
+
+// refreshAll 从爬虫获取所有房间最新座位信息并回填缓存与时间戳
+func (r *SeatRepo) refreshAll(ctx context.Context, stuID string) (map[string][]*biz.Seat, error) {
+	data, err := r.crawler.GetSeatInfos(ctx, stuID)
+	if err != nil {
+		return nil, err
+	}
+	now := time.Now()
+
+	for roomID, seats := range data {
+		// 回填缓存
+		if err := r.setRoomSeatsCache(ctx, roomID, seats, now); err != nil {
+			r.log.Warnf("set room seats cache(room_id:%s) err: %v", roomID, err)
+		}
+	}
+	return data, nil
 }
