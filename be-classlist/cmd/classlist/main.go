@@ -5,7 +5,6 @@ import (
 	"github.com/asynccnu/ccnubox-be/be-classlist/internal/classLog"
 	"github.com/asynccnu/ccnubox-be/be-classlist/internal/conf"
 	"github.com/asynccnu/ccnubox-be/be-classlist/internal/metrics"
-	"github.com/asynccnu/ccnubox-be/be-classlist/internal/pkg/tool"
 	"github.com/go-kratos/kratos/contrib/registry/etcd/v2"
 	"github.com/go-kratos/kratos/v2"
 	"github.com/prometheus/client_golang/prometheus"
@@ -79,10 +78,8 @@ func main() {
 	//gorm的日志文件
 	//在main函数中声明,程序结束执行Close
 	//防止只有连接数据库的时候，才会将sql语句写入
-	logfile, err := tool.OpenFile(bc.Data.Database.LogPath, bc.Data.Database.LogFileName)
-	if err != nil {
-		panic(err)
-	}
+	logfile := classLog.NewLumberjackLogger(bc.Data.Database.LogPath,
+		bc.Data.Database.LogFileName, 6, 5, 30, false)
 	defer logfile.Close()
 
 	app, cleanup, err := wireApp(bc.Server, bc.Data, bc.Registry, bc.Schoolday, logfile, logger)
