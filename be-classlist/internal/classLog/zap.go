@@ -61,18 +61,22 @@ func getLogWriter(conf *conf.ZapLogConfigs) (zapcore.WriteSyncer, error) {
 	}
 
 	// 日志文件 与 日志切割 配置
-	lumberJackLogger := &lumberjack.Logger{
-		Filename:   filepath.Join(conf.LogPath, conf.LogFileName), // 日志文件路径
-		MaxSize:    int(conf.LogFileMaxSize),                      // 单个日志文件最大多少 mb
-		MaxBackups: int(conf.LogFileMaxBackups),                   // 日志备份数量
-		MaxAge:     int(conf.LogMaxAge),                           // 日志最长保留时间
-		Compress:   conf.LogCompress,                              // 是否压缩日志
-	}
+	lumberJackLogger := NewLumberjackLogger(conf.LogPath, conf.LogFileName, int(conf.LogFileMaxSize), int(conf.LogFileMaxBackups), int(conf.LogMaxAge), conf.LogCompress)
 	if conf.LogStdout {
 		// 日志同时输出到控制台和日志文件中
 		return zapcore.NewMultiWriteSyncer(zapcore.AddSync(lumberJackLogger), zapcore.AddSync(os.Stdout)), nil
 	} else {
 		// 日志只输出到日志文件
 		return zapcore.AddSync(lumberJackLogger), nil
+	}
+}
+
+func NewLumberjackLogger(logPath, logFileName string, fileMaxSize, logFileMaxBackups, logMaxAge int, logCompress bool) *lumberjack.Logger {
+	return &lumberjack.Logger{
+		Filename:   filepath.Join(logPath, logFileName), // 日志文件路径
+		MaxSize:    fileMaxSize,                         // 单个日志文件最大多少 mb
+		MaxBackups: logFileMaxBackups,                   // 日志备份数量
+		MaxAge:     logMaxAge,                           // 日志最长保留时间
+		Compress:   logCompress,                         // 是否压缩日志
 	}
 }
