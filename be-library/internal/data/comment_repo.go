@@ -4,23 +4,26 @@ import (
 	"time"
 
 	"github.com/asynccnu/ccnubox-be/be-library/internal/biz"
+	"github.com/asynccnu/ccnubox-be/be-library/internal/data/DO"
 	"github.com/go-kratos/kratos/v2/log"
 )
 
 type CommentRepo struct {
 	data *Data
 	log  *log.Helper
+	conv *Assembler
 }
 
-func NewCommentRepo(data *Data, logger log.Logger) biz.CommentRepo {
+func NewCommentRepo(data *Data, logger log.Logger, conv *Assembler) biz.CommentRepo {
 	return &CommentRepo{
 		log:  log.NewHelper(logger),
 		data: data,
+		conv: conv,
 	}
 }
 
 func (r CommentRepo) CreateComment(req *biz.CreateCommentReq) (string, error) {
-	comment := biz.Comment{
+	comment := DO.Comment{
 		SeatID:    req.SeatID,
 		Content:   req.Content,
 		Rating:    req.Rating,
@@ -36,14 +39,15 @@ func (r CommentRepo) CreateComment(req *biz.CreateCommentReq) (string, error) {
 	return "success", err
 }
 
-func (r CommentRepo) GetCommentsBySeatID(seatID int) ([]biz.Comment, error) {
-	var comments []biz.Comment
+func (r CommentRepo) GetCommentsBySeatID(seatID int) ([]*biz.Comment, error) {
+	var comments []*DO.Comment
 	err := r.data.db.Where("seat_id = ?", seatID).Order("created_at desc").Find(&comments).Error
-	return comments, err
+	result := r.conv.ConvertCommentDO2Biz(comments)
+	return result, err
 }
 
 func (r CommentRepo) DeleteComment(id int) (string, error) {
-	err := r.data.db.Delete(&biz.Comment{}, id).Error
+	err := r.data.db.Delete(&DO.Comment{}, id).Error
 	if err != nil {
 		return "", nil
 	}

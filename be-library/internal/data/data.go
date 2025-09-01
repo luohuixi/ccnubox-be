@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/asynccnu/ccnubox-be/be-library/internal/biz"
 	"github.com/asynccnu/ccnubox-be/be-library/internal/conf"
 	"github.com/asynccnu/ccnubox-be/be-library/internal/data/DO"
 	"github.com/redis/go-redis/v9"
@@ -18,7 +17,7 @@ import (
 )
 
 // ProviderSet is data providers.
-var ProviderSet = wire.NewSet(NewData, NewSeatRepo, NewDB, NewRedisDB, NewCommentRepo)
+var ProviderSet = wire.NewSet(NewData, NewSeatRepo, NewDB, NewRedisDB, NewCommentRepo, NewAssembler)
 
 // Data 做CURD时使用该框架
 type Data struct {
@@ -55,7 +54,7 @@ func NewDB(c *conf.Data) (*gorm.DB, error) {
 		return nil, fmt.Errorf("failed to connect database: %w", err)
 	}
 
-	if err := db.AutoMigrate(&DO.Seat{}, &DO.TimeSlot{}, &DO.FutureRecord{}, &DO.HistoryRecord{}, &biz.Comment{}); err != nil {
+	if err := db.AutoMigrate(&DO.Seat{}, &DO.TimeSlot{}, &DO.FutureRecord{}, &DO.HistoryRecord{}, &DO.Comment{}); err != nil {
 		return nil, fmt.Errorf("auto migrate failed: %w", err)
 	}
 

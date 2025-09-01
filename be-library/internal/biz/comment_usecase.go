@@ -28,7 +28,7 @@ func (b *commentUsecase) CreateComment(ctx context.Context, req CreateCommentReq
 	return message, nil
 }
 
-func (b *commentUsecase) GetCommentsBySeatID(seatID int) ([]Comment, error) {
+func (b *commentUsecase) GetCommentsBySeatID(seatID int) ([]*Comment, error) {
 	comments, err := b.repo.GetCommentsBySeatID(seatID)
 	if err != nil {
 		b.log.Errorf("Get comments failed (seat_id = %s)", seatID)
