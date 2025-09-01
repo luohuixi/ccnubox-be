@@ -142,3 +142,109 @@ package crawler
 //	} `json:"xsxx"`
 //	Zckbsfxssj string `json:"zckbsfxssj"`
 //}
+
+// 研究生的结构
+//type CrawReply2 struct {
+//	Kblx         int   `json:"kblx"`
+//	XqbzxxszList []any `json:"xqbzxxszList"`
+//	Xsxx         struct {
+//		Xnmc   string `json:"XNMC"`
+//		Kxkxxq string `json:"KXKXXQ"`
+//		Xkkgxq string `json:"XKKGXQ"`
+//		Xkkg   string `json:"XKKG"`
+//		XhID   string `json:"XH_ID"`
+//		Xh     string `json:"XH"`
+//		Xqmmc  string `json:"XQMMC"`
+//		Xm     string `json:"XM"`
+//		Xqm    string `json:"XQM"`
+//		Xnm    string `json:"XNM"`
+//		Kcms   int    `json:"KCMS"`
+//	} `json:"xsxx"`
+//	SjkList  []any `json:"sjkList"`
+//	Xkkg     bool  `json:"xkkg"`
+//	XqjmcMap struct {
+//		Num1 string `json:"1"`
+//		Num2 string `json:"2"`
+//		Num3 string `json:"3"`
+//		Num4 string `json:"4"`
+//		Num5 string `json:"5"`
+//		Num6 string `json:"6"`
+//		Num7 string `json:"7"`
+//	} `json:"xqjmcMap"`
+//	Xskbsfxstkzt string `json:"xskbsfxstkzt"`
+//	KbList       []struct {
+//		CdID       string `json:"cd_id"`
+//		Cdmc       string `json:"cdmc"`
+//		Cxbj       string `json:"cxbj"`
+//		Date       string `json:"date"`
+//		DateDigit  string `json:"dateDigit"`
+//		Day        string `json:"day"`
+//		Jc         string `json:"jc"`
+//		Jcor       string `json:"jcor"`
+//		Jcs        string `json:"jcs"`
+//		JghID      string `json:"jgh_id"`
+//		Jgpxzd     string `json:"jgpxzd"`
+//		JxbID      string `json:"jxb_id"`
+//		Jxbmc      string `json:"jxbmc"`
+//		Jxbsftkbj  string `json:"jxbsftkbj"`
+//		Jxbzc      string `json:"jxbzc"`
+//		KchID      string `json:"kch_id"`
+//		Kcmc       string `json:"kcmc"`
+//		Kcxszc     string `json:"kcxszc"`
+//		Khfsmc     string `json:"khfsmc"`
+//		Listnav    string `json:"listnav"`
+//		LocaleKey  string `json:"localeKey"`
+//		Oldjc      string `json:"oldjc"`
+//		Oldzc      string `json:"oldzc"`
+//		Pageable   bool   `json:"pageable"`
+//		Pkbj       string `json:"pkbj"`
+//		QueryModel struct {
+//			CurrentPage   int   `json:"currentPage"`
+//			CurrentResult int   `json:"currentResult"`
+//			EntityOrField bool  `json:"entityOrField"`
+//			Limit         int   `json:"limit"`
+//			Offset        int   `json:"offset"`
+//			PageNo        int   `json:"pageNo"`
+//			PageSize      int   `json:"pageSize"`
+//			ShowCount     int   `json:"showCount"`
+//			Sorts         []any `json:"sorts"`
+//			TotalCount    int   `json:"totalCount"`
+//			TotalPage     int   `json:"totalPage"`
+//			TotalResult   int   `json:"totalResult"`
+//		} `json:"queryModel"`
+//		Rangeable      bool   `json:"rangeable"`
+//		Rsdzjs         int    `json:"rsdzjs"`
+//		Sfsyhzsfgn     string `json:"sfsyhzsfgn"`
+//		SfxsbybjExport string `json:"sfxsbybj_export"`
+//		SfxsbybjPage   string `json:"sfxsbybj_page"`
+//		Sxbj           string `json:"sxbj"`
+//		TotalResult    string `json:"totalResult"`
+//		UserModel      struct {
+//			Monitor    bool   `json:"monitor"`
+//			RoleCount  int    `json:"roleCount"`
+//			RoleKeys   string `json:"roleKeys"`
+//			RoleValues string `json:"roleValues"`
+//			Status     int    `json:"status"`
+//			Usable     bool   `json:"usable"`
+//		} `json:"userModel"`
+//		Xf     string `json:"xf"`
+//		Xkbz   string `json:"xkbz"`
+//		Xm     string `json:"xm"`
+//		Xnm    string `json:"xnm"`
+//		Xqdm   string `json:"xqdm"`
+//		Xqh1   string `json:"xqh1"`
+//		XqhID  string `json:"xqh_id"`
+//		Xqj    string `json:"xqj"`
+//		Xqjmc  string `json:"xqjmc"`
+//		Xqm    string `json:"xqm"`
+//		Xqmc   string `json:"xqmc"`
+//		Xxdm   string `json:"xxdm"`
+//		Year   string `json:"year"`
+//		Zcd    string `json:"zcd"`
+//		Zhxs   string `json:"zhxs"`
+//		Zxs    string `json:"zxs"`
+//		Zyfxmc string `json:"zyfxmc"`
+//	} `json:"kbList"`
+//	JxhjkcList []any `json:"jxhjkcList"`
+//	XsbjList   []any `json:"xsbjList"`
+//}

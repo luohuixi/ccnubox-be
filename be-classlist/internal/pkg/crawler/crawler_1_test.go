@@ -8,9 +8,8 @@ import (
 	"time"
 )
 
-var cookie = "JSESSIONID=9923654784AEF41BD751198E64AD830B"
-
 func TestCrawler_GetClassInfosForUndergraduate(t *testing.T) {
+	var cookie = "JSESSIONID=98355539BF868E9B0675D58EE1D794A8"
 	crawler := NewClassCrawler(test.NewLogger())
 	start := time.Now()
 	infos, scs, err := crawler.GetClassInfosForUndergraduate(context.Background(), "testID", "2024", "2", cookie)
@@ -18,10 +17,18 @@ func TestCrawler_GetClassInfosForUndergraduate(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Log(fmt.Sprintf("一共耗时%v", time.Since(start)))
-	t.Log(infos, scs)
+
+	for _, v := range infos {
+		t.Log(*v)
+	}
+	for _, v := range scs {
+		t.Log(*v)
+	}
+	//t.Log(infos, scs)
 }
 
 func BenchmarkCrawler_GetClassInfosForUndergraduate(b *testing.B) {
+	var cookie = "JSESSIONID=98355539BF868E9B0675D58EE1D794A8"
 	crawler := NewClassCrawler(test.NewLogger())
 
 	ctx := context.Background()
@@ -35,5 +42,23 @@ func BenchmarkCrawler_GetClassInfosForUndergraduate(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
+	}
+}
+
+func TestCrawler_GetClassInfoForGraduateStudent(t *testing.T) {
+	var cookie = "JSESSIONID=5A195A5AB96A07ABAEBE6A8F17B6ADD4"
+	crawler := NewClassCrawler(test.NewLogger())
+	start := time.Now()
+	infos, scs, err := crawler.GetClassInfoForGraduateStudent(context.Background(), "testID", "2024", "1", cookie)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log(fmt.Sprintf("一共耗时%v", time.Since(start)))
+
+	for _, v := range infos {
+		t.Log(*v)
+	}
+	for _, v := range scs {
+		t.Log(*v)
 	}
 }
