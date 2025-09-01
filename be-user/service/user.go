@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	ccnuv1 "github.com/asynccnu/ccnubox-be/be-api/gen/proto/ccnu/v1"
 	userv1 "github.com/asynccnu/ccnubox-be/be-api/gen/proto/user/v1"
 	"github.com/asynccnu/ccnubox-be/be-user/pkg/crypto"
@@ -11,7 +12,6 @@ import (
 	"github.com/asynccnu/ccnubox-be/be-user/repository/dao"
 	"github.com/asynccnu/ccnubox-be/be-user/tool"
 	"golang.org/x/sync/singleflight"
-	"gorm.io/gorm"
 	"net/http"
 )
 
@@ -40,11 +40,15 @@ var (
 	DECRYPT_ERROR = func(err error) error {
 		return errorx.New(userv1.ErrorDecryptError("Password解密失败"), "crypt", err)
 	}
+	InCorrectPassword = func(err error) error {
+		return errorx.New(userv1.ErrorIncorrectPasswordError("账号密码错误"), "user", err)
+	}
 )
 
 type UserService interface {
 	Save(ctx context.Context, studentId string, password string) error
 	GetCookie(ctx context.Context, studentId string) (string, error)
+	Check(ctx context.Context, studentId string, password string) (bool, error)
 }
 
 type userService struct {
@@ -70,8 +74,8 @@ func (s *userService) Save(ctx context.Context, studentId string, password strin
 
 	//尝试查找用户
 	user, err := s.dao.FindByStudentId(ctx, studentId)
-	switch err {
-	case nil:
+	switch {
+	case err == nil:
 
 		//检查是否有更新的价值
 		if user.Password != password {
@@ -80,7 +84,7 @@ func (s *userService) Save(ctx context.Context, studentId string, password strin
 			return nil
 		}
 
-	case gorm.ErrRecordNotFound:
+	case errors.Is(err, dao.UserNotFound):
 		user.StudentId = studentId
 		user.Password = password
 
@@ -97,6 +101,30 @@ func (s *userService) Save(ctx context.Context, studentId string, password strin
 	return nil
 }
 
+func (s *userService) Check(ctx context.Context, studentId string, password string) (bool, error) {
+
+	_, err := tool.Retry(func() (*ccnuv1.LoginCCNUResponse, error) {
+		return s.ccnu.LoginCCNU(ctx, &ccnuv1.LoginCCNURequest{StudentId: studentId, Password: password})
+	})
+
+	switch {
+	case err == nil:
+		return true, nil
+	case ccnuv1.IsInvalidSidOrPwd(err):
+		return false, InCorrectPassword(errors.New("invalid sid or password"))
+	}
+	s.l.Warn("尝试从ccnu登录失败!", logger.Error(err))
+
+	//尝试查找用户
+	user, err := s.dao.FindByStudentId(ctx, studentId)
+	switch err {
+	case nil:
+		return user.Password == password, nil
+	default:
+		return false, DEFAULT_DAO_ERROR(err)
+	}
+
+}
 func (s *userService) GetCookie(ctx context.Context, studentId string) (string, error) {
 	key := studentId
 	result, err, _ := s.sfGroup.Do(key, func() (interface{}, error) {
@@ -105,7 +133,7 @@ func (s *userService) GetCookie(ctx context.Context, studentId string) (string, 
 		//如果从缓存获取成功就直接返回,否则降级处理
 		cookie, err := s.cache.GetCookie(ctx, studentId)
 		if err != nil {
-			s.l.Info("从缓存获取cookie失败", logger.FormatLog("cache", err)...)
+			s.l.Info("从缓存获取cookie失败", logger.Error(err))
 
 			//直接获取新的
 			newCookie, err = s.getNewCookie(ctx, studentId)
@@ -131,7 +159,7 @@ func (s *userService) GetCookie(ctx context.Context, studentId string) (string, 
 			go func() {
 				err := s.cache.SetCookie(context.Background(), studentId, cookie)
 				if err != nil {
-					s.l.Error("回填cookie失败", logger.FormatLog("cache", err)...)
+					s.l.Error("回填cookie失败", logger.Error(err))
 				}
 			}()
 		}
@@ -164,8 +192,8 @@ func (s *userService) getNewCookie(ctx context.Context, studentId string) (strin
 		return "", DECRYPT_ERROR(err)
 	}
 
-	resp, err := tool.Retry(func() (*ccnuv1.GetCCNUCookieResponse, error) {
-		return s.ccnu.GetCCNUCookie(ctx, &ccnuv1.GetCCNUCookieRequest{
+	resp, err := tool.Retry(func() (*ccnuv1.GetXKCookieResponse, error) {
+		return s.ccnu.GetXKCookie(ctx, &ccnuv1.GetXKCookieRequest{
 			StudentId: user.StudentId,
 			Password:  decryptPassword,
 		})

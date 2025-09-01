@@ -2,6 +2,8 @@ name: Build and Deploy - be-classlist
 
 on:
   push:
+    branches:
+      - main
     paths:
       - 'be-classlist/**'
 env:

@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	feedv1 "github.com/asynccnu/ccnubox-be/be-api/gen/proto/feed/v1"
 	"github.com/asynccnu/ccnubox-be/be-feed/domain"
@@ -117,7 +116,7 @@ func (s *feedEventService) ReadFeedEvent(ctx context.Context, id int64) error {
 func (s *feedEventService) ClearFeedEvent(ctx context.Context, studentId string, feedEventId int64, status string) error {
 	// 调用 DAO 层的清除方法，删除用户的 Feed 事件
 	if feedEventId == 0 && status == "" {
-		s.l.Info("意外的清除规则", logger.FormatLog("params", errors.New("参数不足"))...)
+		s.l.Info("意外的清除规则", logger.String("studentId", "参数不足"))
 		return nil
 	}
 
@@ -136,14 +135,13 @@ func (s *feedEventService) InsertEventList(ctx context.Context, feedEvents []dom
 
 	_, err := s.feedEventDAO.InsertFeedEventList(ctx, convFeedEventsFromDomainToModel(feedEvents))
 	if err != nil {
-		s.l.Error("批量插入feedEvent失败", logger.FormatLog("system", err)...)
+		s.l.Error("批量插入feedEvent失败", logger.Error(err))
 		for i := range feedEvents {
 			_, err = s.feedEventDAO.InsertFeedEvent(ctx, convFeedEventFromDomainToModel(&feedEvents[i]))
 			if err != nil {
-				s.l.Error("插入feedEvent失败", append(
-					logger.FormatLog("system", err),
+				s.l.Error("插入feedEvent失败",
+					logger.Error(err),
 					logger.String("feedData", fmt.Sprintf("%v", feedEvents[i])),
-				)...,
 				)
 				errs = append(errs, err)
 			}
@@ -163,7 +161,7 @@ func (s *feedEventService) PublicFeedEvent(ctx context.Context, isAll bool, even
 			// 获取一批 studentIds
 			studentIds, newLastId, err := s.userFeedConfigDAO.GetStudentIdsByCursor(ctx, lastId, batchSize)
 			if err != nil {
-				s.l.Error("获取用户studentIds错误", append(logger.FormatLog("dao", err), logger.Int64("当前索引:", lastId))...)
+				s.l.Error("获取用户studentIds错误", logger.Error(err), logger.Int64("当前索引:", lastId))
 			}
 
 			// 如果没有更多数据，结束循环
@@ -177,7 +175,7 @@ func (s *feedEventService) PublicFeedEvent(ctx context.Context, isAll bool, even
 				event.StudentId = studentIds[i]
 				err := s.feedProducer.SendMessage(topic.FeedEvent, event)
 				if err != nil {
-					s.l.Error("发送消息发生失败", append(logger.FormatLog("dao", err), logger.String("当前学号:", studentIds[i]))...)
+					s.l.Error("发送消息发生失败", logger.Error(err), logger.String("当前学号:", studentIds[i]))
 				}
 			}
 
@@ -192,79 +190,3 @@ func (s *feedEventService) PublicFeedEvent(ctx context.Context, isAll bool, even
 	}
 	return nil
 }
-
-//func (s *feedEventService) insertEvent(ctx context.Context, feedEvent *model.FeedEvent, Type string) error {
-//	// 开始事务，通过 DAO 层进行
-//	tx, err := s.feedEventDAO.BeginTx(ctx)
-//	if err != nil {
-//		return err
-//	}
-//	defer func() {
-//		if err != nil {
-//			tx.Rollback()
-//		} else {
-//			tx.Commit()
-//		}
-//	}()
-//
-//	//插入feed数据到指定的表
-//	insertedEvent, err := s.feedEventDAO.InsertFeedEvent(ctx, feedEvent)
-//	if err != nil {
-//		return err
-//	}
-//
-//	//存储索引到指定的用户表
-//	err = s.feedEventIndexDAO.SaveFeedEventIndex(ctx, &model.FeedEventIndex{
-//		StudentId: feedEvent.StudentId,
-//		FeedID:    insertedEvent.ID,
-//		Read:      false,
-//		Type:      Type,
-//	})
-//	if err != nil {
-//		return err
-//	}
-//
-//	return nil
-//}
-//
-//func (s *feedEventService) insertEventsByType(ctx context.Context, Type string, events []model.FeedEvent) (err error) {
-//	//开始事务
-//	tx, err := s.feedEventDAO.BeginTx(ctx)
-//	if err != nil {
-//		return err
-//	}
-//
-//	//批量存储
-//	defer func() {
-//		if err != nil {
-//			tx.Rollback()
-//		} else {
-//			tx.Commit()
-//		}
-//	}()
-//
-//	// 插入 FeedEvent 并获取插入后的 ID
-//	insertedEvents, err := s.feedEventDAO.InsertFeedEventListByTx(ctx, tx, events)
-//	if err != nil {
-//		return err
-//	}
-//
-//	var eventIndexes []model.FeedEventIndex
-//	// 根据插入后的 FeedEvent 生成 FeedEventIndex
-//	for _, insertedEvent := range insertedEvents {
-//		eventIndexes = append(eventIndexes, model.FeedEventIndex{
-//			FeedID:    insertedEvent.ID,
-//			StudentId: insertedEvent.StudentId,
-//			Read:      false,
-//			Type:      Type,
-//		})
-//	}
-//
-//	//批量插入
-//	err = s.feedEventIndexDAO.InsertFeedEventIndexListByTx(ctx, tx, eventIndexes)
-//	if err != nil {
-//		return err
-//	}
-//
-//	return nil
-//}

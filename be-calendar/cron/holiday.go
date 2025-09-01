@@ -45,7 +45,7 @@ func (r *HolidayController) StartCronTask() {
 			case <-ticker.C:
 				err := r.publishMSG()
 				if err != nil {
-					r.l.Error("推送消息失败!:", logger.FormatLog("cron", err)...)
+					r.l.Error("推送消息失败!:", logger.Error(err))
 				}
 
 			case <-r.stopChan:

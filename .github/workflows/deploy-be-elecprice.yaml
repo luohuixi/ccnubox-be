@@ -2,6 +2,8 @@ name: Build and Deploy - be-elecprice
 
 on:
   push:
+    branches:
+      - main
     paths:
       - 'be-elecprice/**'
 env:

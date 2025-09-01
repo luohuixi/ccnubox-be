@@ -19,16 +19,16 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	CCNUService_Login_FullMethodName         = "/ccnu.v1.CCNUService/Login"
-	CCNUService_GetCCNUCookie_FullMethodName = "/ccnu.v1.CCNUService/GetCCNUCookie"
+	CCNUService_GetXKCookie_FullMethodName = "/ccnu.v1.CCNUService/GetXKCookie"
+	CCNUService_LoginCCNU_FullMethodName   = "/ccnu.v1.CCNUService/LoginCCNU"
 )
 
 // CCNUServiceClient is the client API for CCNUService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type CCNUServiceClient interface {
-	Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error)
-	GetCCNUCookie(ctx context.Context, in *GetCCNUCookieRequest, opts ...grpc.CallOption) (*GetCCNUCookieResponse, error)
+	GetXKCookie(ctx context.Context, in *GetXKCookieRequest, opts ...grpc.CallOption) (*GetXKCookieResponse, error)
+	LoginCCNU(ctx context.Context, in *LoginCCNURequest, opts ...grpc.CallOption) (*LoginCCNUResponse, error)
 }
 
 type cCNUServiceClient struct {
@@ -39,20 +39,20 @@ func NewCCNUServiceClient(cc grpc.ClientConnInterface) CCNUServiceClient {
 	return &cCNUServiceClient{cc}
 }
 
-func (c *cCNUServiceClient) Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error) {
+func (c *cCNUServiceClient) GetXKCookie(ctx context.Context, in *GetXKCookieRequest, opts ...grpc.CallOption) (*GetXKCookieResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(LoginResponse)
-	err := c.cc.Invoke(ctx, CCNUService_Login_FullMethodName, in, out, cOpts...)
+	out := new(GetXKCookieResponse)
+	err := c.cc.Invoke(ctx, CCNUService_GetXKCookie_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *cCNUServiceClient) GetCCNUCookie(ctx context.Context, in *GetCCNUCookieRequest, opts ...grpc.CallOption) (*GetCCNUCookieResponse, error) {
+func (c *cCNUServiceClient) LoginCCNU(ctx context.Context, in *LoginCCNURequest, opts ...grpc.CallOption) (*LoginCCNUResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetCCNUCookieResponse)
-	err := c.cc.Invoke(ctx, CCNUService_GetCCNUCookie_FullMethodName, in, out, cOpts...)
+	out := new(LoginCCNUResponse)
+	err := c.cc.Invoke(ctx, CCNUService_LoginCCNU_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -63,8 +63,8 @@ func (c *cCNUServiceClient) GetCCNUCookie(ctx context.Context, in *GetCCNUCookie
 // All implementations must embed UnimplementedCCNUServiceServer
 // for forward compatibility.
 type CCNUServiceServer interface {
-	Login(context.Context, *LoginRequest) (*LoginResponse, error)
-	GetCCNUCookie(context.Context, *GetCCNUCookieRequest) (*GetCCNUCookieResponse, error)
+	GetXKCookie(context.Context, *GetXKCookieRequest) (*GetXKCookieResponse, error)
+	LoginCCNU(context.Context, *LoginCCNURequest) (*LoginCCNUResponse, error)
 	mustEmbedUnimplementedCCNUServiceServer()
 }
 
@@ -75,11 +75,11 @@ type CCNUServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedCCNUServiceServer struct{}
 
-func (UnimplementedCCNUServiceServer) Login(context.Context, *LoginRequest) (*LoginResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Login not implemented")
+func (UnimplementedCCNUServiceServer) GetXKCookie(context.Context, *GetXKCookieRequest) (*GetXKCookieResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetXKCookie not implemented")
 }
-func (UnimplementedCCNUServiceServer) GetCCNUCookie(context.Context, *GetCCNUCookieRequest) (*GetCCNUCookieResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetCCNUCookie not implemented")
+func (UnimplementedCCNUServiceServer) LoginCCNU(context.Context, *LoginCCNURequest) (*LoginCCNUResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method LoginCCNU not implemented")
 }
 func (UnimplementedCCNUServiceServer) mustEmbedUnimplementedCCNUServiceServer() {}
 func (UnimplementedCCNUServiceServer) testEmbeddedByValue()                     {}
@@ -102,38 +102,38 @@ func RegisterCCNUServiceServer(s grpc.ServiceRegistrar, srv CCNUServiceServer) {
 	s.RegisterService(&CCNUService_ServiceDesc, srv)
 }
 
-func _CCNUService_Login_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(LoginRequest)
+func _CCNUService_GetXKCookie_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetXKCookieRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CCNUServiceServer).Login(ctx, in)
+		return srv.(CCNUServiceServer).GetXKCookie(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: CCNUService_Login_FullMethodName,
+		FullMethod: CCNUService_GetXKCookie_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CCNUServiceServer).Login(ctx, req.(*LoginRequest))
+		return srv.(CCNUServiceServer).GetXKCookie(ctx, req.(*GetXKCookieRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CCNUService_GetCCNUCookie_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetCCNUCookieRequest)
+func _CCNUService_LoginCCNU_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LoginCCNURequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CCNUServiceServer).GetCCNUCookie(ctx, in)
+		return srv.(CCNUServiceServer).LoginCCNU(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: CCNUService_GetCCNUCookie_FullMethodName,
+		FullMethod: CCNUService_LoginCCNU_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CCNUServiceServer).GetCCNUCookie(ctx, req.(*GetCCNUCookieRequest))
+		return srv.(CCNUServiceServer).LoginCCNU(ctx, req.(*LoginCCNURequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -146,12 +146,12 @@ var CCNUService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*CCNUServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Login",
-			Handler:    _CCNUService_Login_Handler,
+			MethodName: "GetXKCookie",
+			Handler:    _CCNUService_GetXKCookie_Handler,
 		},
 		{
-			MethodName: "GetCCNUCookie",
-			Handler:    _CCNUService_GetCCNUCookie_Handler,
+			MethodName: "LoginCCNU",
+			Handler:    _CCNUService_LoginCCNU_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

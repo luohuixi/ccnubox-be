@@ -2,6 +2,8 @@ name: Build and Deploy - bff
 
 on:
   push:
+    branches:
+      - main
     paths:
       - 'bff/**'
 env:

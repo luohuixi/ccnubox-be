@@ -15,4 +15,6 @@ enum UserErrorReason {
   CCNU_GETCOOKIE_ERROR=3 [(errors.code) = 503];
   ENCRYPT_ERROR=4  [(errors.code) = 504];
   DECRYPT_ERROR=5  [(errors.code) = 505];
+  INCORRECT_PASSWORD_ERROR=6  [(errors.code) = 401];
+
 }

@@ -1,7 +1,7 @@
 package user
 
 import (
-	ccnuv1 "github.com/asynccnu/ccnubox-be/be-api/gen/proto/ccnu/v1"
+	"fmt"
 	userv1 "github.com/asynccnu/ccnubox-be/be-api/gen/proto/user/v1"
 	"github.com/asynccnu/ccnubox-be/bff/errs"
 	"github.com/asynccnu/ccnubox-be/bff/pkg/ginx"
@@ -15,14 +15,12 @@ import (
 type UserHandler struct {
 	ijwt.Handler
 	userSvc userv1.UserServiceClient
-	ccnuSvc ccnuv1.CCNUServiceClient
 }
 
-func NewUserHandler(hdl ijwt.Handler, userSvc userv1.UserServiceClient, ccnuSvc ccnuv1.CCNUServiceClient) *UserHandler {
+func NewUserHandler(hdl ijwt.Handler, userSvc userv1.UserServiceClient) *UserHandler {
 	return &UserHandler{
 		Handler: hdl,
 		userSvc: userSvc,
-		ccnuSvc: ccnuSvc,
 	}
 }
 
@@ -44,19 +42,22 @@ func (h *UserHandler) RegisterRoutes(s *gin.RouterGroup, authMiddleware gin.Hand
 // @Success 200 {object} web.Response "Success"
 // @Router /users/login_ccnu [post]
 func (h *UserHandler) LoginByCCNU(ctx *gin.Context, req LoginByCCNUReq) (web.Response, error) {
-	//请求部分,内层调用的be-api上面的东西,实现grpc通信可以直接点进去看
-	_, err := h.ccnuSvc.Login(ctx, &ccnuv1.LoginRequest{
+
+	// 检测是否学生证账号密码正确,如果通行证失败的话会去查本地,如果本地也失败就会丢出系统异常错误,否则是账号密码不正确
+	_, err := h.userSvc.CheckUser(ctx, &userv1.CheckUserReq{
 		StudentId: req.StudentId,
 		Password:  req.Password,
 	})
+	fmt.Println(err)
 	switch {
 	case err == nil:
 	// 直接向下执行
-	case ccnuv1.IsInvalidSidOrPwd(err):
+	case userv1.IsIncorrectPasswordError(err):
 		return web.Response{}, errs.USER_SID_Or_PASSPORD_ERROR(err)
 	default:
 		return web.Response{}, errs.LOGIN_BY_CCNU_ERROR(err)
 	}
+
 	// FindOrCreate
 	_, err = h.userSvc.SaveUser(ctx, &userv1.SaveUserReq{StudentId: req.StudentId, Password: req.Password})
 	if err != nil {
@@ -67,6 +68,7 @@ func (h *UserHandler) LoginByCCNU(ctx *gin.Context, req LoginByCCNUReq) (web.Res
 	if err != nil {
 		return web.Response{}, errs.JWT_SYSTEM_ERROR(err)
 	}
+
 	return web.Response{
 		Msg: "Success",
 	}, nil

@@ -2,6 +2,8 @@ name: Build and Deploy - be-website
 
 on:
   push:
+    branches:
+      - main
     paths:
       - 'be-website/**'
 env:
