@@ -2,12 +2,15 @@ package data
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/asynccnu/ccnubox-be/be-library/internal/biz"
 	"github.com/asynccnu/ccnubox-be/be-library/internal/data/DO"
+	"github.com/asynccnu/ccnubox-be/be-library/pkg/tool"
 	"github.com/go-kratos/kratos/v2/log"
+	"github.com/redis/go-redis/v9"
 	"golang.org/x/sync/singleflight"
 	"gorm.io/gorm"
 )
@@ -28,8 +31,11 @@ func NewSeatRepo(data *Data, logger log.Logger, crawler biz.LibraryCrawler) biz.
 }
 
 // 弄个管理员账号来进行持续爬虫
+// ZADD seat:{seatID}:times startTimestamp "{start}-{end}"
 func (r *SeatRepo) SaveRoomSeatsInRedis(ctx context.Context, stuID string) error {
 	ttl := r.data.cfg.Redis.Ttl
+	// 用pipe收集redis指令，减少网络IO造成的时间损耗
+	pipe := r.data.redis.Pipeline()
 
 	allSeats, err := r.crawler.GetSeatInfos(ctx, stuID)
 	if err != nil {
@@ -50,22 +56,35 @@ func (r *SeatRepo) SaveRoomSeatsInRedis(ctx context.Context, stuID string) error
 				return err
 			}
 			hash[seatID] = string(seatJson)
-		}
 
-		// 存入 Redis
+			// 建立时间序列 zSort
+			zKey := fmt.Sprintf("seat:%s:times", seatID)
+			var zs []redis.Z
+			for _, ts := range seat.Ts {
+				startUnix, _ := tool.ParseToUnix(ts.Start)
+				endUnix, _ := tool.ParseToUnix(ts.End)
+				zs = append(zs, redis.Z{
+					Score:  float64(startUnix),
+					Member: fmt.Sprintf("%d-%d", startUnix, endUnix),
+				})
+			}
+			if len(zs) > 0 {
+				pipe.ZAdd(ctx, zKey, zs...) // 批量插入时间段
+				pipe.Expire(ctx, zKey, ttl.AsDuration())
+			}
+
+		}
 		// RoomID : {N1111: json1 N2222: json2}
-		err := r.data.redis.HSet(ctx, key, hash).Err()
-		if err != nil {
-			r.log.Errorf("HSet room:%s error: %v", roomId, err)
-			return err
-		}
-
+		// 单个房间的座位存储
+		pipe.HSet(ctx, key, hash)
 		// 设置 TTL , 过时自动删除捏
-		err = r.data.redis.Expire(ctx, key, ttl.AsDuration()).Err()
-		if err != nil {
-			r.log.Errorf("Expire room:%s error: %v", roomId, err)
-			return err
-		}
+		pipe.Expire(ctx, key, ttl.AsDuration()).Err()
+	}
+
+	_, err = pipe.Exec(ctx)
+	if err != nil {
+		r.log.Error("Save SeatInfo in redis ERROR:%s", err.Error())
+		return err
 	}
 
 	r.log.Infof("All seats saved in Redis successfully")
