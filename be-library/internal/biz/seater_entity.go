@@ -58,7 +58,7 @@ type SeatStatistics struct {
 
 type SeatRepo interface {
 	// 核心方法：从爬虫同步数据（要修改，应该是通过 crawler 直接将座位同步到里面）
-	SyncSeatsIntoSQL(ctx context.Context, roomID string, stuID string, seats []*Seat) error
+	// SyncSeatsIntoSQL(ctx context.Context, roomID string, stuID string, seats []*Seat) error
 
 	// 查询方法
 	// Get(ctx context.Context, devID string) (*Seat, error)

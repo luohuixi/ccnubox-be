@@ -90,7 +90,7 @@ func TestGetSeat(t *testing.T) {
 	ctx := context.Background()
 	roomID := "101699179"
 
-	seats, err := repo.GetRoomSeats(ctx, roomID)
+	seats, err := repo.GetSeatsByRoom(ctx, roomID)
 	if err != nil {
 		panic(err)
 	}

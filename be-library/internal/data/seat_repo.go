@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/asynccnu/ccnubox-be/be-library/internal/biz"
 	"github.com/go-kratos/kratos/v2/log"
@@ -76,7 +75,7 @@ func (r *SeatRepo) SaveRoomSeatsInRedis(ctx context.Context, stuID string) error
 		}
 
 		// 设置 TTL , 过时自动删除捏
-		err = r.data.redis.Expire(ctx, key, ttl).Err()
+		err = r.data.redis.Expire(ctx, key, ttl.AsDuration()).Err()
 		if err != nil {
 			r.log.Errorf("Expire room:%s error: %v", roomId, err)
 			return err
@@ -116,7 +115,7 @@ func (r *SeatRepo) FindFirstAvailableSeat(ctx context.Context, roomID, start, en
 		Where("time_slots.dev_id = seats.id").
 		Where("start < ?", end).
 		Where("end > ?", start)
-
+	
 	err := r.data.db.WithContext(ctx).
 		Model(&seat{}).
 		Where("room_id = ?", roomID).
@@ -133,50 +132,26 @@ func (r *SeatRepo) FindFirstAvailableSeat(ctx context.Context, roomID, start, en
 	return seatDevID, nil
 }
 
-// Get 获取单个座位信息
-func (r *SeatRepo) Get(ctx context.Context, devID string) (*biz.Seat, error) {
-	// 先从缓存获取
-	cacheKey := fmt.Sprintf("seat:%s", devID)
-	cached, err := r.data.redis.Get(ctx, cacheKey).Result()
-	if err == nil && cached != "" {
-		var s biz.Seat
-		if err := json.Unmarshal([]byte(cached), &s); err == nil {
-			return &s, nil
-		}
-	}
+// func (r *SeatRepo) getSeatFromSQL(ctx context.Context, devID string) (*biz.Seat, error) {
+// 	var seatModel seat
+// 	if err := r.data.db.WithContext(ctx).
+// 		Where("dev_id = ?", devID).
+// 		First(&seatModel).Error; err != nil {
+// 		if err == gorm.ErrRecordNotFound {
+// 			return nil, nil
+// 		}
+// 		return nil, err
+// 	}
+// 	ts, err := r.GetTimeSlotsBySeatID(ctx, devID)
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	r.log.Errorf("Error getting seatInfo from redis")
-	// 从数据库获取兜底
-	result, err := r.getSeatFromSQL(ctx, devID)
+// 	// 转换为业务模型
+// 	result := ConvertSeat2Biz(&seatModel, ts)
 
-	// 写入缓存
-	if data, err := json.Marshal(result); err == nil {
-		r.data.redis.Set(ctx, cacheKey, data, 5*time.Minute)
-	}
-
-	return result, nil
-}
-
-func (r *SeatRepo) getSeatFromSQL(ctx context.Context, devID string) (*biz.Seat, error) {
-	var seatModel seat
-	if err := r.data.db.WithContext(ctx).
-		Where("dev_id = ?", devID).
-		First(&seatModel).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, nil
-		}
-		return nil, err
-	}
-	ts, err := r.GetTimeSlotsBySeatID(ctx, devID)
-	if err != nil {
-		return nil, err
-	}
-
-	// 转换为业务模型
-	result := ConvertSeat2Biz(&seatModel, ts)
-
-	return result, nil
-}
+// 	return result, nil
+// }
 
 func (r *SeatRepo) toBizSeat(s *seat, ts []timeSlot) *biz.Seat {
 	bizTs := make([]*biz.TimeSlot, len(ts))
