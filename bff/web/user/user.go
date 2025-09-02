@@ -1,7 +1,6 @@
 package user
 
 import (
-	"fmt"
 	userv1 "github.com/asynccnu/ccnubox-be/be-api/gen/proto/user/v1"
 	"github.com/asynccnu/ccnubox-be/bff/errs"
 	"github.com/asynccnu/ccnubox-be/bff/pkg/ginx"
@@ -48,7 +47,6 @@ func (h *UserHandler) LoginByCCNU(ctx *gin.Context, req LoginByCCNUReq) (web.Res
 		StudentId: req.StudentId,
 		Password:  req.Password,
 	})
-	fmt.Println(err)
 	switch {
 	case err == nil:
 	// 直接向下执行
