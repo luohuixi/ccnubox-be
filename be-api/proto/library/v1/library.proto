@@ -14,7 +14,7 @@ service Library {
     rpc SearchUser (SearchUserRequest) returns (SearchUserResponse);
     rpc ReserveDiscussion (ReserveDiscussionRequest) returns (ReserveDiscussionResponse);
     rpc CancelReserve (CancelReserveRequest) returns (CancelReserveResponse);
-    rpc ReserveSeatRandomly (ReserveSeatRamdonlyRequest) returns (ReserveSeatRamdonlyResponse);
+    rpc ReserveSeatRandomly (ReserveSeatRandomlyRequest) returns (ReserveSeatRandomlyResponse);
     rpc CreateComment (CreateCommentReq) returns (Resp);
     rpc GetComments (ID) returns (GetCommentResp);
     rpc DeleteComment (ID) returns (Resp);
@@ -193,14 +193,14 @@ message CancelReserveResponse{
 }
 
 // 随机选座
-message ReserveSeatRamdonlyRequest {
+message ReserveSeatRandomlyRequest {
     string start = 1;
     string end = 2;
     string stu_id = 3;
     string room_id = 4;
 }
 
-message ReserveSeatRamdonlyResponse {
+message ReserveSeatRandomlyResponse {
     string message = 1;
 }
 

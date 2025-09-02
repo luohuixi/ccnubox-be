@@ -115,12 +115,12 @@ func (ls *LibraryService) CancelReserve(ctx context.Context, req *pb.CancelReser
 	return &pb.CancelReserveResponse{Message: msg}, nil
 }
 
-func (ls *LibraryService) ReserveSeatRandomly(ctx context.Context, req *pb.ReserveSeatRamdonlyRequest) (*pb.ReserveSeatRamdonlyResponse, error) {
-	msg, err := ls.biz.ReserveSeatRandomly(ctx, req.StuId, req.RoomId, req.Start, req.End)
+func (ls *LibraryService) ReserveSeatRandomly(ctx context.Context, req *pb.ReserveSeatRandomlyRequest) (*pb.ReserveSeatRandomlyResponse, error) {
+	msg, err := ls.biz.ReserveSeatRandomly(ctx, req.StuId, req.Start, req.End)
 	if err != nil {
 		return nil, err
 	}
-	return &pb.ReserveSeatRamdonlyResponse{Message: msg}, nil
+	return &pb.ReserveSeatRandomlyResponse{Message: msg}, nil
 }
 
 func (ls *LibraryService) CreateComment(ctx context.Context, req *pb.CreateCommentReq) (*pb.Resp, error) {

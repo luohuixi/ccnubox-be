@@ -47,7 +47,7 @@ type LibraryClient interface {
 	SearchUser(ctx context.Context, in *SearchUserRequest, opts ...grpc.CallOption) (*SearchUserResponse, error)
 	ReserveDiscussion(ctx context.Context, in *ReserveDiscussionRequest, opts ...grpc.CallOption) (*ReserveDiscussionResponse, error)
 	CancelReserve(ctx context.Context, in *CancelReserveRequest, opts ...grpc.CallOption) (*CancelReserveResponse, error)
-	ReserveSeatRandomly(ctx context.Context, in *ReserveSeatRamdonlyRequest, opts ...grpc.CallOption) (*ReserveSeatRamdonlyResponse, error)
+	ReserveSeatRandomly(ctx context.Context, in *ReserveSeatRandomlyRequest, opts ...grpc.CallOption) (*ReserveSeatRandomlyResponse, error)
 	CreateComment(ctx context.Context, in *CreateCommentReq, opts ...grpc.CallOption) (*Resp, error)
 	GetComments(ctx context.Context, in *ID, opts ...grpc.CallOption) (*GetCommentResp, error)
 	DeleteComment(ctx context.Context, in *ID, opts ...grpc.CallOption) (*Resp, error)
@@ -151,9 +151,9 @@ func (c *libraryClient) CancelReserve(ctx context.Context, in *CancelReserveRequ
 	return out, nil
 }
 
-func (c *libraryClient) ReserveSeatRandomly(ctx context.Context, in *ReserveSeatRamdonlyRequest, opts ...grpc.CallOption) (*ReserveSeatRamdonlyResponse, error) {
+func (c *libraryClient) ReserveSeatRandomly(ctx context.Context, in *ReserveSeatRandomlyRequest, opts ...grpc.CallOption) (*ReserveSeatRandomlyResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ReserveSeatRamdonlyResponse)
+	out := new(ReserveSeatRandomlyResponse)
 	err := c.cc.Invoke(ctx, Library_ReserveSeatRandomly_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -204,7 +204,7 @@ type LibraryServer interface {
 	SearchUser(context.Context, *SearchUserRequest) (*SearchUserResponse, error)
 	ReserveDiscussion(context.Context, *ReserveDiscussionRequest) (*ReserveDiscussionResponse, error)
 	CancelReserve(context.Context, *CancelReserveRequest) (*CancelReserveResponse, error)
-	ReserveSeatRandomly(context.Context, *ReserveSeatRamdonlyRequest) (*ReserveSeatRamdonlyResponse, error)
+	ReserveSeatRandomly(context.Context, *ReserveSeatRandomlyRequest) (*ReserveSeatRandomlyResponse, error)
 	CreateComment(context.Context, *CreateCommentReq) (*Resp, error)
 	GetComments(context.Context, *ID) (*GetCommentResp, error)
 	DeleteComment(context.Context, *ID) (*Resp, error)
@@ -245,7 +245,7 @@ func (UnimplementedLibraryServer) ReserveDiscussion(context.Context, *ReserveDis
 func (UnimplementedLibraryServer) CancelReserve(context.Context, *CancelReserveRequest) (*CancelReserveResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CancelReserve not implemented")
 }
-func (UnimplementedLibraryServer) ReserveSeatRandomly(context.Context, *ReserveSeatRamdonlyRequest) (*ReserveSeatRamdonlyResponse, error) {
+func (UnimplementedLibraryServer) ReserveSeatRandomly(context.Context, *ReserveSeatRandomlyRequest) (*ReserveSeatRandomlyResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReserveSeatRandomly not implemented")
 }
 func (UnimplementedLibraryServer) CreateComment(context.Context, *CreateCommentReq) (*Resp, error) {
@@ -441,7 +441,7 @@ func _Library_CancelReserve_Handler(srv interface{}, ctx context.Context, dec fu
 }
 
 func _Library_ReserveSeatRandomly_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ReserveSeatRamdonlyRequest)
+	in := new(ReserveSeatRandomlyRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -453,7 +453,7 @@ func _Library_ReserveSeatRandomly_Handler(srv interface{}, ctx context.Context, 
 		FullMethod: Library_ReserveSeatRandomly_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(LibraryServer).ReserveSeatRandomly(ctx, req.(*ReserveSeatRamdonlyRequest))
+		return srv.(LibraryServer).ReserveSeatRandomly(ctx, req.(*ReserveSeatRandomlyRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

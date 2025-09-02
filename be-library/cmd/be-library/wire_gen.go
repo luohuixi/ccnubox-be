@@ -47,7 +47,8 @@ func wireApp(confServer *conf.Server, confData *conf.Data, confRegistry *conf.Re
 	}
 	seatRepo := data.NewSeatRepo(dataData, logger, libraryCrawler)
 	libraryBiz := biz.NewLibraryBiz(libraryCrawler, logger, seatRepo)
-	commentRepo := data.NewCommentRepo(dataData, logger)
+	assembler := data.NewAssembler()
+	commentRepo := data.NewCommentRepo(dataData, logger, assembler)
 	libraryService := service.NewLibraryService(libraryBiz, logger, commentRepo)
 	grpcServer := server.NewGRPCServer(confServer, libraryService, logger)
 	app := newApp(logger, grpcServer, etcdRegistry)

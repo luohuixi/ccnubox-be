@@ -2,6 +2,9 @@ package biz
 
 import (
 	"context"
+	"errors"
+	"strings"
+	"time"
 
 	"github.com/go-kratos/kratos/v2/log"
 )
@@ -101,14 +104,30 @@ func (b *libraryBiz) CancelReserve(ctx context.Context, stuID, id string) (strin
 	return message, nil
 }
 
-func (b *libraryBiz) ReserveSeatRandomly(ctx context.Context, stuID, roomID, start, end string) (string, error) {
-	seatDevID, err := b.SeatRepo.FindFirstAvailableSeat(ctx, roomID, start, end)
+// 2025-09-02 20:00
+func (b *libraryBiz) ReserveSeatRandomly(ctx context.Context, stuID, start, end string) (string, error) {
+	layout := "2006-01-02 15:04"
+	tStart, _ := time.Parse(layout, start)
+	tEnd, _ := time.Parse(layout, end)
+
+	qStart := tStart.Hour()*100 + tStart.Minute()
+	qEnd := tEnd.Hour()*100 + tEnd.Minute()
+
+	// 查找空闲预约
+	seatDevID, isExist, err := b.SeatRepo.FindFirstAvailableSeat(ctx, int64(qStart), int64(qEnd))
 	if err != nil {
 		return "", err
 	}
-	msg, err := b.ReserveSeat(ctx, stuID, seatDevID, start, end)
+	if !isExist {
+		return "", errors.New("available seat unfound")
+	}
+
+	parts := strings.Split(seatDevID, ":")
+
+	// 执行预约操作
+	msg, err := b.ReserveSeat(ctx, stuID, parts[1], start, end)
 	if err != nil {
-		b.log.Errorf("Ramdonly reserve(stu_id:%v id:%v) failed: %v", stuID, seatDevID, err)
+		b.log.Errorf("Randomly reserve(stu_id:%v seatid:%v) failed: %v", stuID, parts[1], err)
 		return "", err
 	}
 	return msg, nil

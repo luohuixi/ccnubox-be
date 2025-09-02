@@ -138,13 +138,13 @@ type CancelReserveRequest struct {
 	ID string `form:"id" binding:"required"`
 }
 
-type ReserveSeatRamdonlyRequest struct {
+type ReserveSeatRandomlyRequest struct {
 	DevID string `json:"dev_id"`
 	Start string `json:"start"`
 	End   string `json:"end"`
 }
 
-type ReserveSeatRamdonlyResponse struct {
+type ReserveSeatRandomlyResponse struct {
 	Message string `json:"message"`
 }
 

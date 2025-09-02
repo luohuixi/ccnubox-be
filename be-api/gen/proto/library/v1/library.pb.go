@@ -1659,7 +1659,7 @@ func (x *CancelReserveResponse) GetMessage() string {
 }
 
 // 随机选座
-type ReserveSeatRamdonlyRequest struct {
+type ReserveSeatRandomlyRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Start         string                 `protobuf:"bytes,1,opt,name=start,proto3" json:"start,omitempty"`
 	End           string                 `protobuf:"bytes,2,opt,name=end,proto3" json:"end,omitempty"`
@@ -1669,20 +1669,20 @@ type ReserveSeatRamdonlyRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ReserveSeatRamdonlyRequest) Reset() {
-	*x = ReserveSeatRamdonlyRequest{}
+func (x *ReserveSeatRandomlyRequest) Reset() {
+	*x = ReserveSeatRandomlyRequest{}
 	mi := &file_library_v1_library_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ReserveSeatRamdonlyRequest) String() string {
+func (x *ReserveSeatRandomlyRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ReserveSeatRamdonlyRequest) ProtoMessage() {}
+func (*ReserveSeatRandomlyRequest) ProtoMessage() {}
 
-func (x *ReserveSeatRamdonlyRequest) ProtoReflect() protoreflect.Message {
+func (x *ReserveSeatRandomlyRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_library_v1_library_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1694,60 +1694,60 @@ func (x *ReserveSeatRamdonlyRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ReserveSeatRamdonlyRequest.ProtoReflect.Descriptor instead.
-func (*ReserveSeatRamdonlyRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use ReserveSeatRandomlyRequest.ProtoReflect.Descriptor instead.
+func (*ReserveSeatRandomlyRequest) Descriptor() ([]byte, []int) {
 	return file_library_v1_library_proto_rawDescGZIP(), []int{27}
 }
 
-func (x *ReserveSeatRamdonlyRequest) GetStart() string {
+func (x *ReserveSeatRandomlyRequest) GetStart() string {
 	if x != nil {
 		return x.Start
 	}
 	return ""
 }
 
-func (x *ReserveSeatRamdonlyRequest) GetEnd() string {
+func (x *ReserveSeatRandomlyRequest) GetEnd() string {
 	if x != nil {
 		return x.End
 	}
 	return ""
 }
 
-func (x *ReserveSeatRamdonlyRequest) GetStuId() string {
+func (x *ReserveSeatRandomlyRequest) GetStuId() string {
 	if x != nil {
 		return x.StuId
 	}
 	return ""
 }
 
-func (x *ReserveSeatRamdonlyRequest) GetRoomId() string {
+func (x *ReserveSeatRandomlyRequest) GetRoomId() string {
 	if x != nil {
 		return x.RoomId
 	}
 	return ""
 }
 
-type ReserveSeatRamdonlyResponse struct {
+type ReserveSeatRandomlyResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Message       string                 `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ReserveSeatRamdonlyResponse) Reset() {
-	*x = ReserveSeatRamdonlyResponse{}
+func (x *ReserveSeatRandomlyResponse) Reset() {
+	*x = ReserveSeatRandomlyResponse{}
 	mi := &file_library_v1_library_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ReserveSeatRamdonlyResponse) String() string {
+func (x *ReserveSeatRandomlyResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ReserveSeatRamdonlyResponse) ProtoMessage() {}
+func (*ReserveSeatRandomlyResponse) ProtoMessage() {}
 
-func (x *ReserveSeatRamdonlyResponse) ProtoReflect() protoreflect.Message {
+func (x *ReserveSeatRandomlyResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_library_v1_library_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1759,12 +1759,12 @@ func (x *ReserveSeatRamdonlyResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ReserveSeatRamdonlyResponse.ProtoReflect.Descriptor instead.
-func (*ReserveSeatRamdonlyResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use ReserveSeatRandomlyResponse.ProtoReflect.Descriptor instead.
+func (*ReserveSeatRandomlyResponse) Descriptor() ([]byte, []int) {
 	return file_library_v1_library_proto_rawDescGZIP(), []int{28}
 }
 
-func (x *ReserveSeatRamdonlyResponse) GetMessage() string {
+func (x *ReserveSeatRandomlyResponse) GetMessage() string {
 	if x != nil {
 		return x.Message
 	}
@@ -2179,12 +2179,12 @@ const file_library_v1_library_proto_rawDesc = "" +
 	"\x06stu_id\x18\x02 \x01(\tR\x05stuId\"1\n" +
 	"\x15CancelReserveResponse\x12\x18\n" +
 	"\amessage\x18\x01 \x01(\tR\amessage\"t\n" +
-	"\x1aReserveSeatRamdonlyRequest\x12\x14\n" +
+	"\x1aReserveSeatRandomlyRequest\x12\x14\n" +
 	"\x05start\x18\x01 \x01(\tR\x05start\x12\x10\n" +
 	"\x03end\x18\x02 \x01(\tR\x03end\x12\x15\n" +
 	"\x06stu_id\x18\x03 \x01(\tR\x05stuId\x12\x17\n" +
 	"\aroom_id\x18\x04 \x01(\tR\x06roomId\"7\n" +
-	"\x1bReserveSeatRamdonlyResponse\x12\x18\n" +
+	"\x1bReserveSeatRandomlyResponse\x12\x18\n" +
 	"\amessage\x18\x01 \x01(\tR\amessage\"\x9f\x01\n" +
 	"\aComment\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x17\n" +
@@ -2217,7 +2217,7 @@ const file_library_v1_library_proto_rawDesc = "" +
 	"SearchUser\x12\x1d.library.v1.SearchUserRequest\x1a\x1e.library.v1.SearchUserResponse\x12`\n" +
 	"\x11ReserveDiscussion\x12$.library.v1.ReserveDiscussionRequest\x1a%.library.v1.ReserveDiscussionResponse\x12T\n" +
 	"\rCancelReserve\x12 .library.v1.CancelReserveRequest\x1a!.library.v1.CancelReserveResponse\x12f\n" +
-	"\x13ReserveSeatRandomly\x12&.library.v1.ReserveSeatRamdonlyRequest\x1a'.library.v1.ReserveSeatRamdonlyResponse\x12?\n" +
+	"\x13ReserveSeatRandomly\x12&.library.v1.ReserveSeatRandomlyRequest\x1a'.library.v1.ReserveSeatRandomlyResponse\x12?\n" +
 	"\rCreateComment\x12\x1c.library.v1.CreateCommentReq\x1a\x10.library.v1.Resp\x129\n" +
 	"\vGetComments\x12\x0e.library.v1.ID\x1a\x1a.library.v1.GetCommentResp\x121\n" +
 	"\rDeleteComment\x12\x0e.library.v1.ID\x1a\x10.library.v1.RespBFZDgithub.com/asynccnu/ccnubox-be/be-api/gen/proto/library/v1;libraryv1b\x06proto3"
@@ -2263,8 +2263,8 @@ var file_library_v1_library_proto_goTypes = []any{
 	(*ReserveDiscussionResponse)(nil),   // 24: library.v1.ReserveDiscussionResponse
 	(*CancelReserveRequest)(nil),        // 25: library.v1.CancelReserveRequest
 	(*CancelReserveResponse)(nil),       // 26: library.v1.CancelReserveResponse
-	(*ReserveSeatRamdonlyRequest)(nil),  // 27: library.v1.ReserveSeatRamdonlyRequest
-	(*ReserveSeatRamdonlyResponse)(nil), // 28: library.v1.ReserveSeatRamdonlyResponse
+	(*ReserveSeatRandomlyRequest)(nil),  // 27: library.v1.ReserveSeatRandomlyRequest
+	(*ReserveSeatRandomlyResponse)(nil), // 28: library.v1.ReserveSeatRandomlyResponse
 	(*Comment)(nil),                     // 29: library.v1.Comment
 	(*CreateCommentReq)(nil),            // 30: library.v1.CreateCommentReq
 	(*GetCommentResp)(nil),              // 31: library.v1.GetCommentResp
@@ -2291,7 +2291,7 @@ var file_library_v1_library_proto_depIdxs = []int32{
 	21, // 16: library.v1.Library.SearchUser:input_type -> library.v1.SearchUserRequest
 	23, // 17: library.v1.Library.ReserveDiscussion:input_type -> library.v1.ReserveDiscussionRequest
 	25, // 18: library.v1.Library.CancelReserve:input_type -> library.v1.CancelReserveRequest
-	27, // 19: library.v1.Library.ReserveSeatRandomly:input_type -> library.v1.ReserveSeatRamdonlyRequest
+	27, // 19: library.v1.Library.ReserveSeatRandomly:input_type -> library.v1.ReserveSeatRandomlyRequest
 	30, // 20: library.v1.Library.CreateComment:input_type -> library.v1.CreateCommentReq
 	32, // 21: library.v1.Library.GetComments:input_type -> library.v1.ID
 	32, // 22: library.v1.Library.DeleteComment:input_type -> library.v1.ID
@@ -2304,7 +2304,7 @@ var file_library_v1_library_proto_depIdxs = []int32{
 	22, // 29: library.v1.Library.SearchUser:output_type -> library.v1.SearchUserResponse
 	24, // 30: library.v1.Library.ReserveDiscussion:output_type -> library.v1.ReserveDiscussionResponse
 	26, // 31: library.v1.Library.CancelReserve:output_type -> library.v1.CancelReserveResponse
-	28, // 32: library.v1.Library.ReserveSeatRandomly:output_type -> library.v1.ReserveSeatRamdonlyResponse
+	28, // 32: library.v1.Library.ReserveSeatRandomly:output_type -> library.v1.ReserveSeatRandomlyResponse
 	33, // 33: library.v1.Library.CreateComment:output_type -> library.v1.Resp
 	31, // 34: library.v1.Library.GetComments:output_type -> library.v1.GetCommentResp
 	33, // 35: library.v1.Library.DeleteComment:output_type -> library.v1.Resp

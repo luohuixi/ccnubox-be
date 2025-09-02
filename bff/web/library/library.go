@@ -35,6 +35,7 @@ func (h *LibraryHandler) RegisterRoutes(s *gin.RouterGroup, authMiddleware gin.H
 	sg.POST("/create_comment", authMiddleware, ginx.WrapClaimsAndReq(h.CreateComment))
 	sg.GET("/get_comments", authMiddleware, ginx.WrapClaimsAndReq(h.GetComments))
 	sg.GET("/delete_comment", authMiddleware, ginx.WrapClaimsAndReq(h.DeleteComment))
+	sg.POST("/reserve_randomly", authMiddleware, ginx.WrapClaimsAndReq(h.ReserveSeatRandomly))
 }
 
 // GetSeatInfos 获取图书馆座位信息
@@ -419,7 +420,6 @@ func (h *LibraryHandler) CreateComment(ctx *gin.Context, req CreateCommentReq, u
 }
 
 func (h *LibraryHandler) GetComments(ctx *gin.Context, req IDreq, uc ijwt.UserClaims) (web.Response, error) {
-
 	comments, err := h.LibraryClient.GetComments(ctx, &libraryv1.ID{Id: int64(req.ID)})
 	if err != nil {
 		return web.Response{}, errs.GET_COMMENT_ERROR(err)
@@ -435,6 +435,22 @@ func (h *LibraryHandler) DeleteComment(ctx *gin.Context, req IDreq, uc ijwt.User
 	msg, err := h.LibraryClient.DeleteComment(ctx, &libraryv1.ID{Id: int64(req.ID)})
 	if err != nil {
 		return web.Response{}, errs.DELETE_COMMENT_ERROR(err)
+	}
+
+	return web.Response{
+		Msg: msg.Message,
+	}, nil
+}
+
+// 快速随机全校所有座位随机选座（后续设计传入 roomid []string 指定楼层随机）
+func (h *LibraryHandler) ReserveSeatRandomly(ctx *gin.Context, req ReserveSeatRandomlyRequest, uc ijwt.UserClaims) (web.Response, error) {
+	msg, err := h.LibraryClient.ReserveSeatRandomly(ctx, &libraryv1.ReserveSeatRandomlyRequest{
+		Start: req.Start,
+		End:   req.End,
+		StuId: uc.StudentId,
+	})
+	if err != nil {
+		return web.Response{}, errs.RESERVE_SEAT_ERROR(err)
 	}
 
 	return web.Response{

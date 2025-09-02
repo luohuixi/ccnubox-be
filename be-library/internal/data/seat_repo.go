@@ -123,7 +123,8 @@ func (r *SeatRepo) GetSeatsByRoom(ctx context.Context, roomID string) ([]*biz.Se
 	return seats, nil
 }
 
-func (r *SeatRepo) FindFirstAvailableSeat(ctx context.Context, roomID string, start, end int64) (string, error) {
+// 返回 座位号 座位是否找到 err
+func (r *SeatRepo) FindFirstAvailableSeat(ctx context.Context, start, end int64) (string, bool, error) {
 	luaScript := `
 		local qStart = tonumber(ARGV[1])
 		local qEnd = tonumber(ARGV[2])
@@ -154,22 +155,22 @@ func (r *SeatRepo) FindFirstAvailableSeat(ctx context.Context, roomID string, st
 		return nil
 	`
 	result, err := r.data.redis.Eval(ctx, luaScript, nil, start, end).Result()
-	// redis.Nil 来做无匹配座位的表示符
+	// redis.Nil 来做无匹配座位的表示符，返回 false
 	if err == redis.Nil {
-		r.log.Infof("No available seat now (time:%s)", time.Now().String())
-		return "", err
+		r.log.Infof("No available seat (time:%s)", time.Now().String())
+		return "", false, err
 	}
 	if err != nil {
 		r.log.Errorf("Error getting first available seat from redis (time:%s)", time.Now().String())
-		return "", err
+		return "", false, err
 	}
 
 	resultStr, ok := result.(string)
 	if !ok {
 		r.log.Infof("No available seat now (time:%s)", time.Now().String())
-		return "", fmt.Errorf("no available seat now (time:%s)", time.Now().String())
+		return "", false, fmt.Errorf("no available seat now (time:%s)", time.Now().String())
 	}
-	return resultStr, nil
+	return resultStr, true, nil
 }
 
 // func (r *SeatRepo) getSeatFromSQL(ctx context.Context, devID string) (*biz.Seat, error) {
