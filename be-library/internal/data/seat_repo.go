@@ -74,6 +74,15 @@ func (r *SeatRepo) SaveRoomSeatsInRedis(ctx context.Context, stuID string) error
 			if len(zs) > 0 {
 				pipe.ZAdd(ctx, zKey, zs...) // 批量插入时间段
 				pipe.Expire(ctx, zKey, ttl.AsDuration())
+			} else if len(zs) == 0 {
+				// 给未被占用的座位一个默认值，使得查询脚本能查询到空闲座位
+				def := redis.Z{
+					Score:  2300,
+					Member: 2300,
+				}
+
+				pipe.ZAdd(ctx, zKey, def)
+				pipe.Expire(ctx, zKey, ttl.AsDuration())
 			}
 
 		}
