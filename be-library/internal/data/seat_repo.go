@@ -63,9 +63,12 @@ func (r *SeatRepo) SaveRoomSeatsInRedis(ctx context.Context, stuID string) error
 			for _, ts := range seat.Ts {
 				startUnix, _ := tool.ParseToUnix(ts.Start)
 				endUnix, _ := tool.ParseToUnix(ts.End)
+				// 记录每个被占用时间的开始与结束的时间戳
 				zs = append(zs, redis.Z{
-					Score:  float64(startUnix),
-					Member: fmt.Sprintf("%d-%d", startUnix, endUnix),
+					// 开始时间
+					Score: float64(endUnix),
+					// 结束时间
+					Member: float64(startUnix),
 				})
 			}
 			if len(zs) > 0 {
@@ -111,30 +114,53 @@ func (r *SeatRepo) GetSeatsByRoom(ctx context.Context, roomID string) ([]*biz.Se
 	return seats, nil
 }
 
-// 待优化x
-func (r *SeatRepo) FindFirstAvailableSeat(ctx context.Context, roomID, start, end string) (string, error) {
-	var seatDevID string
-	// 待优化
-	subQuery := r.data.db.Model(&DO.TimeSlot{}).
-		Select("1").
-		Where("time_slots.dev_id = seats.id").
-		Where("start < ?", end).
-		Where("end > ?", start)
+func (r *SeatRepo) FindFirstAvailableSeat(ctx context.Context, roomID string, start, end int64) (string, error) {
+	luaScript := `
+		local qStart = tonumber(ARGV[1])
+		local qEnd = tonumber(ARGV[2])
+		local cursor = "0"
 
-	err := r.data.db.WithContext(ctx).
-		Model(&DO.Seat{}).
-		Where("room_id = ?", roomID).
-		Where("NOT EXISTS (?)", subQuery).
-		Limit(1).
-		Pluck("dev_id", &seatDevID).Error
+		repeat
+			local scanResult = redis.call("SCAN", cursor, "MATCH", "seat:*:times", "COUNT", 100)
+			cursor = scanResult[1]
+			local keys = scanResult[2]
 
-	if err != nil {
+			for i=1,#keys do
+				local members = redis.call("ZRANGE", keys[i], 0, -1, "WITHSCORES")
+				local free = true
+				for j=2,#members,2 do
+					local startTime = tonumber(members[j-1])
+					local endTime = tonumber(members[j])
+					if startTime < qEnd and endTime > qStart then
+						free = false
+						break
+					end
+				end
+				if free then
+					return keys[i]  -- 返回第一个空闲座位 key
+				end
+			end
+		until cursor == "0"
+
+		return nil
+	`
+	result, err := r.data.redis.Eval(ctx, luaScript, nil, start, end).Result()
+	// redis.Nil 来做无匹配座位的表示符
+	if err == redis.Nil {
+		r.log.Infof("No available seat now (time:%s)", time.Now().String())
 		return "", err
 	}
-	if seatDevID == "" {
-		return "", fmt.Errorf("no available seat found")
+	if err != nil {
+		r.log.Errorf("Error getting first available seat from redis (time:%s)", time.Now().String())
+		return "", err
 	}
-	return seatDevID, nil
+
+	resultStr, ok := result.(string)
+	if !ok {
+		r.log.Infof("No available seat now (time:%s)", time.Now().String())
+		return "", fmt.Errorf("no available seat now (time:%s)", time.Now().String())
+	}
+	return resultStr, nil
 }
 
 // func (r *SeatRepo) getSeatFromSQL(ctx context.Context, devID string) (*biz.Seat, error) {

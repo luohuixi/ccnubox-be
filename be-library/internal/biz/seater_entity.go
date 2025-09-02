@@ -65,7 +65,7 @@ type SeatRepo interface {
 	// GetByRoom(ctx context.Context, roomID string) ([]*Seat, error)
 	// GetAvailableSeats(ctx context.Context, filter *SeatFilter) ([]*Seat, int64, error)
 	// GetStatistics(ctx context.Context, roomID string) (*SeatStatistics, error)
-	FindFirstAvailableSeat(ctx context.Context, roomID, start, end string) (string, error)
+	FindFirstAvailableSeat(ctx context.Context, roomID string, start, end int64) (string, error)
 
 	// 获取所有楼层座位信息
 	GetSeatInfos(ctx context.Context, stuID string) (map[string][]*Seat, error)
