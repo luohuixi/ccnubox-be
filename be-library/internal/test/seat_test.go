@@ -1,4 +1,4 @@
-package data
+package test
 
 import (
 	"context"
@@ -11,6 +11,7 @@ import (
 	"github.com/asynccnu/ccnubox-be/be-library/internal/client"
 	"github.com/asynccnu/ccnubox-be/be-library/internal/conf"
 	"github.com/asynccnu/ccnubox-be/be-library/internal/crawler"
+	"github.com/asynccnu/ccnubox-be/be-library/internal/data"
 	"github.com/asynccnu/ccnubox-be/be-library/internal/registry"
 	"github.com/go-kratos/kratos/v2/config"
 	"github.com/go-kratos/kratos/v2/config/file"
@@ -24,7 +25,8 @@ func init() {
 }
 
 // 全局 repo
-var repo *SeatRepo
+var repo *data.SeatRepo
+var bizz biz.LibraryBiz
 
 // TestMain 在所有测试前初始化依赖
 func TestMain(m *testing.M) {
@@ -45,11 +47,11 @@ func TestMain(m *testing.M) {
 	}
 
 	// 初始化 DB + Redis
-	db, err := NewDB(bc.Data)
+	db, err := data.NewDB(bc.Data)
 	if err != nil {
 		panic(err)
 	}
-	rdb := NewRedisDB(bc.Data, log.NewStdLogger(os.Stdout))
+	rdb := data.NewRedisDB(bc.Data, log.NewStdLogger(os.Stdout))
 
 	confServer := bc.Server
 	confRegistry := bc.Registry
@@ -65,18 +67,20 @@ func TestMain(m *testing.M) {
 	duration := biz.NewWaitTime(confServer)
 	libraryCrawler := crawler.NewLibraryCrawler(logger, cookiePool, ccnuServiceProxy, duration)
 
-	d, err := NewData(bc.Data, log.NewStdLogger(os.Stdout), db, rdb)
+	d, err := data.NewData(bc.Data, log.NewStdLogger(os.Stdout), db, rdb)
 	if err != nil {
 		panic(err)
 	}
 
-	repo = NewSeatRepo(d, log.NewStdLogger(os.Stdout), libraryCrawler).(*SeatRepo)
+	repo = data.NewSeatRepo(d, log.NewStdLogger(os.Stdout), libraryCrawler).(*data.SeatRepo)
+	bizz = biz.NewLibraryBiz(libraryCrawler, log.NewStdLogger(os.Stdout), repo)
 
 	// 执行测试
 	m.Run()
 }
 
-func TestSaveRoomSeatsInRediss(t *testing.T) {
+// 10s -> 8s
+func TestSaveRoomSeatsInRedis(t *testing.T) {
 	stuID := "2024214744"
 	ctx := context.Background()
 
@@ -98,4 +102,25 @@ func TestGetSeat(t *testing.T) {
 	for _, seat := range seats {
 		fmt.Println(seat)
 	}
+}
+
+func TestFindFirstAvailbleSeat(t *testing.T) {
+	ctx := context.Background()
+	devid, _, err := repo.FindFirstAvailableSeat(ctx, 2000, 2100)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(devid)
+}
+
+func TestReserveSeatRandomly(t *testing.T) {
+	id := "2024214744"
+	start := "2025-09-02 20:00"
+	end := "2025-09-02 21:00"
+	ctx := context.Background()
+	msg, err := bizz.ReserveSeatRandomly(ctx, id, start, end)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(msg)
 }
