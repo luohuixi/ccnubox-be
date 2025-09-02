@@ -167,7 +167,7 @@ func (s *userService) GetCookie(ctx context.Context, studentId string) (string, 
 	})
 
 	if err != nil {
-		return "", SAVE_USER_ERROR(err)
+		return "", CCNU_GETCOOKIE_ERROR(err)
 	}
 
 	cookie, ok := result.(string)

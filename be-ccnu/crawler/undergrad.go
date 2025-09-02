@@ -159,11 +159,7 @@ func (c *UnderGrad) LoginUnderGradSystem(ctx context.Context) error {
 		return err
 	}
 	defer resp.Body.Close()
-	res, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-	fmt.Println(string(res))
+
 	return nil
 }
 
