@@ -32,6 +32,7 @@ message Data {
     google.protobuf.Duration read_timeout = 3;
     google.protobuf.Duration write_timeout = 4;
     string password = 5;
+    google.protobuf.Duration ttl = 6;
   }
   Database database = 1;
   Redis redis = 2;

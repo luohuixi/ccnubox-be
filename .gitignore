@@ -42,3 +42,6 @@ bin/
 
 *.xlsx
 deployment/docker/logs
+
+test.sh
+test.yaml

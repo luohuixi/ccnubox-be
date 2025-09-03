@@ -151,3 +151,25 @@ func (a *Assembler) ConvertGetSeatResponse(data map[string][]*biz.Seat) *pb.GetS
 	}
 	return result
 }
+
+func (c *Assembler) ConvertMessages(data []*biz.Comment) *pb.GetCommentResp {
+	if len(data) == 0 {
+		return &pb.GetCommentResp{}
+	}
+
+	result := make([]*pb.Comment, 0, len(data))
+	for _, r := range data {
+		result = append(result, &pb.Comment{
+			Id:        int64(r.ID),
+			SeatId:    r.SeatID,
+			Username:  r.Username,
+			Content:   r.Content,
+			Rating:    int64(r.Rating),
+			CreatedAt: r.CreatedAt.String(),
+		})
+	}
+
+	return &pb.GetCommentResp{
+		Comment: result,
+	}
+}

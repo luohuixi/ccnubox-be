@@ -10,6 +10,7 @@ import (
 	"github.com/asynccnu/ccnubox-be/be-library/internal/biz"
 	"github.com/asynccnu/ccnubox-be/be-library/internal/client"
 	"github.com/asynccnu/ccnubox-be/be-library/internal/conf"
+	"github.com/asynccnu/ccnubox-be/be-library/internal/crawler"
 	"github.com/asynccnu/ccnubox-be/be-library/internal/data"
 	"github.com/asynccnu/ccnubox-be/be-library/internal/registry"
 	"github.com/asynccnu/ccnubox-be/be-library/internal/server"
@@ -34,19 +35,21 @@ func wireApp(confServer *conf.Server, confData *conf.Data, confRegistry *conf.Re
 	}
 	ccnuServiceProxy := client.NewCCNUServiceProxy(userServiceClient)
 	duration := biz.NewWaitTime(confServer)
-	libraryCrawler := data.NewLibraryCrawler(logger, cookiePool, ccnuServiceProxy, duration)
+	libraryCrawler := crawler.NewLibraryCrawler(logger, cookiePool, ccnuServiceProxy, duration)
 	db, err := data.NewDB(confData)
 	if err != nil {
 		return nil, nil, err
 	}
 	redisClient := data.NewRedisDB(confData, logger)
-	dataData, err := data.NewData(confData, logger, db, libraryCrawler, redisClient)
+	dataData, err := data.NewData(confData, logger, db, redisClient)
 	if err != nil {
 		return nil, nil, err
 	}
-	seatRepo := data.NewSeatRepo(dataData, logger)
+	seatRepo := data.NewSeatRepo(dataData, logger, libraryCrawler)
 	libraryBiz := biz.NewLibraryBiz(libraryCrawler, logger, seatRepo)
-	libraryService := service.NewLibraryService(libraryBiz, logger)
+	assembler := data.NewAssembler()
+	commentRepo := data.NewCommentRepo(dataData, logger, assembler)
+	libraryService := service.NewLibraryService(libraryBiz, logger, commentRepo)
 	grpcServer := server.NewGRPCServer(confServer, libraryService, logger)
 	app := newApp(logger, grpcServer, etcdRegistry)
 	return app, func() {

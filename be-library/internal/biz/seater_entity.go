@@ -27,8 +27,8 @@ type Seat struct {
 	LabName  string // 南湖分馆一楼
 	RoomID   string // room_id
 	RoomName string // 南湖分馆一楼开敞座位区
-	DevID    string // 101699849
-	DevName  string // N1245
+	DevID    string // 101699849 或称 seatid
+	DevName  string // N1245 或称 seatname
 	Ts       []*TimeSlot
 }
 
@@ -58,15 +58,14 @@ type SeatStatistics struct {
 
 type SeatRepo interface {
 	// 核心方法：从爬虫同步数据（要修改，应该是通过 crawler 直接将座位同步到里面）
-	SyncSeatsIntoSQL(ctx context.Context, roomID string, stuID string, seats []*Seat) error
+	// SyncSeatsIntoSQL(ctx context.Context, roomID string, stuID string, seats []*Seat) error
 
 	// 查询方法
 	// Get(ctx context.Context, devID string) (*Seat, error)
 	// GetByRoom(ctx context.Context, roomID string) ([]*Seat, error)
 	// GetAvailableSeats(ctx context.Context, filter *SeatFilter) ([]*Seat, int64, error)
 	// GetStatistics(ctx context.Context, roomID string) (*SeatStatistics, error)
-	FindFirstAvailableSeat(ctx context.Context, roomID, start, end string) (string, error)
-
+	FindFirstAvailableSeat(ctx context.Context, start, end int64) (string, bool, error)
 	// 获取所有楼层座位信息
 	GetSeatInfos(ctx context.Context, stuID string) (map[string][]*Seat, error)
 

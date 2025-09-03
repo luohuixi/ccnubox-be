@@ -2,133 +2,197 @@ package data
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/asynccnu/ccnubox-be/be-library/internal/biz"
 	"github.com/asynccnu/ccnubox-be/be-library/internal/data/DO"
+	"github.com/asynccnu/ccnubox-be/be-library/pkg/tool"
 	"github.com/go-kratos/kratos/v2/log"
+	"github.com/redis/go-redis/v9"
 	"golang.org/x/sync/singleflight"
 	"gorm.io/gorm"
 )
 
 type SeatRepo struct {
-	data *Data
-	log  *log.Helper
-	sf   singleflight.Group
+	data    *Data
+	log     *log.Helper
+	sf      singleflight.Group
+	crawler biz.LibraryCrawler
 }
 
-func NewSeatRepo(data *Data, logger log.Logger) biz.SeatRepo {
+func NewSeatRepo(data *Data, logger log.Logger, crawler biz.LibraryCrawler) biz.SeatRepo {
 	return &SeatRepo{
-		log:  log.NewHelper(logger),
-		data: data,
+		log:     log.NewHelper(logger),
+		data:    data,
+		crawler: crawler,
 	}
 }
 
-// 将座位信息分块存入redis里
-// func (r *SeatRepo) SyncFromCrawlerInCache(ctx context.Context, roomID string, cookie string) error {
-//  SeatJson, roomID, err := r.data.crawler.SeatJSONCrawler(ctx, cookie, roomID)
-//  if err != nil {
-//     return err
-//  }
+// 弄个管理员账号来进行持续爬虫
+// ZADD seat:{seatID}:times startTimestamp "{start}-{end}"
+func (r *SeatRepo) SaveRoomSeatsInRedis(ctx context.Context, stuID string) error {
+	ttl := r.data.cfg.Redis.Ttl
+	// 用pipe收集redis指令，减少网络IO造成的时间损耗
+	pipe := r.data.redis.Pipeline()
 
-//  err = r.SeatToCache(ctx, SeatJson, roomID)
-//  if err != nil {
-//     return err
-//  }
-
-//  return nil
-// }
-
-func (r *SeatRepo) SyncSeatsIntoSQL(ctx context.Context, roomID string, stuID string, seats []*biz.Seat) error {
-	dataSeats, dataTimeslots := LotConvert2DataSeat(seats)
-	err := r.SaveSeatsAndTimeSlots(ctx, dataSeats, dataTimeslots)
+	allSeats, err := r.crawler.GetSeatInfos(ctx, stuID)
 	if err != nil {
-		r.log.Errorf("save seats and timeslots failed(room_id: %v) stu_id: %v", roomID, stuID)
 		return err
 	}
 
-	r.log.Infof("save seats and timeslots successed(room_id: %v) stu_id: %v", roomID, stuID)
+	// 按房间存储 房间里的所有座位数据
+	for roomId, seats := range allSeats {
+		key := fmt.Sprintf("room:%s", roomId)
+
+		// seatID : seatJson
+		hash := make(map[string]string)
+		for _, seat := range seats {
+			seatID := seat.DevID
+			seatJson, err := json.Marshal(seat)
+			if err != nil {
+				r.log.Errorf("marshal seat error := %v", err)
+				return err
+			}
+			hash[seatID] = string(seatJson)
+
+			// 建立时间序列 zSort
+			zKey := fmt.Sprintf("seat:%s:times", seatID)
+			var zs []redis.Z
+			for _, ts := range seat.Ts {
+				startUnix, _ := tool.ParseToUnix(ts.Start)
+				endUnix, _ := tool.ParseToUnix(ts.End)
+				// 记录每个被占用时间的开始与结束的时间戳
+				zs = append(zs, redis.Z{
+					// 开始时间
+					Score: float64(endUnix),
+					// 结束时间
+					Member: float64(startUnix),
+				})
+			}
+			if len(zs) > 0 {
+				pipe.ZAdd(ctx, zKey, zs...) // 批量插入时间段
+				pipe.Expire(ctx, zKey, ttl.AsDuration())
+			} else if len(zs) == 0 {
+				// 给未被占用的座位一个默认值，使得查询脚本能查询到空闲座位
+				def := redis.Z{
+					Score:  2300,
+					Member: 2300,
+				}
+
+				pipe.ZAdd(ctx, zKey, def)
+				pipe.Expire(ctx, zKey, ttl.AsDuration())
+			}
+
+		}
+		// RoomID : {N1111: json1 N2222: json2}
+		// 单个房间的座位存储
+		pipe.HSet(ctx, key, hash)
+		// 设置 TTL , 过时自动删除捏
+		pipe.Expire(ctx, key, ttl.AsDuration()).Err()
+	}
+
+	_, err = pipe.Exec(ctx)
+	if err != nil {
+		r.log.Error("Save SeatInfo in redis ERROR:%s", err.Error())
+		return err
+	}
+
+	r.log.Infof("All seats saved in Redis successfully")
 	return nil
 }
 
-func (r *SeatRepo) GetByRoom(ctx context.Context, roomID string) (string, error) {
-	json, err := r.getSeatJSONFromCacheByDevID(ctx, roomID, false)
+func (r *SeatRepo) GetSeatsByRoom(ctx context.Context, roomID string) ([]*biz.Seat, error) {
+	roomKey := fmt.Sprintf("room:%s", roomID)
+
+	data, err := r.data.redis.HGetAll(ctx, roomKey).Result()
 	if err != nil {
-		return "", err
-	}
-	return json, nil
-}
-
-// 待优化
-func (r *SeatRepo) FindFirstAvailableSeat(ctx context.Context, roomID, start, end string) (string, error) {
-	var seatDevID string
-	// 待优化
-	subQuery := r.data.db.Model(&DO.TimeSlot{}).
-		Select("1").
-		Where("time_slots.dev_id = seats.id").
-		Where("start < ?", end).
-		Where("end > ?", start)
-
-	err := r.data.db.WithContext(ctx).
-		Model(&DO.Seat{}).
-		Where("room_id = ?", roomID).
-		Where("NOT EXISTS (?)", subQuery).
-		Limit(1).
-		Pluck("dev_id", &seatDevID).Error
-
-	if err != nil {
-		return "", err
-	}
-	if seatDevID == "" {
-		return "", fmt.Errorf("no available seat found")
-	}
-	return seatDevID, nil
-}
-
-// Get 获取单个座位信息
-func (r *SeatRepo) Get(ctx context.Context, devID string) (*biz.Seat, error) {
-	// 先从缓存获取
-	if s, ok, err := r.getSeatCache(ctx, devID); err == nil && ok {
-		return s, nil
-	} else if err != nil {
-		r.log.Warnf("get seat cache(dev_id:%s) err: %v", devID, err)
-	}
-
-	// 从数据库获取兜底
-	result, err := r.getSeatFromSQL(ctx, devID)
-	if err != nil {
+		r.log.Errorf("get seatinfo from redis error (room_id := %s)", roomKey)
 		return nil, err
 	}
 
-	// 写入缓存
-	if result != nil {
-		_ = r.setSeatCache(ctx, devID, result, 5*time.Minute)
-	}
-
-	return result, nil
-}
-
-func (r *SeatRepo) getSeatFromSQL(ctx context.Context, devID string) (*biz.Seat, error) {
-	var seatModel DO.Seat
-	if err := r.data.db.WithContext(ctx).
-		Where("dev_id = ?", devID).
-		First(&seatModel).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, nil
+	seats := []*biz.Seat{}
+	for _, v := range data {
+		var s biz.Seat
+		err := json.Unmarshal([]byte(v), &s)
+		if err == nil {
+			seats = append(seats, &s)
 		}
-		return nil, err
 	}
-	ts, err := r.GetTimeSlotsBySeatID(ctx, devID)
-	if err != nil {
-		return nil, err
-	}
-
-	// 转换为业务模型
-	result := ConvertSeat2Biz(&seatModel, ts)
-
-	return result, nil
+	return seats, nil
 }
+
+// 返回 座位号 座位是否找到 err
+func (r *SeatRepo) FindFirstAvailableSeat(ctx context.Context, start, end int64) (string, bool, error) {
+	luaScript := `
+		local qStart = tonumber(ARGV[1])
+		local qEnd = tonumber(ARGV[2])
+		local cursor = "0"
+
+		repeat
+			local scanResult = redis.call("SCAN", cursor, "MATCH", "seat:*:times", "COUNT", 100)
+			cursor = scanResult[1]
+			local keys = scanResult[2]
+
+			for i=1,#keys do
+				local members = redis.call("ZRANGE", keys[i], 0, -1, "WITHSCORES")
+				local free = true
+				for j=2,#members,2 do
+					local startTime = tonumber(members[j-1])
+					local endTime = tonumber(members[j])
+					if startTime < qEnd and endTime > qStart then
+						free = false
+						break
+					end
+				end
+				if free then
+					return keys[i]  -- 返回第一个空闲座位 key
+				end
+			end
+		until cursor == "0"
+
+		return nil
+	`
+	result, err := r.data.redis.Eval(ctx, luaScript, nil, start, end).Result()
+	// redis.Nil 来做无匹配座位的表示符，返回 false
+	if err == redis.Nil {
+		r.log.Infof("No available seat (time:%s)", time.Now().String())
+		return "", false, err
+	}
+	if err != nil {
+		r.log.Errorf("Error getting first available seat from redis (time:%s)", time.Now().String())
+		return "", false, err
+	}
+
+	resultStr, ok := result.(string)
+	if !ok {
+		r.log.Infof("No available seat now (time:%s)", time.Now().String())
+		return "", false, fmt.Errorf("no available seat now (time:%s)", time.Now().String())
+	}
+	return resultStr, true, nil
+}
+
+// func (r *SeatRepo) getSeatFromSQL(ctx context.Context, devID string) (*biz.Seat, error) {
+// 	var seatModel seat
+// 	if err := r.data.db.WithContext(ctx).
+// 		Where("dev_id = ?", devID).
+// 		First(&seatModel).Error; err != nil {
+// 		if err == gorm.ErrRecordNotFound {
+// 			return nil, nil
+// 		}
+// 		return nil, err
+// 	}
+// 	ts, err := r.GetTimeSlotsBySeatID(ctx, devID)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+
+// 	// 转换为业务模型
+// 	result := ConvertSeat2Biz(&seatModel, ts)
+
+// 	return result, nil
+// }
 
 func (r *SeatRepo) toBizSeat(s *DO.Seat, ts []*DO.TimeSlot) *biz.Seat {
 	bizTs := make([]*biz.TimeSlot, len(ts))
@@ -234,7 +298,7 @@ func (r *SeatRepo) GetSeatInfos(ctx context.Context, stuID string) (map[string][
 
 // refreshAll 从爬虫获取所有房间最新座位信息并回填缓存与时间戳
 func (r *SeatRepo) refreshAll(ctx context.Context, stuID string) (map[string][]*biz.Seat, error) {
-	data, err := r.data.crawler.GetSeatInfos(ctx, stuID)
+	data, err := r.crawler.GetSeatInfos(ctx, stuID)
 	if err != nil {
 		return nil, err
 	}

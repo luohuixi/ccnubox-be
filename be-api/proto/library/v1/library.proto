@@ -14,7 +14,10 @@ service Library {
     rpc SearchUser (SearchUserRequest) returns (SearchUserResponse);
     rpc ReserveDiscussion (ReserveDiscussionRequest) returns (ReserveDiscussionResponse);
     rpc CancelReserve (CancelReserveRequest) returns (CancelReserveResponse);
-    rpc ReserveSeatRamdomly (ReserveSeatRamdonlyRequest) returns (ReserveSeatRamdonlyResponse);
+    rpc ReserveSeatRandomly (ReserveSeatRandomlyRequest) returns (ReserveSeatRandomlyResponse);
+    rpc CreateComment (CreateCommentReq) returns (Resp);
+    rpc GetComments (ID) returns (GetCommentResp);
+    rpc DeleteComment (ID) returns (Resp);
 }
 
 // 获取座位信息
@@ -190,13 +193,46 @@ message CancelReserveResponse{
 }
 
 // 随机选座
-message ReserveSeatRamdonlyRequest {
+message ReserveSeatRandomlyRequest {
     string start = 1;
     string end = 2;
     string stu_id = 3;
     string room_id = 4;
 }
 
-message ReserveSeatRamdonlyResponse {
+message ReserveSeatRandomlyResponse {
     string message = 1;
 }
+
+// 评论
+message Comment {
+    int64 id = 1;
+    string seat_id = 2;
+    string username = 3;
+    string content = 4;
+    int64 rating = 5;
+    string created_at = 6;
+}
+
+
+message CreateCommentReq {
+    string seat_id = 1;
+    string username = 2;
+    string content = 3;
+    int64 rating = 4;
+}
+
+message GetCommentResp {
+    repeated Comment Comment = 1;
+}
+
+// 通用ID项
+message ID {
+    int64 id = 1;
+}
+
+// 通用消息项
+message Resp {
+    string message = 1;
+}
+

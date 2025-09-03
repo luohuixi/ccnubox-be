@@ -1,9 +1,9 @@
 http:
-  addr: ":8080"
+  addr: ":8081"
 
 redis:
   addr: "localhost:6379"
-  password: "12345678"
+  password: "youpassword"
 
 
 etcd:

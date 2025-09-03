@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/asynccnu/ccnubox-be/be-library/internal/biz"
 	"github.com/asynccnu/ccnubox-be/be-library/internal/conf"
 	"github.com/asynccnu/ccnubox-be/be-library/internal/data/DO"
 	"github.com/redis/go-redis/v9"
@@ -18,23 +17,23 @@ import (
 )
 
 // ProviderSet is data providers.
-var ProviderSet = wire.NewSet(NewData, NewLibraryCrawler, NewSeatRepo, NewRecordRepo, NewDB, NewRedisDB)
+var ProviderSet = wire.NewSet(NewData, NewSeatRepo, NewDB, NewRedisDB, NewCommentRepo, NewAssembler)
 
 // Data 做CURD时使用该框架
 type Data struct {
-	db      *gorm.DB
-	log     *log.Helper
-	crawler biz.LibraryCrawler
-	redis   *redis.Client
+	db    *gorm.DB
+	log   *log.Helper
+	cfg   *conf.Data
+	redis *redis.Client
 }
 
-// NewData .
-func NewData(c *conf.Data, logger log.Logger, db *gorm.DB, crawler biz.LibraryCrawler, rdb *redis.Client) (*Data, error) {
+// NewData
+func NewData(c *conf.Data, logger log.Logger, db *gorm.DB, rdb *redis.Client) (*Data, error) {
 	data := &Data{
-		log:     log.NewHelper(logger),
-		db:      db,
-		crawler: crawler,
-		redis:   rdb,
+		log:   log.NewHelper(logger),
+		db:    db,
+		redis: rdb,
+		cfg:   c,
 	}
 
 	return data, nil
@@ -55,7 +54,7 @@ func NewDB(c *conf.Data) (*gorm.DB, error) {
 		return nil, fmt.Errorf("failed to connect database: %w", err)
 	}
 
-	if err := db.AutoMigrate(&DO.Seat{}, &DO.TimeSlot{}, &DO.FutureRecord{}, &DO.HistoryRecord{}); err != nil {
+	if err := db.AutoMigrate(&DO.Seat{}, &DO.TimeSlot{}, &DO.FutureRecord{}, &DO.HistoryRecord{}, &DO.Comment{}); err != nil {
 		return nil, fmt.Errorf("auto migrate failed: %w", err)
 	}
 

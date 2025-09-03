@@ -1,4 +1,4 @@
-package data
+package crawler
 
 import (
 	"context"
@@ -171,7 +171,8 @@ func (c *Crawler) getSeatInfos(ctx context.Context, client *client.CookieClient,
 	data.ForEach(func(_, item gjson.Result) bool {
 		seat := &biz.Seat{
 			LabName:  item.Get("labName").String(),
-			RoomName: item.Get("kindName").String(),
+			RoomName: item.Get("roomName").String(),
+			RoomID:   item.Get("roomId").String(),
 			DevID:    item.Get("devId").String(),
 			DevName:  item.Get("devName").String(),
 		}
