@@ -7,12 +7,10 @@ import (
 	"time"
 
 	"github.com/asynccnu/ccnubox-be/be-library/internal/biz"
-	"github.com/asynccnu/ccnubox-be/be-library/internal/data/DO"
 	"github.com/asynccnu/ccnubox-be/be-library/pkg/tool"
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/redis/go-redis/v9"
 	"golang.org/x/sync/singleflight"
-	"gorm.io/gorm"
 )
 
 type SeatRepo struct {
@@ -32,6 +30,7 @@ func NewSeatRepo(data *Data, logger log.Logger, crawler biz.LibraryCrawler) biz.
 
 // 弄个管理员账号来进行持续爬虫
 // ZADD seat:{seatID}:times startTimestamp "{start}-{end}"
+// HSET roomid timestamp(UnixMilli)
 func (r *SeatRepo) SaveRoomSeatsInRedis(ctx context.Context, stuID string) error {
 	ttl := r.data.cfg.Redis.Ttl
 	// 用pipe收集redis指令，减少网络IO造成的时间损耗
@@ -44,7 +43,10 @@ func (r *SeatRepo) SaveRoomSeatsInRedis(ctx context.Context, stuID string) error
 
 	// 按房间存储 房间里的所有座位数据
 	for roomId, seats := range allSeats {
-		key := fmt.Sprintf("room:%s", roomId)
+		key := r.cacheRoomSeatsKey(roomId)
+		tsKey := r.cacheRoomTsKey(roomId)
+		// 存储每个获取每个房间的时间戳，用于比较软更新时使用
+		pipe.HSet(ctx, tsKey, time.Now().UnixMilli())
 
 		// seatID : seatJson
 		hash := make(map[string]string)
@@ -57,8 +59,8 @@ func (r *SeatRepo) SaveRoomSeatsInRedis(ctx context.Context, stuID string) error
 			}
 			hash[seatID] = string(seatJson)
 
-			// 建立时间序列 zSort
-			zKey := fmt.Sprintf("seat:%s:times", seatID)
+			// 建立时间序列 zSet
+			zKey := r.cacheSeatTsKey(seatID)
 			var zs []redis.Z
 			for _, ts := range seat.Ts {
 				startUnix, _ := tool.ParseToUnix(ts.Start)
@@ -103,13 +105,17 @@ func (r *SeatRepo) SaveRoomSeatsInRedis(ctx context.Context, stuID string) error
 	return nil
 }
 
-func (r *SeatRepo) GetSeatsByRoom(ctx context.Context, roomID string) ([]*biz.Seat, error) {
-	roomKey := fmt.Sprintf("room:%s", roomID)
+// RoomSeat 是否保留待商榷
+func (r *SeatRepo) GetSeatsByRoom(ctx context.Context, roomID string, stuID string) ([]*biz.Seat, bool, error) {
+	roomKey := r.cacheRoomSeatsKey(roomID)
 
 	data, err := r.data.redis.HGetAll(ctx, roomKey).Result()
 	if err != nil {
 		r.log.Errorf("get seatinfo from redis error (room_id := %s)", roomKey)
-		return nil, err
+		return nil, true, err
+	} else if len(data) == 0 {
+		r.log.Infof("get no seatinfo from redis (room_id := %s) reloading", roomKey)
+		return nil, false, err
 	}
 
 	seats := []*biz.Seat{}
@@ -120,11 +126,11 @@ func (r *SeatRepo) GetSeatsByRoom(ctx context.Context, roomID string) ([]*biz.Se
 			seats = append(seats, &s)
 		}
 	}
-	return seats, nil
+	return seats, true, nil
 }
 
 // 返回 座位号 座位是否找到 err
-func (r *SeatRepo) FindFirstAvailableSeat(ctx context.Context, start, end int64) (string, bool, error) {
+func (r *SeatRepo) FindFirstAvailableSeat(ctx context.Context, start, end int64, roomID []string) (string, bool, error) {
 	luaScript := `
 		local qStart = tonumber(ARGV[1])
 		local qEnd = tonumber(ARGV[2])
@@ -173,70 +179,6 @@ func (r *SeatRepo) FindFirstAvailableSeat(ctx context.Context, start, end int64)
 	return resultStr, true, nil
 }
 
-// func (r *SeatRepo) getSeatFromSQL(ctx context.Context, devID string) (*biz.Seat, error) {
-// 	var seatModel seat
-// 	if err := r.data.db.WithContext(ctx).
-// 		Where("dev_id = ?", devID).
-// 		First(&seatModel).Error; err != nil {
-// 		if err == gorm.ErrRecordNotFound {
-// 			return nil, nil
-// 		}
-// 		return nil, err
-// 	}
-// 	ts, err := r.GetTimeSlotsBySeatID(ctx, devID)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	// 转换为业务模型
-// 	result := ConvertSeat2Biz(&seatModel, ts)
-
-// 	return result, nil
-// }
-
-func (r *SeatRepo) toBizSeat(s *DO.Seat, ts []*DO.TimeSlot) *biz.Seat {
-	bizTs := make([]*biz.TimeSlot, len(ts))
-	for _, t := range ts {
-		bizT := &biz.TimeSlot{
-			Start: t.Start,
-			End:   t.End,
-		}
-		bizTs = append(bizTs, bizT)
-	}
-
-	result := &biz.Seat{
-		DevID:    s.DevID,
-		DevName:  s.DevName,
-		LabName:  s.LabName,
-		RoomID:   s.RoomID,
-		RoomName: s.RoomName,
-		Ts:       bizTs,
-	}
-
-	return result
-}
-
-func (r *SeatRepo) SaveSeatsAndTimeSlots(ctx context.Context, seats []*DO.Seat, timeSlots []*DO.TimeSlot) error {
-	// 使用事务保证 seat timeSlot 插入数据一致性
-	return r.data.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		// 批量插入 seat
-		if len(seats) > 0 {
-			if err := tx.Create(&seats).Error; err != nil {
-				return err
-			}
-		}
-
-		// 批量插入 timeSlot
-		if len(timeSlots) > 0 {
-			if err := tx.Create(&timeSlots).Error; err != nil {
-				return err
-			}
-		}
-
-		return nil
-	})
-}
-
 // GetSeatInfos 按楼层查缓存
 func (r *SeatRepo) GetSeatInfos(ctx context.Context, stuID string) (map[string][]*biz.Seat, error) {
 	now := time.Now()
@@ -248,9 +190,9 @@ func (r *SeatRepo) GetSeatInfos(ctx context.Context, stuID string) (map[string][
 	needRefresh := false
 
 	for _, roomID := range biz.RoomIDs {
-		seats, ts, ok, err := r.getRoomSeatsCache(ctx, roomID)
+		seats, ok, err := r.GetSeatsByRoom(ctx, roomID, stuID)
 		if err != nil {
-			r.log.Warnf("get room seats cache(room_id:%s) err: %v", roomID, err)
+			r.log.Warnf("get room seats cache(room_id:%s) err: 	 %v", roomID, err)
 			needRefresh = true
 			continue
 		}
