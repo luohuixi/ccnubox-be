@@ -42,7 +42,7 @@ func (r CommentRepo) CreateComment(req *biz.CreateCommentReq) (string, error) {
 func (r CommentRepo) GetCommentsBySeatID(seatID int) ([]*biz.Comment, error) {
 	var comments []*DO.Comment
 	err := r.data.db.Where("seat_id = ?", seatID).Order("created_at desc").Find(&comments).Error
-	result := r.conv.ConvertCommentDO2Biz(comments)
+	result := r.conv.ConvertDOCommentBiz(comments)
 	return result, err
 }
 
