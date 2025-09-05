@@ -10,16 +10,20 @@ import (
 )
 
 type libraryBiz struct {
-	crawler  LibraryCrawler
-	SeatRepo SeatRepo
-	log      *log.Helper
+	crawler          LibraryCrawler
+	log              *log.Helper
+	SeatRepo         SeatRepo
+	RecordRepo       RecordRepo
+	CreditPointsRepo CreditPointsRepo
 }
 
-func NewLibraryBiz(crawler LibraryCrawler, logger log.Logger, seatRepo SeatRepo) LibraryBiz {
+func NewLibraryBiz(crawler LibraryCrawler, logger log.Logger, seatRepo SeatRepo, recordRepo RecordRepo, creditPointsRepo CreditPointsRepo) LibraryBiz {
 	return &libraryBiz{
-		crawler:  crawler,
-		log:      log.NewHelper(logger),
-		SeatRepo: seatRepo,
+		crawler:          crawler,
+		log:              log.NewHelper(logger),
+		SeatRepo:         seatRepo,
+		RecordRepo:       recordRepo,
+		CreditPointsRepo: creditPointsRepo,
 	}
 }
 
@@ -47,7 +51,18 @@ func (b *libraryBiz) GetSeatRecord(ctx context.Context, stuID string) ([]*Future
 		b.log.Errorf("get records(stu_id:%v) failed: %v", stuID, err)
 		return nil, err
 	}
-	return records, nil
+	// 去重并持久化
+	if err = b.RecordRepo.UpsertFutureRecords(ctx, stuID, records); err != nil {
+		b.log.Errorf("persist future records(stu_id:%v) failed: %v", stuID, err)
+		return nil, err
+	}
+	// 从数据库读取去重后的数据
+	result, err := b.RecordRepo.ListFutureRecords(ctx, stuID)
+	if err != nil {
+		b.log.Errorf("list future records(stu_id:%v) failed: %v", stuID, err)
+		return nil, err
+	}
+	return result, nil
 }
 
 func (b *libraryBiz) GetHistory(ctx context.Context, stuID string) ([]*HistoryRecords, error) {
@@ -56,7 +71,18 @@ func (b *libraryBiz) GetHistory(ctx context.Context, stuID string) ([]*HistoryRe
 		b.log.Errorf("get history(stu_id:%v) failed: %v", stuID, err)
 		return nil, err
 	}
-	return history, nil
+	// 去重并持久化
+	if err = b.RecordRepo.UpsertHistoryRecords(ctx, stuID, history); err != nil {
+		b.log.Errorf("persist history records(stu_id:%v) failed: %v", stuID, err)
+		return nil, err
+	}
+	// 从数据库读取去重后的数据
+	result, err := b.RecordRepo.ListHistoryRecords(ctx, stuID)
+	if err != nil {
+		b.log.Errorf("list history records(stu_id:%v) failed: %v", stuID, err)
+		return nil, err
+	}
+	return result, nil
 }
 
 func (b *libraryBiz) GetCreditPoint(ctx context.Context, stuID string) (*CreditPoints, error) {
@@ -65,7 +91,18 @@ func (b *libraryBiz) GetCreditPoint(ctx context.Context, stuID string) (*CreditP
 		b.log.Errorf("get credit points(stu_id:%v) failed: %v", stuID, err)
 		return nil, err
 	}
-	return creditPoints, nil
+	// 去重并持久化
+	if err = b.CreditPointsRepo.UpsertCreditPoint(ctx, stuID, creditPoints); err != nil {
+		b.log.Warnf("persist credit points(stu_id:%v) failed: %v", stuID, err)
+		return nil, err
+	}
+	// 从数据库读取去重后的数据
+	result, err := b.CreditPointsRepo.ListCreditPoint(ctx, stuID)
+	if err != nil {
+		b.log.Errorf("list credit points(stu_id:%v) failed: %v", stuID, err)
+		return nil, err
+	}
+	return result, nil
 }
 
 func (b *libraryBiz) GetDiscussion(ctx context.Context, stuID, classID, date string) ([]*Discussion, error) {
