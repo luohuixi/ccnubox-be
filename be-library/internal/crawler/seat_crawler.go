@@ -89,6 +89,9 @@ func (c *Crawler) doRequest(ctx context.Context, client *client.CookieClient, me
 		if err != nil {
 			return nil, fmt.Errorf("创建请求失败: %w", err)
 		}
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		req.Header.Set("Origin", "https://account.ccnu.edu.cn")
+		req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.109 Safari/537.36")
 
 		resp, err := client.DoWithContext(ctx, req)
 		if err != nil {

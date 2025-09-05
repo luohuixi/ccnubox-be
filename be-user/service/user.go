@@ -323,6 +323,7 @@ func (s *userService) checkLibraryCookie(cookie string) bool {
 
 	// 设置请求头
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Origin", "https://account.ccnu.edu.cn")
 	req.Header.Set("Connection", "keep-alive")
 	req.Header.Set("Cookie", cookie)
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36 Edg/132.0.0.0")
