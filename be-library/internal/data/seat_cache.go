@@ -11,12 +11,12 @@ import (
 )
 
 const (
-	cacheKeyRoomSeatsFmt = "lib:room:%s:seats"
-	cacheKeyRoomTsFmt    = "lib:room:%s:seats:ts"
+	cacheKeyRoomSeatsFmt   = "lib:room:%s:seats"
+	cacheKeyRoomSeatsTsFmt = "lib:room:%s:seats:ts"
 	// 硬过期，保证夜间不丢缓存
-	hardTTL = 24 * time.Hour
+	seatsHardTTL = 24 * time.Hour
 	// 软过期，超时则视为需要刷新
-	freshness = 30 * time.Second
+	seatsFreshness = 30 * time.Second
 )
 
 // func (c *Crawler) SeatJSONCrawler(ctx context.Context, cookie string, roomid string) (JSON string, roomID string, err error) {
@@ -84,7 +84,7 @@ func (c *SeatRepo) SeatToCache(ctx context.Context, JSON string, roomID string) 
 	for _, seatJSON := range seats {
 		// 取出 devId
 		var seatMap map[string]json.RawMessage
-		err := json.Unmarshal(seatJSON, &seatMap)
+		err = json.Unmarshal(seatJSON, &seatMap)
 		if err != nil {
 			return err
 		}
@@ -96,7 +96,7 @@ func (c *SeatRepo) SeatToCache(ctx context.Context, JSON string, roomID string) 
 		}
 
 		// 直接存入 Redis
-		key := fmt.Sprintf("seat:%s", devID)
+		key = fmt.Sprintf("seat:%s", devID)
 		err = c.data.redis.Set(ctx, key, seatJSON, 5*time.Minute).Err()
 		if err != nil {
 			return err
@@ -154,7 +154,6 @@ func (r *SeatRepo) clearRoomCache(ctx context.Context, roomID string) {
 	}
 }
 
-// 封装：单座位缓存 get/set/del
 func (r *SeatRepo) getSeatCache(ctx context.Context, devID string) (*biz.Seat, bool, error) {
 	key := fmt.Sprintf("seat:%s", devID)
 	val, err := r.data.redis.Get(ctx, key).Bytes()
@@ -162,7 +161,7 @@ func (r *SeatRepo) getSeatCache(ctx context.Context, devID string) (*biz.Seat, b
 		return nil, false, nil
 	}
 	var s biz.Seat
-	if err := json.Unmarshal(val, &s); err != nil {
+	if err = json.Unmarshal(val, &s); err != nil {
 		return nil, false, err
 	}
 	return &s, true, nil
@@ -182,18 +181,17 @@ func (r *SeatRepo) delSeatCache(ctx context.Context, devID string) error {
 	return r.data.redis.Del(ctx, key).Err()
 }
 
-// 房间级缓存 key 生成（与 seat_repo.go 中的 fmt 保持一致）
 func (r *SeatRepo) cacheRoomSeatsKey(roomID string) string {
 	return fmt.Sprintf(cacheKeyRoomSeatsFmt, roomID)
 }
-func (r *SeatRepo) cacheRoomTsKey(roomID string) string {
-	return fmt.Sprintf(cacheKeyRoomTsFmt, roomID)
+
+func (r *SeatRepo) cacheRoomSeatsTsKey(roomID string) string {
+	return fmt.Sprintf(cacheKeyRoomSeatsTsFmt, roomID)
 }
 
-// 封装：房间级缓存 get/set/del（seats + ts）
 func (r *SeatRepo) getRoomSeatsCache(ctx context.Context, roomID string) ([]*biz.Seat, time.Time, bool, error) {
 	seatsKey := r.cacheRoomSeatsKey(roomID)
-	tsKey := r.cacheRoomTsKey(roomID)
+	tsKey := r.cacheRoomSeatsTsKey(roomID)
 
 	// 读取 seats
 	raw, err := r.data.redis.Get(ctx, seatsKey).Bytes()
@@ -201,7 +199,7 @@ func (r *SeatRepo) getRoomSeatsCache(ctx context.Context, roomID string) ([]*biz
 		return nil, time.Time{}, false, nil
 	}
 	var seats []*biz.Seat
-	if err := json.Unmarshal(raw, &seats); err != nil {
+	if err = json.Unmarshal(raw, &seats); err != nil {
 		return nil, time.Time{}, false, err
 	}
 
@@ -220,24 +218,27 @@ func (r *SeatRepo) getRoomSeatsCache(ctx context.Context, roomID string) ([]*biz
 
 func (r *SeatRepo) setRoomSeatsCache(ctx context.Context, roomID string, seats []*biz.Seat, ts time.Time) error {
 	seatsKey := r.cacheRoomSeatsKey(roomID)
-	tsKey := r.cacheRoomTsKey(roomID)
+	tsKey := r.cacheRoomSeatsTsKey(roomID)
 
 	b, err := json.Marshal(seats)
 	if err != nil {
 		return err
 	}
-	if err := r.data.redis.Set(ctx, seatsKey, b, hardTTL).Err(); err != nil {
+	if err = r.data.redis.Set(ctx, seatsKey, b, seatsHardTTL).Err(); err != nil {
 		return err
 	}
-	if err := r.data.redis.Set(ctx, tsKey, ts.Format(time.RFC3339Nano), hardTTL).Err(); err != nil {
+	if err = r.data.redis.Set(ctx, tsKey, ts.Format(time.RFC3339Nano), seatsHardTTL).Err(); err != nil {
 		return err
 	}
+
 	return nil
 }
 
 func (r *SeatRepo) delRoomSeatsCache(ctx context.Context, roomID string) error {
 	seatsKey := r.cacheRoomSeatsKey(roomID)
-	tsKey := r.cacheRoomTsKey(roomID)
+	tsKey := r.cacheRoomSeatsTsKey(roomID)
+
 	_, err := r.data.redis.Del(ctx, seatsKey, tsKey).Result()
+
 	return err
 }
