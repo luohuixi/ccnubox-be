@@ -38,7 +38,7 @@ func NewCookieClient(cookieString string) (*CookieClient, error) {
 	}
 
 	// 解析并设置初始cookie到华师图书馆域名
-	if err := cc.setCookiesFromString(cookieString); err != nil {
+	if err = cc.setCookiesFromString(cookieString); err != nil {
 		return nil, err
 	}
 

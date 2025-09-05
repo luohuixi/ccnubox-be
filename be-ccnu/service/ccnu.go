@@ -136,6 +136,7 @@ func (c *ccnuService) libraryLoginClient(ctx context.Context, client *http.Clien
 		return nil, SYSTEM_ERROR(err)
 	}
 	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	request.Header.Set("Origin", "https://account.ccnu.edu.cn")
 	request.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.109 Safari/537.36")
 	request.WithContext(ctx)
 
@@ -165,7 +166,9 @@ func (c *ccnuService) libraryLoginClient(ctx context.Context, client *http.Clien
 	if err != nil {
 		return nil, SYSTEM_ERROR(err)
 	}
-
+	libraryReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	libraryReq.Header.Set("Origin", "https://account.ccnu.edu.cn")
+	libraryReq.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.109 Safari/537.36")
 	libraryReq.WithContext(ctx)
 
 	libraryResp, err := client.Do(libraryReq)

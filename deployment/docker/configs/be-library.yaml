@@ -3,11 +3,11 @@ server:
   grpc:
     network: "tcp"
     addr: "0.0.0.0:19093"
-    timeout: 2s
+    timeout: 20s
 
 data:
   database:
-    source: "root:password@tcp(localhost:3307)/library?charset=utf8mb4&parseTime=True&loc=Local"
+    source: "root:password@tcp(localhost:3307)/ccnubox?charset=utf8mb4&parseTime=True&loc=Local"
   redis:
     network: "tcp"
     addr: "127.0.0.1:6379"

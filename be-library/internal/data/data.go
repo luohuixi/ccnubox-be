@@ -17,7 +17,7 @@ import (
 )
 
 // ProviderSet is data providers.
-var ProviderSet = wire.NewSet(NewData, NewSeatRepo, NewDB, NewRedisDB, NewCommentRepo, NewAssembler)
+var ProviderSet = wire.NewSet(NewData, NewDB, NewRedisDB, NewAssembler, NewSeatRepo, NewCommentRepo, NewRecordRepo, NewCreditPointsRepo)
 
 // Data 做CURD时使用该框架
 type Data struct {
@@ -54,7 +54,7 @@ func NewDB(c *conf.Data) (*gorm.DB, error) {
 		return nil, fmt.Errorf("failed to connect database: %w", err)
 	}
 
-	if err := db.AutoMigrate(&DO.Seat{}, &DO.TimeSlot{}, &DO.FutureRecord{}, &DO.HistoryRecord{}, &DO.Comment{}); err != nil {
+	if err = db.AutoMigrate(&DO.Seat{}, &DO.TimeSlot{}, &DO.Comment{}, &DO.FutureRecord{}, &DO.HistoryRecord{}, &DO.CreditSummary{}, &DO.CreditRecord{}); err != nil {
 		return nil, fmt.Errorf("auto migrate failed: %w", err)
 	}
 

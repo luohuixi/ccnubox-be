@@ -11,7 +11,7 @@ func NewAssembler() *Assembler {
 	return &Assembler{}
 }
 
-func (a *Assembler) ConvertCommentDO2Biz(comments []*DO.Comment) []*biz.Comment {
+func (a *Assembler) ConvertDOCommentBiz(comments []*DO.Comment) []*biz.Comment {
 	if len(comments) == 0 {
 		return nil
 	}
