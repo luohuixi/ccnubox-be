@@ -27,7 +27,7 @@ var (
 
 func (c *ccnuService) GetXKCookie(ctx context.Context, studentId string, password string) (string, error) {
 
-	if len(studentId) > 4 && studentId[4] == '1' {
+	if len(studentId) > 4 && (studentId[4] == '1' || studentId[4] == '0') {
 		// 研究生
 		return c.getGradCookie(ctx, studentId, password)
 	} else if len(studentId) > 4 && studentId[4] == '2' {
@@ -39,7 +39,7 @@ func (c *ccnuService) GetXKCookie(ctx context.Context, studentId string, passwor
 }
 
 func (c *ccnuService) LoginCCNU(ctx context.Context, studentId string, password string) (bool, error) {
-	if len(studentId) > 4 && studentId[4] == '1' {
+	if len(studentId) > 4 && (studentId[4] == '1' || studentId[4] == '0') {
 		// 研究生
 		pg := crawler.NewPostGraduate(crawler.NewCrawlerClient(c.timeout))
 		return c.loginGrad(ctx, pg, studentId, password)
