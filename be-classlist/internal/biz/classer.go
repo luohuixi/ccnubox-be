@@ -527,6 +527,16 @@ func (cluc *ClassUsecase) deleteRedundantLogs(ctx context.Context, stuID, year, 
 	}
 }
 
+func(cluc *ClassUsecase) UpdateClassNote(ctx context.Context,stuID,year,semester,classID,note string)error{
+	err:=cluc.classRepo.UpdateClassNote(ctx,stuID,year,semester,classID,note)
+	if err!=nil{
+		cluc.log.Errorf("Update note [%v] for class [%v %v %v %v] failed:%v",note,stuID,classID,year,semester,err)
+		return err
+	}
+	return nil
+}
+
+
 // Student 学生接口
 type Student interface {
 	GetClass(ctx context.Context, stuID, year, semester, cookie string, craw ClassCrawler) ([]*ClassInfo, []*StudentCourse, error)

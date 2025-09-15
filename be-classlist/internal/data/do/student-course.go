@@ -1,8 +1,9 @@
 package do
 
 import (
-	"gorm.io/gorm"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 const (
@@ -17,6 +18,7 @@ type StudentCourse struct {
 	IsManuallyAdded bool      `gorm:"column:is_manually_added;default:false;uniqueIndex:idx_sc,priority:5" json:"is_manually_added"` //是否为手动添加
 	CreatedAt       time.Time `json:"-"`
 	UpdatedAt       time.Time `json:"-"`
+	Note            string    `gorm:"type:varchar(100);column:note" json:"note"` //备注
 }
 
 func (sc *StudentCourse) TableName() string {

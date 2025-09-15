@@ -207,6 +207,22 @@ definitions:
     - where
     - year
     type: object
+  class.DeleteClassNoteReq:
+    properties:
+      classId:
+        description: 课程ID
+        type: string
+      semester:
+        description: 学期
+        type: string
+      year:
+        description: 学年
+        type: string
+    required:
+    - classId
+    - semester
+    - year
+    type: object
   class.DeleteClassRequest:
     properties:
       id:
@@ -279,6 +295,26 @@ definitions:
         type: array
     required:
     - classInfos
+    type: object
+  class.UpdateClassNoteReq:
+    properties:
+      classId:
+        description: 课程ID
+        type: string
+      note:
+        description: 备注
+        type: string
+      semester:
+        description: 学期
+        type: string
+      year:
+        description: 学年
+        type: string
+    required:
+    - classId
+    - note
+    - semester
+    - year
     type: object
   class.UpdateClassRequest:
     properties:
@@ -710,8 +746,10 @@ definitions:
         description: |-
           Utime      time.Time
           Ctime      time.Time
+        format: int64
         type: integer
       id:
+        format: int64
         type: integer
       question:
         type: string
@@ -1436,6 +1474,60 @@ paths:
                   $ref: '#/definitions/class.GetRecycleBinClassInfosResp'
               type: object
       summary: 获取回收站课表信息
+      tags:
+      - class
+  /class/note/delete:
+    post:
+      consumes:
+      - application/json
+      description: 根据课程 ID 删除课程备注
+      parameters:
+      - description: Bearer Token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: 删除课程备注请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/class.DeleteClassNoteReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功删除课程备注
+          schema:
+            $ref: '#/definitions/web.Response'
+      summary: 删除课程备注
+      tags:
+      - class
+  /class/note/insert:
+    post:
+      consumes:
+      - application/json
+      description: 根据课程 ID 更新课程备注
+      parameters:
+      - description: Bearer Token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: 更新课程备注请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/class.UpdateClassNoteReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功插入课程备注
+          schema:
+            $ref: '#/definitions/web.Response'
+      summary: 插入课程备注
       tags:
       - class
   /class/recover:

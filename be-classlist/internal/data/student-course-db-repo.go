@@ -104,3 +104,13 @@ func (s StudentAndCourseDBRepo) CheckManualCourseStatus(ctx context.Context, stu
 	}
 	return isAdded
 }
+
+func(s StudentAndCourseDBRepo) UpdateCourseNoteToDB(ctx context.Context,stuID,classID,year,semester,note string)error{
+	db:=s.data.DB(ctx).Table(do.StudentCourseTableName).WithContext(ctx)
+
+	err:=db.Where("stu_id = ? and year = ? and semester = ? and cla_id = ?",stuID,year,semester,classID).Update("note",note).Error
+	if err!=nil{
+		return errcode.ErrClassUpdate
+	}
+	return nil
+}

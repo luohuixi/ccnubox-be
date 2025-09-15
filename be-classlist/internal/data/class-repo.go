@@ -10,7 +10,6 @@ import (
 	"github.com/asynccnu/ccnubox-be/be-classlist/internal/errcode"
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/jinzhu/copier"
-
 )
 
 // MaxNum 每个学期最多允许添加的课程数量
@@ -100,7 +99,6 @@ func (cla ClassRepo) GetClassesFromLocal(ctx context.Context, stuID, year, semes
 
 	return classInfosBiz, nil
 }
-
 
 // GetSpecificClassInfo 获取特定课程信息
 func (cla ClassRepo) GetSpecificClassInfo(ctx context.Context, classID string) (*biz.ClassInfo, error) {
@@ -350,4 +348,34 @@ func (cla ClassRepo) GetAddedClasses(ctx context.Context, stuID, year, semester 
 func (cla ClassRepo) IsClassOfficial(ctx context.Context,stuID,year,semester,classID string) bool {
 	isManuallyAddedCourse := cla.Sac.DB.CheckManualCourseStatus(ctx, stuID, year, semester, classID)
 	return !isManuallyAddedCourse
+}
+
+
+// UpdateClassNote 插入课程备注
+func (cla ClassRepo) UpdateClassNote(ctx context.Context, stuID, year, semester, classID, note string) error {
+	err := cla.ClaRepo.Cache.DeleteClassInfoFromCache(ctx, cla.Sac.Cache.GenerateClassInfosKey(stuID, year, semester))
+	if err != nil {
+		return err
+	}
+
+	errTX := cla.TxCtrl.InTx(ctx, func(ctx context.Context) error {
+		err := cla.Sac.DB.UpdateCourseNoteToDB(ctx, stuID, classID, year, semester, note)
+		if err != nil {
+			return errcode.ErrClassUpdate
+		}
+		return nil
+	})
+
+	if errTX != nil {
+		cla.log.Errorf("Update Class [%v,%v,%v,%v] Note %v To DB failed: %v ", stuID, year, semester, classID, note, errTX)
+		return errTX
+	}
+
+	go func() {
+		time.AfterFunc(1*time.Second, func() {
+			_ = cla.ClaRepo.Cache.DeleteClassInfoFromCache(context.Background(), cla.Sac.Cache.GenerateClassInfosKey(stuID, year, semester))
+		})
+	}()
+
+	return nil
 }

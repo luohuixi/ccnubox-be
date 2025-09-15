@@ -114,3 +114,17 @@ type GetSchoolDayResp struct {
 	HolidayTime int64 `json:"holiday_time" binding:"required"`
 	SchoolTime  int64 `json:"school_time" binding:"required"`
 }
+
+type UpdateClassNoteReq struct {
+	Semester string `json:"semester" binding:"required"` //学期
+	Year     string `json:"year" binding:"required"`     //学年
+	ClassId  string `json:"classId" binding:"required"`  //课程ID
+	Note     string `json:"note" binding:"required"`     //备注
+}
+
+type DeleteClassNoteReq struct {
+	Semester string `json:"semester" binding:"required"` //学期
+	Year     string `json:"year" binding:"required"`     //学年
+	ClassId  string `json:"classId" binding:"required"`  //课程ID
+}
+
