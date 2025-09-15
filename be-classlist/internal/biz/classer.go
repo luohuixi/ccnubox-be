@@ -5,10 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/asynccnu/ccnubox-be/be-classlist/internal/classLog"
 	"math/rand"
 	"sync"
 	"time"
+
+	"github.com/asynccnu/ccnubox-be/be-classlist/internal/classLog"
 
 	"github.com/asynccnu/ccnubox-be/be-classlist/internal/conf"
 	"github.com/asynccnu/ccnubox-be/be-classlist/internal/data/do"
@@ -338,6 +339,7 @@ func (cluc *ClassUsecase) SearchClass(ctx context.Context, classId string) (*Cla
 func (cluc *ClassUsecase) UpdateClass(ctx context.Context, stuID, year, semester string, newClassInfo *ClassInfo, newSc *StudentCourse, oldClassId string) error {
 	logh := classLog.GetLogHelperFromCtx(ctx)
 	// 检查下要更新的课程是否是官方课程，如果是，不让更新
+	newSc.IsManuallyAdded = true
 	isOfficial := cluc.classRepo.IsClassOfficial(ctx, stuID, year, semester, oldClassId)
 	if isOfficial {
 		logh.Errorf("class [%v] is official, cannot update", oldClassId)
