@@ -17,7 +17,7 @@ import (
 	"github.com/asynccnu/ccnubox-be/be-classlist/internal/service"
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/log"
-	"os"
+	"io"
 )
 
 import (
@@ -27,8 +27,8 @@ import (
 // Injectors from wire.go:
 
 // wireApp init kratos application.
-func wireApp(confServer *conf.Server, confData *conf.Data, confRegistry *conf.Registry, schoolDay *conf.SchoolDay, file *os.File, logger log.Logger) (*kratos.App, func(), error) {
-	db := data.NewDB(confData, file, logger)
+func wireApp(confServer *conf.Server, confData *conf.Data, confRegistry *conf.Registry, schoolDay *conf.SchoolDay, writer io.Writer, logger log.Logger) (*kratos.App, func(), error) {
+	db := data.NewDB(confData, writer, logger)
 	dataData, cleanup, err := data.NewData(confData, db, logger)
 	if err != nil {
 		return nil, nil, err

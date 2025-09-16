@@ -2,11 +2,13 @@ package crawler
 
 import (
 	"bytes"
+	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"math/big"
@@ -22,22 +24,24 @@ const (
 )
 
 type PostGraduate struct {
+	client *http.Client
 }
 
-func NewPostGraduate() *PostGraduate {
-	return &PostGraduate{}
+func NewPostGraduate(client *http.Client) *PostGraduate {
+	return &PostGraduate{client: client}
 }
 
 // FetchPublicKey 1. 获取账号密码的加密秘钥
-func (c *PostGraduate) FetchPublicKey(client *http.Client) (*rsa.PublicKey, error) {
-	req, err := http.NewRequest("GET", publicKeyURL, nil)
+func (c *PostGraduate) FetchPublicKey(ctx context.Context) (*rsa.PublicKey, error) {
+
+	req, err := http.NewRequestWithContext(ctx, "GET", publicKeyURL, nil)
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Set("User-Agent", "Mozilla/5.0")
 	req.Header.Set("Referer", postgraduateURL+"/yjsxt/")
 
-	resp, err := client.Do(req)
+	resp, err := c.client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -52,22 +56,22 @@ func (c *PostGraduate) FetchPublicKey(client *http.Client) (*rsa.PublicKey, erro
 }
 
 // LoginPostgraduateSystem 2.登陆研究生院
-func (c *PostGraduate) LoginPostgraduateSystem(client *http.Client, username, password string, pubKey *rsa.PublicKey) (*http.Client, error) {
+func (c *PostGraduate) LoginPostgraduateSystem(ctx context.Context, username, password string, pubKey *rsa.PublicKey) error {
 
 	encPwd, err := encryptPasswordJSStyle(password, pubKey)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	form := url.Values{}
 	form.Set("csrftoken", "")
 	form.Set("yhm", username)
 	form.Set("mm", encPwd)
-	form.Set("hidMm", encPwd)
+	//form.Set("hidMm", encPwd)
 
-	req, err := http.NewRequest("POST", loginPostgraduateURL, bytes.NewBufferString(form.Encode()))
+	req, err := http.NewRequestWithContext(ctx, "POST", loginPostgraduateURL, bytes.NewBufferString(form.Encode()))
 	if err != nil {
-		return nil, err
+		return err
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("User-Agent", "Mozilla/5.0")
@@ -75,23 +79,73 @@ func (c *PostGraduate) LoginPostgraduateSystem(client *http.Client, username, pa
 	req.Header.Set("Origin", postgraduateURL)
 	req.Header.Set("Host", "grd.ccnu.edu.cn")
 
-	resp, err := client.Do(req)
+	resp, err := c.client.Do(req)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	// TODO 效率有点低,暂时先这样
 	if strings.Contains(string(body), "用户名或密码不正确") {
-		return nil, INCorrectPASSWORD
+		return INCorrectPASSWORD
 	}
 
-	return client, nil
+	return nil
+}
+
+func (c *PostGraduate) GetCookie(ctx context.Context, stuId, password string, pubKey *rsa.PublicKey) (string, error) {
+	encPwd, err := encryptPasswordJSStyle(password, pubKey)
+	if err != nil {
+		return "", err
+	}
+
+	form := url.Values{}
+	form.Set("csrftoken", "")
+	form.Set("yhm", stuId)
+	form.Set("mm", encPwd)
+
+	req, err := http.NewRequestWithContext(ctx, "POST", loginPostgraduateURL, bytes.NewBufferString(form.Encode()))
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("User-Agent", "Mozilla/5.0")
+	req.Header.Set("Referer", postgraduateURL+"/yjsxt/")
+	req.Header.Set("Origin", postgraduateURL)
+	req.Header.Set("Host", "grd.ccnu.edu.cn")
+
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return "", errors.New(resp.Status)
+	}
+
+	var JSESSIONID, route string
+
+	rootURL, _ := url.Parse("https://grd.ccnu.edu.cn/yjsxt")
+
+	for _, cookie := range c.client.Jar.Cookies(rootURL) {
+		if cookie.Name == "JSESSIONID" {
+			JSESSIONID = cookie.Value
+		}
+		if cookie.Name == "route" {
+			route = cookie.Value
+		}
+	}
+
+	if len(JSESSIONID) == 0 || len(route) == 0 {
+		return "", errors.New("cookie not found")
+	}
+
+	return fmt.Sprintf("JSESSIONID=%s;route=%s", JSESSIONID, route), nil
 }
 
 type rsaPublicKeyResponse struct {

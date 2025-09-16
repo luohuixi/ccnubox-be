@@ -4,12 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/asynccnu/ccnubox-be/be-classlist/internal/data/do"
 	"github.com/asynccnu/ccnubox-be/be-classlist/internal/errcode"
 	"github.com/go-kratos/kratos/v2/log"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
-	"time"
 )
 
 type ClassInfoDBRepo struct {
@@ -40,6 +41,10 @@ func (c ClassInfoDBRepo) SaveClassInfosToDB(ctx context.Context, classInfos []*d
 func (c ClassInfoDBRepo) AddClassInfoToDB(ctx context.Context, classInfo *do.ClassInfo) error {
 	if classInfo == nil {
 		return nil
+	}
+	if classInfo.Day < 1 || classInfo.Day > 7 {
+		c.log.Errorf("Mysql:create %v in %s failed: %v", classInfo, do.ClassInfoTableName, fmt.Errorf("date must between 1 and 7"))
+		return errcode.ErrClassUpdate
 	}
 	db := c.data.DB(ctx).Table(do.ClassInfoTableName).WithContext(ctx)
 	err := db.Debug().Clauses(clause.OnConflict{DoNothing: true}).Create(&classInfo).Error

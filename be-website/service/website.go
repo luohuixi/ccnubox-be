@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"time"
+
 	websitev1 "github.com/asynccnu/ccnubox-be/be-api/gen/proto/website/v1"
 	"github.com/asynccnu/ccnubox-be/be-website/domain"
 	"github.com/asynccnu/ccnubox-be/be-website/pkg/errorx"
@@ -10,7 +12,6 @@ import (
 	"github.com/asynccnu/ccnubox-be/be-website/repository/dao"
 	"github.com/asynccnu/ccnubox-be/be-website/repository/model"
 	"github.com/jinzhu/copier"
-	"time"
 )
 
 type WebsiteService interface {
@@ -95,13 +96,14 @@ func (s *websiteService) SaveWebsite(ctx context.Context, req *domain.Website) e
 	go func() {
 		ct, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
-		resp, err := s.dao.GetWebsites(ctx)
+		resp, err := s.dao.GetWebsites(ct)
 		if err != nil {
 			s.l.Error("回写websites字段时从dao层中获取失败", logger.Error(err))
 		}
 		var websites []*domain.Website
-		err = copier.Copy(resp, websites)
+		err = copier.Copy(&websites, resp)
 		if err != nil {
+			s.l.Error("复制结构体出错", logger.Error(err))
 			return
 		}
 		err = s.cache.SetWebsites(ct, websites)
@@ -123,13 +125,14 @@ func (s *websiteService) DelWebsite(ctx context.Context, id uint) error {
 	go func() {
 		ct, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
-		resp, err := s.dao.GetWebsites(ctx)
+		resp, err := s.dao.GetWebsites(ct)
 		if err != nil {
 			s.l.Error("回写websites字段时从dao层中获取失败", logger.Error(err))
 		}
 		var websites []*domain.Website
-		err = copier.Copy(resp, websites)
+		err = copier.Copy(&websites, resp)
 		if err != nil {
+			s.l.Error("复制结构体出错", logger.Error(err))
 			return
 		}
 		err = s.cache.SetWebsites(ct, websites)

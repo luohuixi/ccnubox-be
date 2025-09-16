@@ -2,6 +2,8 @@ package class
 
 import (
 	"errors"
+	"time"
+
 	cs "github.com/asynccnu/ccnubox-be/be-api/gen/proto/classService/v1"
 	classlistv1 "github.com/asynccnu/ccnubox-be/be-api/gen/proto/classlist/v1"
 	"github.com/asynccnu/ccnubox-be/bff/errs"
@@ -10,7 +12,6 @@ import (
 	"github.com/asynccnu/ccnubox-be/bff/web/ijwt"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/copier"
-	"time"
 )
 
 type ClassHandler struct {
@@ -116,7 +117,7 @@ func (c *ClassHandler) AddClass(ctx *gin.Context, req AddClassRequest, uc ijwt.U
 		Name:     req.Name,
 		DurClass: req.DurClass,
 		Where:    req.Where,
-		Teacher:  req.Where,
+		Teacher:  req.Teacher,
 		Weeks:    weeks,
 		Semester: req.Semester,
 		Year:     req.Year,

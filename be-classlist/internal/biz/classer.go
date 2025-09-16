@@ -259,7 +259,7 @@ wrapRes: //包装结果
 }
 
 func (cluc *ClassUsecase) AddClass(ctx context.Context, stuID string, info *ClassInfo) error {
-	return cluc.addClass(ctx, stuID, info, false)
+	return cluc.addClass(ctx, stuID, info, true)
 }
 
 func (cluc *ClassUsecase) DeleteClass(ctx context.Context, stuID, year, semester, classId string) error {
@@ -337,7 +337,7 @@ func (cluc *ClassUsecase) UpdateClass(ctx context.Context, stuID, year, semester
 		cluc.log.Errorf("class [%v] is official, cannot update", oldClassId)
 		return fmt.Errorf("class [%v] is official, cannot update", oldClassId)
 	}
-	
+
 	err := cluc.classRepo.UpdateClass(ctx, stuID, year, semester, oldClassId, newClassInfo, newSc)
 	if err != nil {
 		return err
