@@ -366,6 +366,7 @@ func (cla ClassRepo) IsClassOfficial(ctx context.Context, stuID, year, semester,
 
 // UpdateClassNote 插入课程备注
 func (cla ClassRepo) UpdateClassNote(ctx context.Context, stuID, year, semester, classID, note string) error {
+	logh := classLog.GetLogHelperFromCtx(ctx)
 	err := cla.ClaRepo.Cache.DeleteClassInfoFromCache(ctx, cla.Sac.Cache.GenerateClassInfosKey(stuID, year, semester))
 	if err != nil {
 		return err
@@ -380,7 +381,7 @@ func (cla ClassRepo) UpdateClassNote(ctx context.Context, stuID, year, semester,
 	})
 
 	if errTX != nil {
-		cla.log.Errorf("Update Class [%v,%v,%v,%v] Note %v To DB failed: %v ", stuID, year, semester, classID, note, errTX)
+		logh.Errorf("Update Class [%v,%v,%v,%v] Note %v To DB failed: %v ", stuID, year, semester, classID, note, errTX)
 		return errTX
 	}
 
