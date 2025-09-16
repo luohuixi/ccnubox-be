@@ -362,3 +362,34 @@ func (cla ClassRepo) IsClassOfficial(ctx context.Context, stuID, year, semester,
 	isManuallyAddedCourse := cla.Sac.DB.CheckManualCourseStatus(ctx, stuID, year, semester, classID)
 	return !isManuallyAddedCourse
 }
+
+
+// UpdateClassNote 插入课程备注
+func (cla ClassRepo) UpdateClassNote(ctx context.Context, stuID, year, semester, classID, note string) error {
+	logh := classLog.GetLogHelperFromCtx(ctx)
+	err := cla.ClaRepo.Cache.DeleteClassInfoFromCache(ctx, cla.Sac.Cache.GenerateClassInfosKey(stuID, year, semester))
+	if err != nil {
+		return err
+	}
+
+	errTX := cla.TxCtrl.InTx(ctx, func(ctx context.Context) error {
+		err := cla.Sac.DB.UpdateCourseNoteToDB(ctx, stuID, classID, year, semester, note)
+		if err != nil {
+			return errcode.ErrClassUpdate
+		}
+		return nil
+	})
+
+	if errTX != nil {
+		logh.Errorf("Update Class [%v,%v,%v,%v] Note %v To DB failed: %v ", stuID, year, semester, classID, note, errTX)
+		return errTX
+	}
+
+	go func() {
+		time.AfterFunc(1*time.Second, func() {
+			_ = cla.ClaRepo.Cache.DeleteClassInfoFromCache(context.Background(), cla.Sac.Cache.GenerateClassInfosKey(stuID, year, semester))
+		})
+	}()
+
+	return nil
+}

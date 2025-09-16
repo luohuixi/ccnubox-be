@@ -280,6 +280,48 @@ func (s *ClassListService) GetSchoolDay(ctx context.Context, req *pb.GetSchoolDa
 	}, nil
 }
 
+func (s *ClassListService) UpdateClassNote(ctx context.Context,req *pb.UpdateClassNoteReq)(*pb.UpdateClassNoteResp,error){
+	if !tool.CheckSY(req.Semester,req.Year){
+		return &pb.UpdateClassNoteResp{},errcode.ErrParam
+	}
+	exist:=s.clu.CheckSCIdsExist(ctx,req.StuId,req.Year,req.Semester,req.ClassId)
+	if !exist{
+		return &pb.UpdateClassNoteResp{
+			Msg: "该课程不存在",
+		},errcode.ErrClassIsExist
+	}
+	err:=s.clu.UpdateClassNote(ctx,req.StuId,req.Year,req.Semester,req.ClassId,req.Note)
+	if err!=nil{
+		return &pb.UpdateClassNoteResp{
+			Msg: "更新课程备注失败",
+		},err
+	}
+	return &pb.UpdateClassNoteResp{
+		Msg: "更新课程备注成功",
+	},nil
+}
+
+func (s *ClassListService) DeleteClassNote(ctx context.Context,req *pb.DeleteClassNoteReq)(*pb.DeleteClassNoteResp,error){
+	if !tool.CheckSY(req.Semester,req.Year){
+		return &pb.DeleteClassNoteResp{},errcode.ErrParam
+	}
+	exist:=s.clu.CheckSCIdsExist(ctx,req.StuId,req.Year,req.Semester,req.ClassId)
+	if !exist{
+		return &pb.DeleteClassNoteResp{
+			Msg: "该课程不存在",
+		},errcode.ErrClassIsExist
+	}
+	err:=s.clu.UpdateClassNote(ctx,req.StuId,req.Year,req.Semester,req.ClassId,"")
+	if err!=nil{
+		return &pb.DeleteClassNoteResp{
+			Msg: "删除课程备注失败",
+		},err
+	}
+	return &pb.DeleteClassNoteResp{
+		Msg: "删除课程备注成功",
+	},nil
+}
+
 func convertToShanghaiTimeStamp(t time.Time) int64 {
 	return tool.ToShanghaiTime(t).Unix()
 }

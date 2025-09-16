@@ -682,6 +682,88 @@ const docTemplate = `{
                 }
             }
         },
+        "/class/note/delete": {
+            "post": {
+                "description": "根据课程 ID 删除课程备注",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "class"
+                ],
+                "summary": "删除课程备注",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer Token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "删除课程备注请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/class.DeleteClassNoteReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功删除课程备注",
+                        "schema": {
+                            "$ref": "#/definitions/web.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/class/note/insert": {
+            "post": {
+                "description": "根据课程 ID 更新课程备注",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "class"
+                ],
+                "summary": "插入课程备注",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer Token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "更新课程备注请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/class.UpdateClassNoteReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功插入课程备注",
+                        "schema": {
+                            "$ref": "#/definitions/web.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/class/recover": {
             "put": {
                 "description": "从回收站恢复课表",
@@ -2967,6 +3049,28 @@ const docTemplate = `{
                 }
             }
         },
+        "class.DeleteClassNoteReq": {
+            "type": "object",
+            "required": [
+                "classId",
+                "semester",
+                "year"
+            ],
+            "properties": {
+                "classId": {
+                    "description": "课程ID",
+                    "type": "string"
+                },
+                "semester": {
+                    "description": "学期",
+                    "type": "string"
+                },
+                "year": {
+                    "description": "学年",
+                    "type": "string"
+                }
+            }
+        },
         "class.DeleteClassRequest": {
             "type": "object",
             "required": [
@@ -3070,6 +3174,33 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/class.ClassInfo"
                     }
+                }
+            }
+        },
+        "class.UpdateClassNoteReq": {
+            "type": "object",
+            "required": [
+                "classId",
+                "note",
+                "semester",
+                "year"
+            ],
+            "properties": {
+                "classId": {
+                    "description": "课程ID",
+                    "type": "string"
+                },
+                "note": {
+                    "description": "备注",
+                    "type": "string"
+                },
+                "semester": {
+                    "description": "学期",
+                    "type": "string"
+                },
+                "year": {
+                    "description": "学年",
+                    "type": "string"
                 }
             }
         },
@@ -3700,10 +3831,12 @@ const docTemplate = `{
                 },
                 "clickTimes": {
                     "description": "Utime      time.Time\nCtime      time.Time",
-                    "type": "integer"
+                    "type": "integer",
+                    "format": "int64"
                 },
                 "id": {
-                    "type": "integer"
+                    "type": "integer",
+                    "format": "int64"
                 },
                 "question": {
                     "type": "string"
