@@ -3,15 +3,16 @@ package biz
 import (
 	"context"
 	"fmt"
+	"io"
+	"net/http"
+	"strings"
+	"time"
+
 	"github.com/asynccnu/ccnubox-be/be-class/internal/lock"
 	clog "github.com/asynccnu/ccnubox-be/be-class/internal/log"
 	"github.com/asynccnu/ccnubox-be/be-class/internal/model"
 	"github.com/asynccnu/ccnubox-be/be-class/internal/service"
 	"github.com/valyala/fastjson"
-	"io"
-	"net/http"
-	"strings"
-	"time"
 )
 
 type FreeClassRoomData interface {
@@ -226,7 +227,9 @@ func (f *FreeClassroomBiz) SearchAvailableClassroom(ctx context.Context, year, s
 		}
 		for sec, freeclassrooms := range freeClassroomMp {
 			for _, freeclassroom := range freeclassrooms {
-				classroomStats[freeclassroom][secIdx[sec]] = true
+				if stats, ok := classroomStats[freeclassroom]; ok {
+					stats[secIdx[sec]] = true
+				}
 			}
 		}
 		return toSerializableClassroomStats(classroomStats), nil
@@ -298,8 +301,9 @@ func (f *FreeClassroomBiz) crawFreeClassroom(ctx context.Context, year, semester
 	}
 
 	for _, section := range sections {
+		preYear := strings.Split(year, "-")[0]
 		var data = strings.NewReader(fmt.Sprintf(`fwzt=cx&xqh_id=%d&xnm=%s&xqm=%s&cdlb_id=&cdejlb_id=&qszws=&jszws=&cdmc=%s&lh=&jyfs=0&cdjylx=&sfbhkc=&zcd=%d&xqj=%d&jcd=%d&_search=false&nd=%d&queryModel.showCount=1000&queryModel.currentPage=1&queryModel.sortName=cdbh+&queryModel.sortOrder=asc&time=1`,
-			campus, year, mp[semester], wherePrefix, 1<<(week-1), day, 1<<(section-1), time.Now().UnixMilli()))
+			campus, preYear, mp[semester], wherePrefix, 1<<(week-1), day, 1<<(section-1), time.Now().UnixMilli()))
 		req, err := http.NewRequest("POST", "https://xk.ccnu.edu.cn/jwglxt/cdjy/cdjy_cxKxcdlb.html?doType=query&gnmkdm=N2155", data)
 		if err != nil {
 			clog.LogPrinter.Errorf("failed to create request: %v", err)

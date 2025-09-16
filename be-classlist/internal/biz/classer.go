@@ -9,6 +9,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/asynccnu/ccnubox-be/be-classlist/internal/classLog"
+
 	"github.com/asynccnu/ccnubox-be/be-classlist/internal/conf"
 	"github.com/asynccnu/ccnubox-be/be-classlist/internal/data/do"
 	"github.com/asynccnu/ccnubox-be/be-classlist/internal/errcode"
@@ -27,7 +29,6 @@ type ClassUsecase struct {
 	refreshLogRepo  RefreshLogRepo
 	waitCrawTime    time.Duration
 	waitUserSvcTime time.Duration
-	log             *log.Helper
 
 	// gpool 是一个用于处理删除log操作的协程池
 	gpool *ants.Pool
@@ -38,13 +39,13 @@ type ClassUsecase struct {
 func (cluc *ClassUsecase) Close() {
 	if cluc.gpool != nil {
 		cluc.gpool.Release()
-		cluc.log.Info("ClassUsecase goroutine pool released")
+		classLog.GlobalLogHelper.Info("ClassUsecase goroutine pool released")
 	}
 }
 
 func NewClassUsecase(classRepo ClassRepo, crawler ClassCrawler,
 	JxbRepo JxbRepo, Cs CCNUServiceProxy, delayQue DelayQueue, refreshLog RefreshLogRepo,
-	cf *conf.Server, logger log.Logger) (*ClassUsecase, func()) {
+	cf *conf.Server) (*ClassUsecase, func()) {
 
 	waitCrawTime := 1200 * time.Millisecond
 	waitUserSvcTime := 10000 * time.Millisecond
@@ -68,7 +69,6 @@ func NewClassUsecase(classRepo ClassRepo, crawler ClassCrawler,
 		refreshLogRepo:  refreshLog,
 		waitCrawTime:    waitCrawTime,
 		waitUserSvcTime: waitUserSvcTime,
-		log:             log.NewHelper(logger),
 		gpool:           p,
 		rndPool: sync.Pool{
 			New: func() interface{} {
@@ -79,7 +79,7 @@ func NewClassUsecase(classRepo ClassRepo, crawler ClassCrawler,
 	// 开启一个协程来处理重试消息
 	go func() {
 		if err := cluc.delayQue.Consume("be-classlist-refresh-retry", cluc.handleRetryMsg); err != nil {
-			cluc.log.Errorf("Error consuming retry message: %v", err)
+			classLog.GlobalLogHelper.Errorf("Error consuming retry message: %v", err)
 		}
 	}()
 
@@ -89,6 +89,10 @@ func NewClassUsecase(classRepo ClassRepo, crawler ClassCrawler,
 }
 
 func (cluc *ClassUsecase) GetClasses(ctx context.Context, stuID, year, semester string, refresh bool) ([]*ClassInfo, *time.Time, error) {
+	logh := classLog.GetLogHelperFromCtx(ctx)
+
+	noExpireCtx := classLog.WithLogger(context.Background(), logh.Logger())
+
 	var classInfos []*ClassInfo
 
 	var wg sync.WaitGroup
@@ -185,9 +189,9 @@ Local: //从本地获取数据
 
 			defer done()
 
-			crawClassInfos_, crawScs, crawErr := cluc.getCourseFromCrawler(context.Background(), stuID, year, semester)
+			crawClassInfos_, crawScs, crawErr := cluc.getCourseFromCrawler(noExpireCtx, stuID, year, semester)
 			if crawErr != nil {
-				_ = cluc.refreshLogRepo.UpdateRefreshLogStatus(context.Background(), logID, do.Failed)
+				_ = cluc.refreshLogRepo.UpdateRefreshLogStatus(noExpireCtx, logID, do.Failed)
 				_ = cluc.sendRetryMsg(stuID, year, semester)
 				return
 			}
@@ -203,16 +207,16 @@ Local: //从本地获取数据
 
 			jxbIDs := extractJxb(crawClassInfos)
 
-			saveErr := cluc.classRepo.SaveClass(context.Background(), stuID, year, semester, crawClassInfos_, crawScs)
+			saveErr := cluc.classRepo.SaveClass(noExpireCtx, stuID, year, semester, crawClassInfos_, crawScs)
 			//更新log状态
 			if saveErr != nil {
-				_ = cluc.refreshLogRepo.UpdateRefreshLogStatus(context.Background(), logID, do.Failed)
+				_ = cluc.refreshLogRepo.UpdateRefreshLogStatus(noExpireCtx, logID, do.Failed)
 				_ = cluc.sendRetryMsg(stuID, year, semester)
 			} else {
-				_ = cluc.refreshLogRepo.UpdateRefreshLogStatus(context.Background(), logID, do.Ready)
+				_ = cluc.refreshLogRepo.UpdateRefreshLogStatus(noExpireCtx, logID, do.Ready)
 			}
 
-			_ = cluc.jxbRepo.SaveJxb(context.Background(), stuID, jxbIDs)
+			_ = cluc.jxbRepo.SaveJxb(noExpireCtx, stuID, jxbIDs)
 		}()
 
 		var addedClassInfos []*ClassInfo
@@ -220,7 +224,7 @@ Local: //从本地获取数据
 		if refresh {
 			addedInfos, addedErr := cluc.classRepo.GetAddedClasses(ctx, stuID, year, semester)
 			if addedErr != nil {
-				cluc.log.Warn("failed to find added class in the database")
+				logh.Warn("failed to find added class in the database")
 			}
 			if len(addedInfos) > 0 {
 				addedClassInfos = addedInfos
@@ -252,7 +256,7 @@ wrapRes: //包装结果
 
 	// 随机执行删除log的操作
 	if refresh && cluc.goroutineSafeRandIntn(10)+1 <= 3 {
-		cluc.deleteRedundantLogs(context.Background(), stuID, year, semester)
+		cluc.deleteRedundantLogs(noExpireCtx, stuID, year, semester)
 	}
 
 	return classInfos, lastRefreshTime, nil
@@ -263,17 +267,19 @@ func (cluc *ClassUsecase) AddClass(ctx context.Context, stuID string, info *Clas
 }
 
 func (cluc *ClassUsecase) DeleteClass(ctx context.Context, stuID, year, semester, classId string) error {
+	logh := classLog.GetLogHelperFromCtx(ctx)
+
 	// 先检查课程是否是官方课程，如果是，不让删
 	isOfficial := cluc.classRepo.IsClassOfficial(ctx, stuID, year, semester, classId)
 	if isOfficial {
-		cluc.log.Errorf("class [%v] is official, cannot delete", classId)
+		logh.Errorf("class [%v] is official, cannot delete", classId)
 		return fmt.Errorf("class [%v] is official, cannot delete", classId)
 	}
 
 	//删除课程
 	err := cluc.classRepo.DeleteClass(ctx, stuID, year, semester, []string{classId})
 	if err != nil {
-		cluc.log.Errorf("delete classlist [%v] failed", classId)
+		logh.Errorf("delete classlist [%v] failed", classId)
 		return errcode.ErrClassDelete
 	}
 	return nil
@@ -331,10 +337,12 @@ func (cluc *ClassUsecase) SearchClass(ctx context.Context, classId string) (*Cla
 	return info, nil
 }
 func (cluc *ClassUsecase) UpdateClass(ctx context.Context, stuID, year, semester string, newClassInfo *ClassInfo, newSc *StudentCourse, oldClassId string) error {
+	logh := classLog.GetLogHelperFromCtx(ctx)
 	// 检查下要更新的课程是否是官方课程，如果是，不让更新
+	newSc.IsManuallyAdded = true
 	isOfficial := cluc.classRepo.IsClassOfficial(ctx, stuID, year, semester, oldClassId)
 	if isOfficial {
-		cluc.log.Errorf("class [%v] is official, cannot update", oldClassId)
+		logh.Errorf("class [%v] is official, cannot update", oldClassId)
 		return fmt.Errorf("class [%v] is official, cannot update", oldClassId)
 	}
 
@@ -355,6 +363,7 @@ func (cluc *ClassUsecase) GetStuIdsByJxbId(ctx context.Context, jxbId string) ([
 }
 
 func (cluc *ClassUsecase) addClass(ctx context.Context, stuID string, info *ClassInfo, isAdded bool) error {
+	logh := classLog.GetLogHelperFromCtx(ctx)
 	sc := &StudentCourse{
 		StuID:           stuID,
 		ClaID:           info.ID,
@@ -364,7 +373,7 @@ func (cluc *ClassUsecase) addClass(ctx context.Context, stuID string, info *Clas
 	}
 	//检查是否添加的课程是否已经存在
 	if cluc.classRepo.CheckSCIdsExist(ctx, stuID, info.Year, info.Semester, info.ID) {
-		cluc.log.Errorf("[%v] already exists", info)
+		logh.Errorf("[%v] already exists", info)
 		return errcode.ErrClassIsExist
 	}
 	//添加课程
@@ -376,14 +385,14 @@ func (cluc *ClassUsecase) addClass(ctx context.Context, stuID string, info *Clas
 }
 
 func (cluc *ClassUsecase) getCourseFromCrawler(ctx context.Context, stuID string, year string, semester string) ([]*ClassInfo, []*StudentCourse, error) {
-
+	logh := classLog.GetLogHelperFromCtx(ctx)
 	defer func(currentTime time.Time) {
-		cluc.log.Infof("[%v %v %v] getCourseFromCrawler took %v", stuID, year, semester, time.Since(currentTime))
+		logh.Infof("[%v %v %v] getCourseFromCrawler took %v", stuID, year, semester, time.Since(currentTime))
 	}(time.Now())
 
 	cookie, err := func() (string, error) {
 		defer func(currentTime time.Time) {
-			cluc.log.Infof("Get cookie (stu_id:%v) from other service,cost %v", stuID, time.Since(currentTime))
+			logh.Infof("Get cookie (stu_id:%v) from other service,cost %v", stuID, time.Since(currentTime))
 		}(time.Now())
 
 		timeoutCtx, cancel := context.WithTimeout(ctx, cluc.waitUserSvcTime) //防止影响
@@ -391,7 +400,7 @@ func (cluc *ClassUsecase) getCourseFromCrawler(ctx context.Context, stuID string
 
 		cookie, err := cluc.ccnu.GetCookie(timeoutCtx, stuID)
 		if err != nil {
-			cluc.log.Errorf("Error getting cookie(stu_id:%v) from other service: %v", stuID, err)
+			logh.Errorf("Error getting cookie(stu_id:%v) from other service: %v", stuID, err)
 		}
 		return cookie, err
 	}()
@@ -410,12 +419,12 @@ func (cluc *ClassUsecase) getCourseFromCrawler(ctx context.Context, stuID string
 
 	return func() ([]*ClassInfo, []*StudentCourse, error) {
 		defer func(currentTime time.Time) {
-			cluc.log.Infof("Craw class [%v,%v,%v] cost %v", stuID, year, semester, time.Since(currentTime))
+			logh.Infof("Craw class [%v,%v,%v] cost %v", stuID, year, semester, time.Since(currentTime))
 		}(time.Now())
 
 		classinfos, scs, err := stu.GetClass(ctx, stuID, year, semester, cookie, cluc.crawler)
 		if err != nil {
-			cluc.log.Errorf("craw classlist(stu_id:%v year:%v semester:%v cookie:%v) failed: %v", stuID, year, semester, cookie, err)
+			logh.Errorf("craw classlist(stu_id:%v year:%v semester:%v cookie:%v) failed: %v", stuID, year, semester, cookie, err)
 			return nil, nil, err
 		}
 		return classinfos, scs, nil
@@ -453,7 +462,7 @@ func (cluc *ClassUsecase) sendRetryMsg(stuID, year, semester string) error {
 	}
 	err = cluc.delayQue.Send([]byte(key), val)
 	if err != nil {
-		cluc.log.Errorf("Error sending retry message: %v", err)
+		classLog.GlobalLogHelper.Errorf("Error sending retry message: %v", err)
 	}
 	return err
 }
@@ -464,47 +473,51 @@ func (cluc *ClassUsecase) handleRetryMsg(key, val []byte) {
 
 	err := json.Unmarshal(val, &retryInfo)
 	if err != nil {
-		cluc.log.Errorf("Error unmarshalling retry info: %v", string(val))
+		classLog.GlobalLogHelper.Errorf("Error unmarshalling retry info: %v", string(val))
 		return
 	}
 	stuID, ok := retryInfo["stu_id"]
 	if !ok {
-		cluc.log.Errorf("Error getting stu_id from retry info: %v", string(val))
+		classLog.GlobalLogHelper.Errorf("Error getting stu_id from retry info: %v", string(val))
 		return
 	}
 	year, ok := retryInfo["year"]
 	if !ok {
-		cluc.log.Errorf("Error getting year from retry info: %v", string(val))
+		classLog.GlobalLogHelper.Errorf("Error getting year from retry info: %v", string(val))
 		return
 	}
 	semester, ok := retryInfo["semester"]
 	if !ok {
-		cluc.log.Errorf("Error getting semester from retry info: %v", string(val))
+		classLog.GlobalLogHelper.Errorf("Error getting semester from retry info: %v", string(val))
 		return
 	}
 
+	valLogger := log.With(classLog.GlobalLogger,
+		"stu_id", stuID, "year", year, "semester", semester)
+	ctx := classLog.WithLogger(context.Background(), valLogger)
+
 	//爬取课程信息
-	crawClassInfos_, crawScs, crawErr := cluc.getCourseFromCrawler(context.Background(), stuID, year, semester)
+	crawClassInfos_, crawScs, crawErr := cluc.getCourseFromCrawler(ctx, stuID, year, semester)
 	if crawErr != nil {
-		cluc.log.Errorf("Error retry getting class info from crawler: %v", crawErr)
+		classLog.GlobalLogHelper.Errorf("Error retry getting class info from crawler: %v", crawErr)
 		return
 	}
 
 	//保存课程信息
-	saveErr := cluc.classRepo.SaveClass(context.Background(), stuID, year, semester, crawClassInfos_, crawScs)
+	saveErr := cluc.classRepo.SaveClass(ctx, stuID, year, semester, crawClassInfos_, crawScs)
 	if saveErr != nil {
-		cluc.log.Errorf("Error after retry getting class,but saving class info to database: %v", saveErr)
+		classLog.GlobalLogHelper.Errorf("Error after retry getting class,but saving class info to database: %v", saveErr)
 		return
 	}
 
 	//插入一条log
-	logID, insertLogErr := cluc.refreshLogRepo.InsertRefreshLog(context.Background(), stuID, year, semester)
+	logID, insertLogErr := cluc.refreshLogRepo.InsertRefreshLog(ctx, stuID, year, semester)
 	if insertLogErr != nil {
-		cluc.log.Errorf("Error after retry getting class, but inserting refresh log: %v", insertLogErr)
+		classLog.GlobalLogHelper.Errorf("Error after retry getting class, but inserting refresh log: %v", insertLogErr)
 		return
 	}
 	//更新日志状态
-	_ = cluc.refreshLogRepo.UpdateRefreshLogStatus(context.Background(), logID, do.Ready)
+	_ = cluc.refreshLogRepo.UpdateRefreshLogStatus(ctx, logID, do.Ready)
 }
 
 // goroutineSafeRandIntn 用于在多协程环境中安全地生成随机数
@@ -515,15 +528,16 @@ func (cluc *ClassUsecase) goroutineSafeRandIntn(n int) int {
 }
 
 func (cluc *ClassUsecase) deleteRedundantLogs(ctx context.Context, stuID, year, semester string) {
+	logh := classLog.GetLogHelperFromCtx(ctx)
 	taskErr := cluc.gpool.Submit(func() {
 		if deleteErr := cluc.refreshLogRepo.DeleteRedundantLogs(ctx, stuID, year, semester); deleteErr != nil {
-			cluc.log.Errorf("Error deleting redundant logs[%v %v %v]: %v", stuID, year, semester, deleteErr)
+			logh.Errorf("Error deleting redundant logs[%v %v %v]: %v", stuID, year, semester, deleteErr)
 			return
 		}
-		cluc.log.Infof("Successfully deleted redundant logs for [%v %v %v]", stuID, year, semester)
+		logh.Infof("Successfully deleted redundant logs for [%v %v %v]", stuID, year, semester)
 	})
 	if taskErr != nil {
-		cluc.log.Errorf("Error submitting delete redundant logs task: %v", taskErr)
+		logh.Errorf("Error submitting delete redundant logs task: %v", taskErr)
 	}
 }
 

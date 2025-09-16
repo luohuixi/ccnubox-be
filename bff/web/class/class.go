@@ -182,7 +182,7 @@ func (c *ClassHandler) UpdateClass(ctx *gin.Context, req UpdateClassRequest, uc 
 		Name:     req.Name,
 		DurClass: req.DurClass,
 		Where:    req.Where,
-		Teacher:  req.Where,
+		Teacher:  req.Teacher,
 		Weeks:    weeks,
 		Semester: req.Semester,
 		Year:     req.Year,
