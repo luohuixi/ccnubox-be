@@ -184,20 +184,22 @@ func (s *gradeService) fetchGradesFromRemoteAndUpdate(ctx context.Context, stude
 
 func (s *gradeService) GetGraduateUpdateScore(ctx context.Context, studentId string, xnm, xqm, cjzt int64) ([]domain.GraduateGrade, error) {
 	grades, err := s.fetchGraduateGradesFromRemote(ctx, studentId, xnm, xqm, cjzt)
-	if err != nil || len(grades) == 0 {
-		return nil, ErrGetGrade(err)
-	}
-
-	updated, err := s.gradeDAO.BatchInsertOrUpdateGraduate(context.Background(), grades)
 	if err != nil {
-		s.l.Warn("更新研究生成绩失败", logger.Error(err))
 		return nil, ErrGetGrade(err)
 	}
 
-	for _, g := range updated {
-		s.l.Info("更新研究生成绩成功", logger.String("studentId", g.StudentID), logger.String("课程", g.ClassName))
-	}
-	return modelGraduateConvDomain(updated), nil
+	// 异步更新数据库
+	go func() {
+		updated, err := s.gradeDAO.BatchInsertOrUpdateGraduate(context.Background(), grades)
+		if err != nil {
+			s.l.Warn("更新研究生成绩失败", logger.Error(err))
+			return
+		}
+		for _, g := range updated {
+			s.l.Info("更新研究生成绩成功", logger.String("studentId", g.StudentID), logger.String("课程", g.ClassName))
+		}
+	}()
+	return modelGraduateConvDomain(grades), nil
 }
 
 func (s *gradeService) fetchGraduateGradesFromRemote(ctx context.Context, studentId string, xnm, xqm, cjzt int64) ([]model.GraduateGrade, error) {

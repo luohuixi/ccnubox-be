@@ -262,7 +262,7 @@ func GetGrade(ctx context.Context, cookie string, xnm, xqm, showCount int64) ([]
 }
 
 type GraduateResp struct {
-	Points []GraduatePoints `json:"points"`
+	Items []GraduatePoints `json:"items"`
 }
 
 type GraduatePoints struct {
@@ -326,11 +326,17 @@ func GetGraduateGrade(ctx context.Context, cookie string, xnm, xqm, showCount, c
 		showCountStr = strconv.Itoa(300)
 	}
 
+	var cjztS string
+	if cjzt <= 0 {
+		cjztS = ""
+	} else {
+		cjztS = strconv.FormatInt(cjzt, 10)
+	}
 	// 构建表单数据
 	formData := url.Values{
 		"xnm":                    {XnmStr}, // 不填的话默认获取所有
 		"xqm":                    {XqmStr}, // 不填的话默认获取所有
-		"cjzt":                   {strconv.FormatInt(cjzt, 10)},
+		"cjzt":                   {cjztS},
 		"_search":                {"false"}, // 成绩状态,不填获取所有,待审核,审核中,审核通过,退回,审核不通过
 		"nd":                     {strconv.FormatInt(time.Now().UnixNano()/int64(time.Millisecond), 10)},
 		"queryModel.showCount":   {showCountStr}, // 重要查询参数
@@ -379,5 +385,5 @@ func GetGraduateGrade(ctx context.Context, cookie string, xnm, xqm, showCount, c
 		return nil, fmt.Errorf("解析 JSON 失败: %w", err)
 	}
 
-	return convertGraduateGrade(response.Points), nil
+	return convertGraduateGrade(response.Items), nil
 }
