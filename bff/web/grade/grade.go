@@ -199,7 +199,6 @@ func (h *GradeHandler) UpdateGraduateGrades(ctx *gin.Context, req UpdateGraduate
 	if err != nil {
 		return web.Response{}, errs.GET_GRADE_SCORE_ERROR(err)
 	}
-	fmt.Println(grpcResp)
 
 	var resp UpdateGraduateGradesResp
 	for _, g := range grpcResp.Grades {
@@ -228,6 +227,5 @@ func (h *GradeHandler) UpdateGraduateGrades(ctx *gin.Context, req UpdateGraduate
 			Teacher:         g.Teacher,
 		})
 	}
-	fmt.Println(resp)
 	return web.Response{Data: resp}, nil
 }

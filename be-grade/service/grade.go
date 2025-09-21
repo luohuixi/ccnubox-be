@@ -215,12 +215,12 @@ func (s *gradeService) fetchGraduateGradesFromRemote(ctx context.Context, studen
 			return nil, err
 		}
 
-		grades, err := GetGraduateGrade(ctx, cookieResp.GetCookie(), xnm, xqm, 300, cjzt)
+		grades, err := GetGraduateGrades(ctx, cookieResp.GetCookie(), xnm, xqm, 300, cjzt)
 		if err != nil {
 			return nil, err
 		}
 
-		s.l.Info("获取研究生成绩耗时", logger.String("耗时", time.Since(start).String()))
+		s.l.Info("获取研究生成绩耗时", logger.String("studentId", studentId), logger.String("耗时", time.Since(start).String()))
 		return grades, nil
 	})
 

@@ -3,6 +3,8 @@ package cron
 import (
 	"context"
 	"fmt"
+	"time"
+
 	classlistv1 "github.com/asynccnu/ccnubox-be/be-api/gen/proto/classlist/v1"
 	counterv1 "github.com/asynccnu/ccnubox-be/be-api/gen/proto/counter/v1"
 	feedv1 "github.com/asynccnu/ccnubox-be/be-api/gen/proto/feed/v1"
@@ -10,7 +12,6 @@ import (
 	"github.com/asynccnu/ccnubox-be/be-grade/pkg/logger"
 	"github.com/asynccnu/ccnubox-be/be-grade/service"
 	"github.com/spf13/viper"
-	"time"
 )
 
 type GradeController struct {
@@ -108,11 +109,11 @@ func (c *GradeController) publishMSG(label string) {
 				return
 			}
 
-			//更改等级到最高级别7
+			//更改等级到最高级别
 			_, err = c.counter.ChangeCounterLevels(ctx, &counterv1.ChangeCounterLevelsReq{
 				StudentIds: res.StuId,
 				IsReduce:   false,
-				Step:       7,
+				Step:       int64(counterv1.CounterLevel_LEVEL_THERE),
 			})
 
 			if err != nil {
@@ -154,7 +155,7 @@ func (c *GradeController) publishMSG(label string) {
 			_, err = c.counter.ChangeCounterLevels(ctx, &counterv1.ChangeCounterLevelsReq{
 				StudentIds: res.StuId,
 				IsReduce:   false,
-				Step:       7,
+				Step:       int64(counterv1.CounterLevel_LEVEL_THERE),
 			})
 			if err != nil {
 				c.l.Error("更改优先级发生错误(研究生)", logger.Error(err))
@@ -166,7 +167,7 @@ func (c *GradeController) publishMSG(label string) {
 				StudentId: studentId,
 				Event: &feedv1.FeedEvent{
 					Type:    "grade",
-					Title:   "成绩更新提醒(研究生)",
+					Title:   "成绩更新提醒",
 					Content: fmt.Sprintf("您的课程:%s分数更新了,请及时查看", g.ClassName),
 				},
 			})

@@ -6,14 +6,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/asynccnu/ccnubox-be/be-grade/repository/model"
+	"golang.org/x/sync/errgroup"
 	"io"
 	"net/http"
 	"net/url"
 	"strconv"
 	"time"
-
-	"github.com/asynccnu/ccnubox-be/be-grade/repository/model"
-	"golang.org/x/sync/errgroup"
 )
 
 var (
@@ -299,7 +298,7 @@ type GraduatePoints struct {
 	Zymc   string `json:"zymc"`    // 专业名称
 }
 
-func GetGraduateGrade(ctx context.Context, cookie string, xnm, xqm, showCount, cjzt int64) ([]model.GraduateGrade, error) {
+func GetGraduateGrades(ctx context.Context, cookie string, xnm, xqm, showCount, cjzt int64) ([]model.GraduateGrade, error) {
 	// 请求URL
 	targetURL := "https://grd.ccnu.edu.cn/yjsxt/cjcx/cjcx_cxDgXscj.html?doType=query&gnmkdm=N305005"
 
@@ -311,14 +310,7 @@ func GetGraduateGrade(ctx context.Context, cookie string, xnm, xqm, showCount, c
 	}
 
 	// 学期转换对应请求参数
-	switch xqm {
-	case 1:
-		XqmStr = "3"
-	case 2:
-		XqmStr = "12"
-	case 3:
-		XqmStr = "16"
-	}
+	XqmStr = convertXqm(xqm)
 
 	if showCount >= 300 {
 		showCountStr = strconv.Itoa(int(showCount))
@@ -380,10 +372,18 @@ func GetGraduateGrade(ctx context.Context, cookie string, xnm, xqm, showCount, c
 		return nil, fmt.Errorf("解析 JSON 失败: %w", err)
 	}
 
-	err = json.Unmarshal(body, &response)
-	if err != nil {
-		return nil, fmt.Errorf("解析 JSON 失败: %w", err)
-	}
-
 	return convertGraduateGrade(response.Items), nil
+}
+
+func convertXqm(xqm int64) string {
+	switch xqm {
+	case 1:
+		return "3"
+	case 2:
+		return "12"
+	case 3:
+		return "16"
+	default:
+		return ""
+	}
 }
