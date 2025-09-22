@@ -79,7 +79,7 @@ func createIndex(ctx context.Context, cli *elastic.Client, keepData bool, indexN
 }
 
 const (
-	classroomIndex   = "ccnubox_classroom"
+	classroomIndex   = "ccnubox-classroom"
 	classroomMapping = `{
 	"mappings": {
 		"properties": {
