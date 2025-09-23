@@ -2,45 +2,33 @@ package class
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
 	cs "github.com/asynccnu/ccnubox-be/be-api/gen/proto/classService/v1"
 	classlistv1 "github.com/asynccnu/ccnubox-be/be-api/gen/proto/classlist/v1"
 	"github.com/asynccnu/ccnubox-be/bff/errs"
 	"github.com/asynccnu/ccnubox-be/bff/pkg/ginx"
-	"github.com/asynccnu/ccnubox-be/bff/pkg/logger"
 	"github.com/asynccnu/ccnubox-be/bff/web"
 	"github.com/asynccnu/ccnubox-be/bff/web/ijwt"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/copier"
 )
 
-type DefaultConfig struct {
-	Year     string `yaml:"year"`
-	Semester string `yaml:"semester"`
-}
-
 type ClassHandler struct {
 	ClassListClient    classlistv1.ClasserClient
 	ClassServiceClinet cs.ClassServiceClient
 	Administrators     map[string]struct{} // 这里注入的是管理员权限验证配置
-	Defaults           DefaultConfig       // 从配置中注入默认值
-	l                  logger.Logger
 }
 
 func NewClassListHandler(
 	ClassListClient classlistv1.ClasserClient,
 	ClassServiceClinet cs.ClassServiceClient,
 	administrators map[string]struct{},
-	l logger.Logger,
-	defaults DefaultConfig) *ClassHandler {
+) *ClassHandler {
 	return &ClassHandler{
 		ClassListClient:    ClassListClient,
 		ClassServiceClinet: ClassServiceClinet,
 		Administrators:     administrators,
-		Defaults:           defaults,
-		l:                  l,
 	}
 }
 
@@ -68,16 +56,6 @@ func (c *ClassHandler) RegisterRoutes(s *gin.RouterGroup, authMiddleware gin.Han
 // @Success 200 {object} web.Response{data=GetClassListResp} "成功返回课表"
 // @Router /class/get [get]
 func (c *ClassHandler) GetClassList(ctx *gin.Context, req GetClassListRequest, uc ijwt.UserClaims) (web.Response, error) {
-	if req.Year == "" {
-		req.Year = c.Defaults.Year // 默认值
-		c.l.Error(fmt.Sprintf("获取 Year 参数为空，使用默认值 %s", req.Year), logger.Error(errs.BAD_ENTITY_ERROR(nil)))
-		fmt.Println("已执行")
-	}
-	if req.Semester == "" {
-		req.Semester = c.Defaults.Semester // 默认值
-		c.l.Error(fmt.Sprintf("获取 Semester 参数为空，使用默认值 %s", req.Semester), logger.Error(errs.BAD_ENTITY_ERROR(nil)))
-	}
-
 	getResp, err := c.ClassListClient.GetClass(ctx, &classlistv1.GetClassRequest{
 		StuId:    uc.StudentId,
 		Semester: req.Semester,

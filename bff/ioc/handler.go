@@ -151,10 +151,7 @@ func InitElecpriceHandler(client elecpricev1.ElecpriceServiceClient) *elecprice.
 		}))
 }
 
-func InitClassHandler(l logger.Logger, client1 classlistv1.ClasserClient, client2 cs.ClassServiceClient) *class.ClassHandler {
-	var defaults class.DefaultConfig
-	_ = viper.UnmarshalKey("defaults", &defaults)
-
+func InitClassHandler(client1 classlistv1.ClasserClient, client2 cs.ClassServiceClient) *class.ClassHandler {
 	var administrators []string
 	err := viper.UnmarshalKey("administrators", &administrators)
 	if err != nil {
@@ -163,8 +160,7 @@ func InitClassHandler(l logger.Logger, client1 classlistv1.ClasserClient, client
 	return class.NewClassListHandler(client1, client2,
 		slice.ToMapV(administrators, func(element string) (string, struct{}) {
 			return element, struct{}{}
-		}), l,
-		defaults)
+		}))
 }
 
 func InitClassRoomHandler(client cs.FreeClassroomSvcClient) *classroom.ClassRoomHandler {

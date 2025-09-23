@@ -49,7 +49,7 @@ func InitApp() *App {
 	gradeHandler := ioc.InitGradeHandler(logger, gradeServiceClient, counterServiceClient)
 	classerClient := ioc.InitClassList(client)
 	classServiceClient := ioc.InitClassService(client)
-	classHandler := ioc.InitClassHandler(logger, classerClient, classServiceClient)
+	classHandler := ioc.InitClassHandler(classerClient, classServiceClient)
 	feedbackHelpClient := ioc.InitFeedbackHelpClient(client)
 	feedbackHelpHandler := ioc.InitFeedbackHelpHandler(feedbackHelpClient)
 	infoSumServiceClient := ioc.InitInfoSumClient(client)
