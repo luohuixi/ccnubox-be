@@ -39,17 +39,17 @@ func (s *ClassListService) GetClass(ctx context.Context, req *pb.GetClassRequest
 	hlog := log.NewHelper(valLogger)
 
 	if s.defaults == nil {
-		hlog.Error("default 参数未在配置文件中配置")
+		hlog.Warn("default 参数未在配置文件中配置")
 	}
 
 	if req.GetYear() == "" {
 		req.Year = s.defaults.Year
-		hlog.Error(fmt.Sprintf("获取 Year 参数为空，使用默认值 %s", req.Year))
+		hlog.Warn(fmt.Sprintf("获取 Year 参数为空，使用默认值 %s", req.Year))
 	}
 
 	if req.GetSemester() == "" {
 		req.Semester = s.defaults.Semester
-		hlog.Error(fmt.Sprintf("获取 Semester 参数为空，使用默认值 %s", req.Semester))
+		hlog.Warn(fmt.Sprintf("获取 Semester 参数为空，使用默认值 %s", req.Semester))
 	}
 
 	if !tool.CheckSY(req.Semester, req.Year) {

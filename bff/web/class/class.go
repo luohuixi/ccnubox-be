@@ -56,6 +56,10 @@ func (c *ClassHandler) RegisterRoutes(s *gin.RouterGroup, authMiddleware gin.Han
 // @Success 200 {object} web.Response{data=GetClassListResp} "成功返回课表"
 // @Router /class/get [get]
 func (c *ClassHandler) GetClassList(ctx *gin.Context, req GetClassListRequest, uc ijwt.UserClaims) (web.Response, error) {
+	if req.Refresh == nil {
+		req.Refresh = new(bool)
+		*req.Refresh = false
+	}
 	getResp, err := c.ClassListClient.GetClass(ctx, &classlistv1.GetClassRequest{
 		StuId:    uc.StudentId,
 		Semester: req.Semester,
