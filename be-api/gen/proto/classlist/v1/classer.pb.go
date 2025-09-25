@@ -1088,6 +1088,7 @@ type ClassInfo struct {
 	Year string `protobuf:"bytes,11,opt,name=year,proto3" json:"year,omitempty"`
 	//课程唯一标识id
 	Id            string `protobuf:"bytes,12,opt,name=id,proto3" json:"id,omitempty"`
+	Note          string `protobuf:"bytes,13,opt,name=note,proto3" json:"note,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1195,6 +1196,13 @@ func (x *ClassInfo) GetYear() string {
 func (x *ClassInfo) GetId() string {
 	if x != nil {
 		return x.Id
+	}
+	return ""
+}
+
+func (x *ClassInfo) GetNote() string {
+	if x != nil {
+		return x.Note
 	}
 	return ""
 }
@@ -1660,7 +1668,7 @@ const file_classlist_v1_classer_proto_rawDesc = "" +
 	"\x16GetStuIdByJxbIdRequest\x12\x15\n" +
 	"\x06jxb_id\x18\x01 \x01(\tR\x05jxbId\"0\n" +
 	"\x17GetStuIdByJxbIdResponse\x12\x15\n" +
-	"\x06stu_id\x18\x01 \x03(\tR\x05stuId\"\x9d\x02\n" +
+	"\x06stu_id\x18\x01 \x03(\tR\x05stuId\"\xb1\x02\n" +
 	"\tClassInfo\x12\x10\n" +
 	"\x03day\x18\x01 \x01(\x03R\x03day\x12\x18\n" +
 	"\ateacher\x18\x02 \x01(\tR\ateacher\x12\x14\n" +
@@ -1674,7 +1682,8 @@ const file_classlist_v1_classer_proto_rawDesc = "" +
 	"\bsemester\x18\n" +
 	" \x01(\tR\bsemester\x12\x12\n" +
 	"\x04year\x18\v \x01(\tR\x04year\x12\x0e\n" +
-	"\x02id\x18\f \x01(\tR\x02id\"2\n" +
+	"\x02id\x18\f \x01(\tR\x02id\x12\x12\n" +
+	"\x04note\x18\r \x01(\tR\x04note\"2\n" +
 	"\x05Class\x12)\n" +
 	"\x04info\x18\x01 \x01(\v2\x15.classer.v1.ClassInfoR\x04info\"\x11\n" +
 	"\x0fGetSchoolDayReq\"T\n" +
