@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"time"
+
 	pb "github.com/asynccnu/ccnubox-be/be-api/gen/proto/classlist/v1" //此处改成了be-api中的,方便其他服务调用.
 	"github.com/asynccnu/ccnubox-be/be-classlist/internal/biz"
 	"github.com/asynccnu/ccnubox-be/be-classlist/internal/classLog"
@@ -10,7 +12,6 @@ import (
 	"github.com/asynccnu/ccnubox-be/be-classlist/internal/pkg/tool"
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/jinzhu/copier"
-	"time"
 )
 
 type ClassListService struct {
@@ -45,6 +46,12 @@ func (s *ClassListService) GetClass(ctx context.Context, req *pb.GetClassRequest
 		var pinfo = new(pb.ClassInfo)
 
 		_ = copier.Copy(&pinfo, &classInfo)
+		// 优先使用 biz 层设置的 IsOfficial
+		pinfo.IsOfficial = classInfo.IsOfficial
+		// 当 IsOfficial 为 false 时，可能是默认值或手动添加课程，回退到数据库判断以确保本地读取的正确性
+		if !pinfo.IsOfficial {
+			pinfo.IsOfficial = s.clu.IsClassOfficial(ctx, req.GetStuId(), req.GetYear(), req.GetSemester(), classInfo.ID)
+		}
 
 		var pclass = &pb.Class{
 			Info: pinfo,
@@ -280,46 +287,46 @@ func (s *ClassListService) GetSchoolDay(ctx context.Context, req *pb.GetSchoolDa
 	}, nil
 }
 
-func (s *ClassListService) UpdateClassNote(ctx context.Context,req *pb.UpdateClassNoteReq)(*pb.UpdateClassNoteResp,error){
-	if !tool.CheckSY(req.Semester,req.Year){
-		return &pb.UpdateClassNoteResp{},errcode.ErrParam
+func (s *ClassListService) UpdateClassNote(ctx context.Context, req *pb.UpdateClassNoteReq) (*pb.UpdateClassNoteResp, error) {
+	if !tool.CheckSY(req.Semester, req.Year) {
+		return &pb.UpdateClassNoteResp{}, errcode.ErrParam
 	}
-	exist:=s.clu.CheckSCIdsExist(ctx,req.StuId,req.Year,req.Semester,req.ClassId)
-	if !exist{
+	exist := s.clu.CheckSCIdsExist(ctx, req.StuId, req.Year, req.Semester, req.ClassId)
+	if !exist {
 		return &pb.UpdateClassNoteResp{
 			Msg: "该课程不存在",
-		},errcode.ErrClassIsExist
+		}, errcode.ErrClassIsExist
 	}
-	err:=s.clu.UpdateClassNote(ctx,req.StuId,req.Year,req.Semester,req.ClassId,req.Note)
-	if err!=nil{
+	err := s.clu.UpdateClassNote(ctx, req.StuId, req.Year, req.Semester, req.ClassId, req.Note)
+	if err != nil {
 		return &pb.UpdateClassNoteResp{
 			Msg: "更新课程备注失败",
-		},err
+		}, err
 	}
 	return &pb.UpdateClassNoteResp{
 		Msg: "更新课程备注成功",
-	},nil
+	}, nil
 }
 
-func (s *ClassListService) DeleteClassNote(ctx context.Context,req *pb.DeleteClassNoteReq)(*pb.DeleteClassNoteResp,error){
-	if !tool.CheckSY(req.Semester,req.Year){
-		return &pb.DeleteClassNoteResp{},errcode.ErrParam
+func (s *ClassListService) DeleteClassNote(ctx context.Context, req *pb.DeleteClassNoteReq) (*pb.DeleteClassNoteResp, error) {
+	if !tool.CheckSY(req.Semester, req.Year) {
+		return &pb.DeleteClassNoteResp{}, errcode.ErrParam
 	}
-	exist:=s.clu.CheckSCIdsExist(ctx,req.StuId,req.Year,req.Semester,req.ClassId)
-	if !exist{
+	exist := s.clu.CheckSCIdsExist(ctx, req.StuId, req.Year, req.Semester, req.ClassId)
+	if !exist {
 		return &pb.DeleteClassNoteResp{
 			Msg: "该课程不存在",
-		},errcode.ErrClassIsExist
+		}, errcode.ErrClassIsExist
 	}
-	err:=s.clu.UpdateClassNote(ctx,req.StuId,req.Year,req.Semester,req.ClassId,"")
-	if err!=nil{
+	err := s.clu.UpdateClassNote(ctx, req.StuId, req.Year, req.Semester, req.ClassId, "")
+	if err != nil {
 		return &pb.DeleteClassNoteResp{
 			Msg: "删除课程备注失败",
-		},err
+		}, err
 	}
 	return &pb.DeleteClassNoteResp{
 		Msg: "删除课程备注成功",
-	},nil
+	}, nil
 }
 
 func convertToShanghaiTimeStamp(t time.Time) int64 {

@@ -85,6 +85,7 @@ func (c *ClassHandler) GetClassList(ctx *gin.Context, req GetClassListRequest, u
 			Semester:     class.Info.Semester,
 			Year:         class.Info.Year,
 			Note:         class.Info.Note,
+			IsOfficial:   class.Info.IsOfficial,
 		})
 	}
 

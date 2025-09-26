@@ -18,7 +18,8 @@ type ClassInfo struct {
 	Weeks        []int   `json:"weeks" binding:"required"`         //哪些周
 	Semester     string  `json:"semester" binding:"required"`      //学期
 	Year         string  `json:"year" binding:"required"`          //学年
-	Note         string  `json:"note" binding:"required"`
+	Note         string  `json:"note" binding:"required"`          // 备注
+	IsOfficial   bool    `json:"is_official" binding:"required"`   // 是否为官方课程
 }
 
 type AddClassRequest struct {
