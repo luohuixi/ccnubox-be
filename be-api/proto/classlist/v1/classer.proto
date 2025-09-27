@@ -198,7 +198,10 @@ message  ClassInfo {
     string year=11;
     //课程唯一标识id
     string id=12;
+    // 备注
     string note=13;
+    // 是否为官方课程
+    bool is_official = 14;
 }
 
 message Class {
