@@ -11,7 +11,6 @@ import (
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
 	sync "sync"
-	unsafe "unsafe"
 )
 
 const (
@@ -22,7 +21,10 @@ const (
 )
 
 type GetClassRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
 	//    //周几的课表
 	//    int64 week=1 ;
 	//学号
@@ -32,16 +34,16 @@ type GetClassRequest struct {
 	//学年
 	Year string `protobuf:"bytes,3,opt,name=year,proto3" json:"year,omitempty"`
 	//是否直接从学校官网直接爬取
-	Refresh       bool `protobuf:"varint,4,opt,name=refresh,proto3" json:"refresh,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Refresh bool `protobuf:"varint,4,opt,name=refresh,proto3" json:"refresh,omitempty"`
 }
 
 func (x *GetClassRequest) Reset() {
 	*x = GetClassRequest{}
-	mi := &file_classlist_v1_classer_proto_msgTypes[0]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
+	if protoimpl.UnsafeEnabled {
+		mi := &file_classlist_v1_classer_proto_msgTypes[0]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
 }
 
 func (x *GetClassRequest) String() string {
@@ -52,7 +54,7 @@ func (*GetClassRequest) ProtoMessage() {}
 
 func (x *GetClassRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_classlist_v1_classer_proto_msgTypes[0]
-	if x != nil {
+	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -96,20 +98,23 @@ func (x *GetClassRequest) GetRefresh() bool {
 }
 
 type GetClassResponse struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
 	//课表
 	Classes []*Class `protobuf:"bytes,1,rep,name=classes,proto3" json:"classes,omitempty"`
 	// 上一次刷新成功的时间戳，上海时区
-	LastTime      int64 `protobuf:"varint,2,opt,name=last_time,json=lastTime,proto3" json:"last_time,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	LastTime int64 `protobuf:"varint,2,opt,name=last_time,json=lastTime,proto3" json:"last_time,omitempty"`
 }
 
 func (x *GetClassResponse) Reset() {
 	*x = GetClassResponse{}
-	mi := &file_classlist_v1_classer_proto_msgTypes[1]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
+	if protoimpl.UnsafeEnabled {
+		mi := &file_classlist_v1_classer_proto_msgTypes[1]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
 }
 
 func (x *GetClassResponse) String() string {
@@ -120,7 +125,7 @@ func (*GetClassResponse) ProtoMessage() {}
 
 func (x *GetClassResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_classlist_v1_classer_proto_msgTypes[1]
-	if x != nil {
+	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -150,7 +155,10 @@ func (x *GetClassResponse) GetLastTime() int64 {
 }
 
 type AddClassRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
 	//学号
 	StuId string `protobuf:"bytes,1,opt,name=stu_id,json=stuId,proto3" json:"stu_id,omitempty"`
 	//课程名称
@@ -170,16 +178,16 @@ type AddClassRequest struct {
 	//星期几
 	Day int64 `protobuf:"varint,9,opt,name=day,proto3" json:"day,omitempty"`
 	//学分
-	Credit        *float64 `protobuf:"fixed64,10,opt,name=credit,proto3,oneof" json:"credit,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Credit *float64 `protobuf:"fixed64,10,opt,name=credit,proto3,oneof" json:"credit,omitempty"`
 }
 
 func (x *AddClassRequest) Reset() {
 	*x = AddClassRequest{}
-	mi := &file_classlist_v1_classer_proto_msgTypes[2]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
+	if protoimpl.UnsafeEnabled {
+		mi := &file_classlist_v1_classer_proto_msgTypes[2]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
 }
 
 func (x *AddClassRequest) String() string {
@@ -190,7 +198,7 @@ func (*AddClassRequest) ProtoMessage() {}
 
 func (x *AddClassRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_classlist_v1_classer_proto_msgTypes[2]
-	if x != nil {
+	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -276,19 +284,22 @@ func (x *AddClassRequest) GetCredit() float64 {
 }
 
 type AddClassResponse struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	//添加的课程ID
-	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Msg           string `protobuf:"bytes,2,opt,name=msg,proto3" json:"msg,omitempty"`
-	unknownFields protoimpl.UnknownFields
+	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	//添加的课程ID
+	Id  string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Msg string `protobuf:"bytes,2,opt,name=msg,proto3" json:"msg,omitempty"`
 }
 
 func (x *AddClassResponse) Reset() {
 	*x = AddClassResponse{}
-	mi := &file_classlist_v1_classer_proto_msgTypes[3]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
+	if protoimpl.UnsafeEnabled {
+		mi := &file_classlist_v1_classer_proto_msgTypes[3]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
 }
 
 func (x *AddClassResponse) String() string {
@@ -299,7 +310,7 @@ func (*AddClassResponse) ProtoMessage() {}
 
 func (x *AddClassResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_classlist_v1_classer_proto_msgTypes[3]
-	if x != nil {
+	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -329,7 +340,10 @@ func (x *AddClassResponse) GetMsg() string {
 }
 
 type DeleteClassRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
 	//要被删的课程id
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	//学号
@@ -337,16 +351,16 @@ type DeleteClassRequest struct {
 	//学年  "2024" -> 代表"2024-2025学年"
 	Year string `protobuf:"bytes,3,opt,name=year,proto3" json:"year,omitempty"`
 	//学期 "1"代表第一学期，"2"代表第二学期，"3"代表第三学期
-	Semester      string `protobuf:"bytes,4,opt,name=semester,proto3" json:"semester,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Semester string `protobuf:"bytes,4,opt,name=semester,proto3" json:"semester,omitempty"`
 }
 
 func (x *DeleteClassRequest) Reset() {
 	*x = DeleteClassRequest{}
-	mi := &file_classlist_v1_classer_proto_msgTypes[4]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
+	if protoimpl.UnsafeEnabled {
+		mi := &file_classlist_v1_classer_proto_msgTypes[4]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
 }
 
 func (x *DeleteClassRequest) String() string {
@@ -357,7 +371,7 @@ func (*DeleteClassRequest) ProtoMessage() {}
 
 func (x *DeleteClassRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_classlist_v1_classer_proto_msgTypes[4]
-	if x != nil {
+	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -401,17 +415,20 @@ func (x *DeleteClassRequest) GetSemester() string {
 }
 
 type DeleteClassResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Msg           string                 `protobuf:"bytes,1,opt,name=msg,proto3" json:"msg,omitempty"`
-	unknownFields protoimpl.UnknownFields
+	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Msg string `protobuf:"bytes,1,opt,name=msg,proto3" json:"msg,omitempty"`
 }
 
 func (x *DeleteClassResponse) Reset() {
 	*x = DeleteClassResponse{}
-	mi := &file_classlist_v1_classer_proto_msgTypes[5]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
+	if protoimpl.UnsafeEnabled {
+		mi := &file_classlist_v1_classer_proto_msgTypes[5]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
 }
 
 func (x *DeleteClassResponse) String() string {
@@ -422,7 +439,7 @@ func (*DeleteClassResponse) ProtoMessage() {}
 
 func (x *DeleteClassResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_classlist_v1_classer_proto_msgTypes[5]
-	if x != nil {
+	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -445,7 +462,10 @@ func (x *DeleteClassResponse) GetMsg() string {
 }
 
 type UpdateClassRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
 	//学号
 	StuId string `protobuf:"bytes,1,opt,name=stu_id,json=stuId,proto3" json:"stu_id,omitempty"`
 	//课程名称
@@ -467,16 +487,16 @@ type UpdateClassRequest struct {
 	//学分
 	Credit *float64 `protobuf:"fixed64,10,opt,name=credit,proto3,oneof" json:"credit,omitempty"`
 	// 课程的ID（唯一标识） 更新后这个可能会换，所以响应的时候会把新的ID返回
-	ClassId       string `protobuf:"bytes,11,opt,name=classId,proto3" json:"classId,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	ClassId string `protobuf:"bytes,11,opt,name=classId,proto3" json:"classId,omitempty"`
 }
 
 func (x *UpdateClassRequest) Reset() {
 	*x = UpdateClassRequest{}
-	mi := &file_classlist_v1_classer_proto_msgTypes[6]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
+	if protoimpl.UnsafeEnabled {
+		mi := &file_classlist_v1_classer_proto_msgTypes[6]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
 }
 
 func (x *UpdateClassRequest) String() string {
@@ -487,7 +507,7 @@ func (*UpdateClassRequest) ProtoMessage() {}
 
 func (x *UpdateClassRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_classlist_v1_classer_proto_msgTypes[6]
-	if x != nil {
+	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -580,19 +600,22 @@ func (x *UpdateClassRequest) GetClassId() string {
 }
 
 type UpdateClassResponse struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	Msg   string                 `protobuf:"bytes,1,opt,name=msg,proto3" json:"msg,omitempty"`
-	//更新后的课程的ID（唯一标识）
-	ClassId       string `protobuf:"bytes,2,opt,name=classId,proto3" json:"classId,omitempty"`
-	unknownFields protoimpl.UnknownFields
+	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Msg string `protobuf:"bytes,1,opt,name=msg,proto3" json:"msg,omitempty"`
+	//更新后的课程的ID（唯一标识）
+	ClassId string `protobuf:"bytes,2,opt,name=classId,proto3" json:"classId,omitempty"`
 }
 
 func (x *UpdateClassResponse) Reset() {
 	*x = UpdateClassResponse{}
-	mi := &file_classlist_v1_classer_proto_msgTypes[7]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
+	if protoimpl.UnsafeEnabled {
+		mi := &file_classlist_v1_classer_proto_msgTypes[7]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
 }
 
 func (x *UpdateClassResponse) String() string {
@@ -603,7 +626,7 @@ func (*UpdateClassResponse) ProtoMessage() {}
 
 func (x *UpdateClassResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_classlist_v1_classer_proto_msgTypes[7]
-	if x != nil {
+	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -633,7 +656,10 @@ func (x *UpdateClassResponse) GetClassId() string {
 }
 
 type GetAllClassInfoRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
 	//学年  "2024" 代表"2024-2025学年"
 	Year string `protobuf:"bytes,1,opt,name=year,proto3" json:"year,omitempty"`
 	//学期 "1"代表第一学期，"2"代表第二学期，"3"代表第三学期
@@ -641,16 +667,16 @@ type GetAllClassInfoRequest struct {
 	//避免一次性获取太多class[每次只获取100个]
 	//最后一个课程的时间戳，时区为UTC
 	// "2023-09-03T01:01:01.000000"
-	Cursor        string `protobuf:"bytes,3,opt,name=cursor,proto3" json:"cursor,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Cursor string `protobuf:"bytes,3,opt,name=cursor,proto3" json:"cursor,omitempty"`
 }
 
 func (x *GetAllClassInfoRequest) Reset() {
 	*x = GetAllClassInfoRequest{}
-	mi := &file_classlist_v1_classer_proto_msgTypes[8]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
+	if protoimpl.UnsafeEnabled {
+		mi := &file_classlist_v1_classer_proto_msgTypes[8]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
 }
 
 func (x *GetAllClassInfoRequest) String() string {
@@ -661,7 +687,7 @@ func (*GetAllClassInfoRequest) ProtoMessage() {}
 
 func (x *GetAllClassInfoRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_classlist_v1_classer_proto_msgTypes[8]
-	if x != nil {
+	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -698,20 +724,23 @@ func (x *GetAllClassInfoRequest) GetCursor() string {
 }
 
 type GetAllClassInfoResponse struct {
-	state      protoimpl.MessageState `protogen:"open.v1"`
-	ClassInfos []*ClassInfo           `protobuf:"bytes,1,rep,name=class_infos,json=classInfos,proto3" json:"class_infos,omitempty"`
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	ClassInfos []*ClassInfo `protobuf:"bytes,1,rep,name=class_infos,json=classInfos,proto3" json:"class_infos,omitempty"`
 	//最后一个课程的时间戳，时区为UTC
 	// "2023-09-03T01:01:01.000000"
-	LastTime      string `protobuf:"bytes,2,opt,name=lastTime,proto3" json:"lastTime,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	LastTime string `protobuf:"bytes,2,opt,name=lastTime,proto3" json:"lastTime,omitempty"`
 }
 
 func (x *GetAllClassInfoResponse) Reset() {
 	*x = GetAllClassInfoResponse{}
-	mi := &file_classlist_v1_classer_proto_msgTypes[9]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
+	if protoimpl.UnsafeEnabled {
+		mi := &file_classlist_v1_classer_proto_msgTypes[9]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
 }
 
 func (x *GetAllClassInfoResponse) String() string {
@@ -722,7 +751,7 @@ func (*GetAllClassInfoResponse) ProtoMessage() {}
 
 func (x *GetAllClassInfoResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_classlist_v1_classer_proto_msgTypes[9]
-	if x != nil {
+	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -752,22 +781,25 @@ func (x *GetAllClassInfoResponse) GetLastTime() string {
 }
 
 type GetRecycleBinClassRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
 	//学号
 	StuId string `protobuf:"bytes,1,opt,name=stuId,proto3" json:"stuId,omitempty"`
 	//学年  "2024" 代表"2024-2025学年"
 	Year string `protobuf:"bytes,2,opt,name=year,proto3" json:"year,omitempty"`
 	//学期 "1"代表第一学期，"2"代表第二学期，"3"代表第三学期
-	Semester      string `protobuf:"bytes,3,opt,name=semester,proto3" json:"semester,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Semester string `protobuf:"bytes,3,opt,name=semester,proto3" json:"semester,omitempty"`
 }
 
 func (x *GetRecycleBinClassRequest) Reset() {
 	*x = GetRecycleBinClassRequest{}
-	mi := &file_classlist_v1_classer_proto_msgTypes[10]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
+	if protoimpl.UnsafeEnabled {
+		mi := &file_classlist_v1_classer_proto_msgTypes[10]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
 }
 
 func (x *GetRecycleBinClassRequest) String() string {
@@ -778,7 +810,7 @@ func (*GetRecycleBinClassRequest) ProtoMessage() {}
 
 func (x *GetRecycleBinClassRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_classlist_v1_classer_proto_msgTypes[10]
-	if x != nil {
+	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -815,18 +847,21 @@ func (x *GetRecycleBinClassRequest) GetSemester() string {
 }
 
 type GetRecycleBinClassResponse struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	//回收站的课程
-	ClassInfos    []*ClassInfo `protobuf:"bytes,1,rep,name=class_infos,json=classInfos,proto3" json:"class_infos,omitempty"`
-	unknownFields protoimpl.UnknownFields
+	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	//回收站的课程
+	ClassInfos []*ClassInfo `protobuf:"bytes,1,rep,name=class_infos,json=classInfos,proto3" json:"class_infos,omitempty"`
 }
 
 func (x *GetRecycleBinClassResponse) Reset() {
 	*x = GetRecycleBinClassResponse{}
-	mi := &file_classlist_v1_classer_proto_msgTypes[11]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
+	if protoimpl.UnsafeEnabled {
+		mi := &file_classlist_v1_classer_proto_msgTypes[11]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
 }
 
 func (x *GetRecycleBinClassResponse) String() string {
@@ -837,7 +872,7 @@ func (*GetRecycleBinClassResponse) ProtoMessage() {}
 
 func (x *GetRecycleBinClassResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_classlist_v1_classer_proto_msgTypes[11]
-	if x != nil {
+	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -860,7 +895,10 @@ func (x *GetRecycleBinClassResponse) GetClassInfos() []*ClassInfo {
 }
 
 type RecoverClassRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
 	//学号
 	StuId string `protobuf:"bytes,1,opt,name=stuId,proto3" json:"stuId,omitempty"`
 	//学年  "2024" 代表"2024-2025学年"
@@ -868,16 +906,16 @@ type RecoverClassRequest struct {
 	//学期 "1"代表第一学期，"2"代表第二学期，"3"代表第三学期
 	Semester string `protobuf:"bytes,3,opt,name=semester,proto3" json:"semester,omitempty"`
 	// 课程的ID（唯一标识） 更新后这个可能会换，所以响应的时候会把新的ID返回
-	ClassId       string `protobuf:"bytes,11,opt,name=classId,proto3" json:"classId,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	ClassId string `protobuf:"bytes,11,opt,name=classId,proto3" json:"classId,omitempty"`
 }
 
 func (x *RecoverClassRequest) Reset() {
 	*x = RecoverClassRequest{}
-	mi := &file_classlist_v1_classer_proto_msgTypes[12]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
+	if protoimpl.UnsafeEnabled {
+		mi := &file_classlist_v1_classer_proto_msgTypes[12]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
 }
 
 func (x *RecoverClassRequest) String() string {
@@ -888,7 +926,7 @@ func (*RecoverClassRequest) ProtoMessage() {}
 
 func (x *RecoverClassRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_classlist_v1_classer_proto_msgTypes[12]
-	if x != nil {
+	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -932,17 +970,20 @@ func (x *RecoverClassRequest) GetClassId() string {
 }
 
 type RecoverClassResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Msg           string                 `protobuf:"bytes,1,opt,name=msg,proto3" json:"msg,omitempty"`
-	unknownFields protoimpl.UnknownFields
+	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Msg string `protobuf:"bytes,1,opt,name=msg,proto3" json:"msg,omitempty"`
 }
 
 func (x *RecoverClassResponse) Reset() {
 	*x = RecoverClassResponse{}
-	mi := &file_classlist_v1_classer_proto_msgTypes[13]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
+	if protoimpl.UnsafeEnabled {
+		mi := &file_classlist_v1_classer_proto_msgTypes[13]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
 }
 
 func (x *RecoverClassResponse) String() string {
@@ -953,7 +994,7 @@ func (*RecoverClassResponse) ProtoMessage() {}
 
 func (x *RecoverClassResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_classlist_v1_classer_proto_msgTypes[13]
-	if x != nil {
+	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -976,17 +1017,20 @@ func (x *RecoverClassResponse) GetMsg() string {
 }
 
 type GetStuIdByJxbIdRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	JxbId         string                 `protobuf:"bytes,1,opt,name=jxb_id,json=jxbId,proto3" json:"jxb_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
+	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	JxbId string `protobuf:"bytes,1,opt,name=jxb_id,json=jxbId,proto3" json:"jxb_id,omitempty"`
 }
 
 func (x *GetStuIdByJxbIdRequest) Reset() {
 	*x = GetStuIdByJxbIdRequest{}
-	mi := &file_classlist_v1_classer_proto_msgTypes[14]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
+	if protoimpl.UnsafeEnabled {
+		mi := &file_classlist_v1_classer_proto_msgTypes[14]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
 }
 
 func (x *GetStuIdByJxbIdRequest) String() string {
@@ -997,7 +1041,7 @@ func (*GetStuIdByJxbIdRequest) ProtoMessage() {}
 
 func (x *GetStuIdByJxbIdRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_classlist_v1_classer_proto_msgTypes[14]
-	if x != nil {
+	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1020,17 +1064,20 @@ func (x *GetStuIdByJxbIdRequest) GetJxbId() string {
 }
 
 type GetStuIdByJxbIdResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	StuId         []string               `protobuf:"bytes,1,rep,name=stu_id,json=stuId,proto3" json:"stu_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
+	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	StuId []string `protobuf:"bytes,1,rep,name=stu_id,json=stuId,proto3" json:"stu_id,omitempty"`
 }
 
 func (x *GetStuIdByJxbIdResponse) Reset() {
 	*x = GetStuIdByJxbIdResponse{}
-	mi := &file_classlist_v1_classer_proto_msgTypes[15]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
+	if protoimpl.UnsafeEnabled {
+		mi := &file_classlist_v1_classer_proto_msgTypes[15]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
 }
 
 func (x *GetStuIdByJxbIdResponse) String() string {
@@ -1041,7 +1088,7 @@ func (*GetStuIdByJxbIdResponse) ProtoMessage() {}
 
 func (x *GetStuIdByJxbIdResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_classlist_v1_classer_proto_msgTypes[15]
-	if x != nil {
+	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1064,7 +1111,10 @@ func (x *GetStuIdByJxbIdResponse) GetStuId() []string {
 }
 
 type ClassInfo struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
 	//星期几
 	Day int64 `protobuf:"varint,1,opt,name=day,proto3" json:"day,omitempty"`
 	//任课教师
@@ -1098,9 +1148,11 @@ type ClassInfo struct {
 
 func (x *ClassInfo) Reset() {
 	*x = ClassInfo{}
-	mi := &file_classlist_v1_classer_proto_msgTypes[16]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
+	if protoimpl.UnsafeEnabled {
+		mi := &file_classlist_v1_classer_proto_msgTypes[16]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
 }
 
 func (x *ClassInfo) String() string {
@@ -1111,7 +1163,7 @@ func (*ClassInfo) ProtoMessage() {}
 
 func (x *ClassInfo) ProtoReflect() protoreflect.Message {
 	mi := &file_classlist_v1_classer_proto_msgTypes[16]
-	if x != nil {
+	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1218,18 +1270,21 @@ func (x *ClassInfo) GetIsOfficial() bool {
 }
 
 type Class struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	//课程信息
-	Info          *ClassInfo `protobuf:"bytes,1,opt,name=info,proto3" json:"info,omitempty"`
-	unknownFields protoimpl.UnknownFields
+	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	//课程信息
+	Info *ClassInfo `protobuf:"bytes,1,opt,name=info,proto3" json:"info,omitempty"`
 }
 
 func (x *Class) Reset() {
 	*x = Class{}
-	mi := &file_classlist_v1_classer_proto_msgTypes[17]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
+	if protoimpl.UnsafeEnabled {
+		mi := &file_classlist_v1_classer_proto_msgTypes[17]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
 }
 
 func (x *Class) String() string {
@@ -1240,7 +1295,7 @@ func (*Class) ProtoMessage() {}
 
 func (x *Class) ProtoReflect() protoreflect.Message {
 	mi := &file_classlist_v1_classer_proto_msgTypes[17]
-	if x != nil {
+	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1263,16 +1318,18 @@ func (x *Class) GetInfo() *ClassInfo {
 }
 
 type GetSchoolDayReq struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	unknownFields protoimpl.UnknownFields
+	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
 }
 
 func (x *GetSchoolDayReq) Reset() {
 	*x = GetSchoolDayReq{}
-	mi := &file_classlist_v1_classer_proto_msgTypes[18]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
+	if protoimpl.UnsafeEnabled {
+		mi := &file_classlist_v1_classer_proto_msgTypes[18]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
 }
 
 func (x *GetSchoolDayReq) String() string {
@@ -1283,7 +1340,7 @@ func (*GetSchoolDayReq) ProtoMessage() {}
 
 func (x *GetSchoolDayReq) ProtoReflect() protoreflect.Message {
 	mi := &file_classlist_v1_classer_proto_msgTypes[18]
-	if x != nil {
+	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1299,18 +1356,21 @@ func (*GetSchoolDayReq) Descriptor() ([]byte, []int) {
 }
 
 type GetSchoolDayResp struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	HolidayTime   string                 `protobuf:"bytes,1,opt,name=holidayTime,proto3" json:"holidayTime,omitempty"` //形式:"2025-07-05"
-	SchoolTime    string                 `protobuf:"bytes,2,opt,name=schoolTime,proto3" json:"schoolTime,omitempty"`   //形式:"2025-02-17"
-	unknownFields protoimpl.UnknownFields
+	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	HolidayTime string `protobuf:"bytes,1,opt,name=holidayTime,proto3" json:"holidayTime,omitempty"` //形式:"2025-07-05"
+	SchoolTime  string `protobuf:"bytes,2,opt,name=schoolTime,proto3" json:"schoolTime,omitempty"`   //形式:"2025-02-17"
 }
 
 func (x *GetSchoolDayResp) Reset() {
 	*x = GetSchoolDayResp{}
-	mi := &file_classlist_v1_classer_proto_msgTypes[19]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
+	if protoimpl.UnsafeEnabled {
+		mi := &file_classlist_v1_classer_proto_msgTypes[19]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
 }
 
 func (x *GetSchoolDayResp) String() string {
@@ -1321,7 +1381,7 @@ func (*GetSchoolDayResp) ProtoMessage() {}
 
 func (x *GetSchoolDayResp) ProtoReflect() protoreflect.Message {
 	mi := &file_classlist_v1_classer_proto_msgTypes[19]
-	if x != nil {
+	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1351,7 +1411,10 @@ func (x *GetSchoolDayResp) GetSchoolTime() string {
 }
 
 type UpdateClassNoteReq struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
 	//学号
 	StuId string `protobuf:"bytes,1,opt,name=stuId,proto3" json:"stuId,omitempty"`
 	//学年  "2024" 代表"2024-2025学年"
@@ -1361,16 +1424,16 @@ type UpdateClassNoteReq struct {
 	// 课程的ID（唯一标识）
 	ClassId string `protobuf:"bytes,4,opt,name=classId,proto3" json:"classId,omitempty"`
 	//课程备注
-	Note          string `protobuf:"bytes,5,opt,name=note,proto3" json:"note,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Note string `protobuf:"bytes,5,opt,name=note,proto3" json:"note,omitempty"`
 }
 
 func (x *UpdateClassNoteReq) Reset() {
 	*x = UpdateClassNoteReq{}
-	mi := &file_classlist_v1_classer_proto_msgTypes[20]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
+	if protoimpl.UnsafeEnabled {
+		mi := &file_classlist_v1_classer_proto_msgTypes[20]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
 }
 
 func (x *UpdateClassNoteReq) String() string {
@@ -1381,7 +1444,7 @@ func (*UpdateClassNoteReq) ProtoMessage() {}
 
 func (x *UpdateClassNoteReq) ProtoReflect() protoreflect.Message {
 	mi := &file_classlist_v1_classer_proto_msgTypes[20]
-	if x != nil {
+	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1432,17 +1495,20 @@ func (x *UpdateClassNoteReq) GetNote() string {
 }
 
 type UpdateClassNoteResp struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Msg           string                 `protobuf:"bytes,1,opt,name=msg,proto3" json:"msg,omitempty"`
-	unknownFields protoimpl.UnknownFields
+	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Msg string `protobuf:"bytes,1,opt,name=msg,proto3" json:"msg,omitempty"`
 }
 
 func (x *UpdateClassNoteResp) Reset() {
 	*x = UpdateClassNoteResp{}
-	mi := &file_classlist_v1_classer_proto_msgTypes[21]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
+	if protoimpl.UnsafeEnabled {
+		mi := &file_classlist_v1_classer_proto_msgTypes[21]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
 }
 
 func (x *UpdateClassNoteResp) String() string {
@@ -1453,7 +1519,7 @@ func (*UpdateClassNoteResp) ProtoMessage() {}
 
 func (x *UpdateClassNoteResp) ProtoReflect() protoreflect.Message {
 	mi := &file_classlist_v1_classer_proto_msgTypes[21]
-	if x != nil {
+	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1476,7 +1542,10 @@ func (x *UpdateClassNoteResp) GetMsg() string {
 }
 
 type DeleteClassNoteReq struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
 	//学号
 	StuId string `protobuf:"bytes,1,opt,name=stuId,proto3" json:"stuId,omitempty"`
 	//学年  "2024" 代表"2024-2025学年"
@@ -1484,16 +1553,16 @@ type DeleteClassNoteReq struct {
 	//学期 "1"代表第一学期，"2"代表第二学期，"3"代表第三学期
 	Semester string `protobuf:"bytes,3,opt,name=semester,proto3" json:"semester,omitempty"`
 	// 课程的ID（唯一标识）
-	ClassId       string `protobuf:"bytes,4,opt,name=classId,proto3" json:"classId,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	ClassId string `protobuf:"bytes,4,opt,name=classId,proto3" json:"classId,omitempty"`
 }
 
 func (x *DeleteClassNoteReq) Reset() {
 	*x = DeleteClassNoteReq{}
-	mi := &file_classlist_v1_classer_proto_msgTypes[22]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
+	if protoimpl.UnsafeEnabled {
+		mi := &file_classlist_v1_classer_proto_msgTypes[22]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
 }
 
 func (x *DeleteClassNoteReq) String() string {
@@ -1504,7 +1573,7 @@ func (*DeleteClassNoteReq) ProtoMessage() {}
 
 func (x *DeleteClassNoteReq) ProtoReflect() protoreflect.Message {
 	mi := &file_classlist_v1_classer_proto_msgTypes[22]
-	if x != nil {
+	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1548,17 +1617,20 @@ func (x *DeleteClassNoteReq) GetClassId() string {
 }
 
 type DeleteClassNoteResp struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Msg           string                 `protobuf:"bytes,1,opt,name=msg,proto3" json:"msg,omitempty"`
-	unknownFields protoimpl.UnknownFields
+	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Msg string `protobuf:"bytes,1,opt,name=msg,proto3" json:"msg,omitempty"`
 }
 
 func (x *DeleteClassNoteResp) Reset() {
 	*x = DeleteClassNoteResp{}
-	mi := &file_classlist_v1_classer_proto_msgTypes[23]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
+	if protoimpl.UnsafeEnabled {
+		mi := &file_classlist_v1_classer_proto_msgTypes[23]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
 }
 
 func (x *DeleteClassNoteResp) String() string {
@@ -1569,7 +1641,7 @@ func (*DeleteClassNoteResp) ProtoMessage() {}
 
 func (x *DeleteClassNoteResp) ProtoReflect() protoreflect.Message {
 	mi := &file_classlist_v1_classer_proto_msgTypes[23]
-	if x != nil {
+	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1734,18 +1806,18 @@ const file_classlist_v1_classer_proto_rawDesc = "" +
 
 var (
 	file_classlist_v1_classer_proto_rawDescOnce sync.Once
-	file_classlist_v1_classer_proto_rawDescData []byte
+	file_classlist_v1_classer_proto_rawDescData = file_classlist_v1_classer_proto_rawDesc
 )
 
 func file_classlist_v1_classer_proto_rawDescGZIP() []byte {
 	file_classlist_v1_classer_proto_rawDescOnce.Do(func() {
-		file_classlist_v1_classer_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_classlist_v1_classer_proto_rawDesc), len(file_classlist_v1_classer_proto_rawDesc)))
+		file_classlist_v1_classer_proto_rawDescData = protoimpl.X.CompressGZIP(file_classlist_v1_classer_proto_rawDescData)
 	})
 	return file_classlist_v1_classer_proto_rawDescData
 }
 
 var file_classlist_v1_classer_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
-var file_classlist_v1_classer_proto_goTypes = []any{
+var file_classlist_v1_classer_proto_goTypes = []interface{}{
 	(*GetClassRequest)(nil),            // 0: classer.v1.GetClassRequest
 	(*GetClassResponse)(nil),           // 1: classer.v1.GetClassResponse
 	(*AddClassRequest)(nil),            // 2: classer.v1.AddClassRequest
@@ -1810,13 +1882,303 @@ func file_classlist_v1_classer_proto_init() {
 	if File_classlist_v1_classer_proto != nil {
 		return
 	}
-	file_classlist_v1_classer_proto_msgTypes[2].OneofWrappers = []any{}
-	file_classlist_v1_classer_proto_msgTypes[6].OneofWrappers = []any{}
+	if !protoimpl.UnsafeEnabled {
+		file_classlist_v1_classer_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GetClassRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_classlist_v1_classer_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GetClassResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_classlist_v1_classer_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*AddClassRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_classlist_v1_classer_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*AddClassResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_classlist_v1_classer_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*DeleteClassRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_classlist_v1_classer_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*DeleteClassResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_classlist_v1_classer_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*UpdateClassRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_classlist_v1_classer_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*UpdateClassResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_classlist_v1_classer_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GetAllClassInfoRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_classlist_v1_classer_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GetAllClassInfoResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_classlist_v1_classer_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GetRecycleBinClassRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_classlist_v1_classer_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GetRecycleBinClassResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_classlist_v1_classer_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*RecoverClassRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_classlist_v1_classer_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*RecoverClassResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_classlist_v1_classer_proto_msgTypes[14].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GetStuIdByJxbIdRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_classlist_v1_classer_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GetStuIdByJxbIdResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_classlist_v1_classer_proto_msgTypes[16].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ClassInfo); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_classlist_v1_classer_proto_msgTypes[17].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*Class); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_classlist_v1_classer_proto_msgTypes[18].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GetSchoolDayReq); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_classlist_v1_classer_proto_msgTypes[19].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GetSchoolDayResp); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_classlist_v1_classer_proto_msgTypes[20].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*UpdateClassNoteReq); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_classlist_v1_classer_proto_msgTypes[21].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*UpdateClassNoteResp); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_classlist_v1_classer_proto_msgTypes[22].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*DeleteClassNoteReq); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_classlist_v1_classer_proto_msgTypes[23].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*DeleteClassNoteResp); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+	}
+	file_classlist_v1_classer_proto_msgTypes[2].OneofWrappers = []interface{}{}
+	file_classlist_v1_classer_proto_msgTypes[6].OneofWrappers = []interface{}{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_classlist_v1_classer_proto_rawDesc), len(file_classlist_v1_classer_proto_rawDesc)),
+			RawDescriptor: file_classlist_v1_classer_proto_rawDesc,
 			NumEnums:      0,
 			NumMessages:   24,
 			NumExtensions: 0,
@@ -1827,6 +2189,7 @@ func file_classlist_v1_classer_proto_init() {
 		MessageInfos:      file_classlist_v1_classer_proto_msgTypes,
 	}.Build()
 	File_classlist_v1_classer_proto = out.File
+	file_classlist_v1_classer_proto_rawDesc = nil
 	file_classlist_v1_classer_proto_goTypes = nil
 	file_classlist_v1_classer_proto_depIdxs = nil
 }
