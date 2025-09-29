@@ -201,6 +201,10 @@ Local: //从本地获取数据
 
 			// 将数据赋值到闭包外
 			crawClassInfos = crawClassInfos_
+			// 标记爬虫返回的课程为官方课程
+			for _, ci := range crawClassInfos {
+				ci.IsOfficial = true
+			}
 
 			// 释放锁
 			crawLock.Unlock()
@@ -227,6 +231,9 @@ Local: //从本地获取数据
 				logh.Warn("failed to find added class in the database")
 			}
 			if len(addedInfos) > 0 {
+				for _, ai := range addedInfos {
+					ai.IsOfficial = false
+				}
 				addedClassInfos = addedInfos
 			}
 		}
@@ -431,6 +438,10 @@ func (cluc *ClassUsecase) getCourseFromCrawler(ctx context.Context, stuID string
 	}()
 }
 
+func (cluc *ClassUsecase) IsClassOfficial(ctx context.Context, stuID, year, semester, classID string) bool {
+	return cluc.classRepo.IsClassOfficial(ctx, stuID, year, semester, classID)
+}
+
 func extractJxb(infos []*ClassInfo) []string {
 	if len(infos) == 0 {
 		return nil
@@ -541,16 +552,15 @@ func (cluc *ClassUsecase) deleteRedundantLogs(ctx context.Context, stuID, year, 
 	}
 }
 
-func(cluc *ClassUsecase) UpdateClassNote(ctx context.Context,stuID,year,semester,classID,note string)error{
+func (cluc *ClassUsecase) UpdateClassNote(ctx context.Context, stuID, year, semester, classID, note string) error {
 	logh := classLog.GetLogHelperFromCtx(ctx)
-	err:=cluc.classRepo.UpdateClassNote(ctx,stuID,year,semester,classID,note)
-	if err!=nil{
-		logh.Errorf("Update note [%v] for class [%v %v %v %v] failed:%v",note,stuID,classID,year,semester,err)
+	err := cluc.classRepo.UpdateClassNote(ctx, stuID, year, semester, classID, note)
+	if err != nil {
+		logh.Errorf("Update note [%v] for class [%v %v %v %v] failed:%v", note, stuID, classID, year, semester, err)
 		return err
 	}
 	return nil
 }
-
 
 // Student 学生接口
 type Student interface {
