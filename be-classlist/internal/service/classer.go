@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	pb "github.com/asynccnu/ccnubox-be/be-api/gen/proto/classlist/v1" //此处改成了be-api中的,方便其他服务调用.
@@ -64,6 +63,12 @@ func (s *ClassListService) GetClass(ctx context.Context, req *pb.GetClassRequest
 		var pinfo = new(pb.ClassInfo)
 
 		_ = copier.Copy(&pinfo, &classInfo)
+		// 优先使用 biz 层设置的 IsOfficial
+		pinfo.IsOfficial = classInfo.IsOfficial
+		// 当 IsOfficial 为 false 时，可能是默认值或手动添加课程，回退到数据库判断以确保本地读取的正确性
+		if !pinfo.IsOfficial {
+			pinfo.IsOfficial = s.clu.IsClassOfficial(ctx, req.GetStuId(), req.GetYear(), req.GetSemester(), classInfo.ID)
+		}
 
 		var pclass = &pb.Class{
 			Info: pinfo,
