@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	freeClassroomIndex   = "free_classroom"
+	freeClassroomIndex   = "ccnubox-free_classroom"
 	freeClassroomMapping = `{
 	"mappings": {
 		"properties": {

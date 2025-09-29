@@ -77,7 +77,7 @@ const classMapping = `{
 }
 `
 
-const classIndexName = "class_info"
+const classIndexName = "ccnubox-class_info"
 
 // ProviderSet is data providers.
 var ProviderSet = wire.NewSet(NewClassData, NewEsClient, NewFreeClassroomData, NewRedisClient, NewCache)
