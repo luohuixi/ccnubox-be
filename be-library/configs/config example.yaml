@@ -7,7 +7,7 @@ server:
 
 data:
   database:
-    source: "root:password@tcp(localhost:3306)/library?charset=utf8mb4&parseTime=True&loc=Local"
+    source: "root:password@tcp(localhost:3306)/ccnubox?charset=utf8mb4&parseTime=True&loc=Local"
   redis:
     network: "tcp"
     addr: "127.0.0.1:6379"

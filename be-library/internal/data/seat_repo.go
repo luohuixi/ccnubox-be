@@ -3,26 +3,24 @@ package data
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/asynccnu/ccnubox-be/be-library/internal/biz"
 	"github.com/asynccnu/ccnubox-be/be-library/pkg/tool"
-	"github.com/go-kratos/kratos/v2/log"
 	"github.com/redis/go-redis/v9"
 	"golang.org/x/sync/singleflight"
 )
 
 type SeatRepo struct {
 	data    *Data
-	log     *log.Helper
 	sf      singleflight.Group
 	crawler biz.LibraryCrawler
 }
 
-func NewSeatRepo(data *Data, logger log.Logger, crawler biz.LibraryCrawler) biz.SeatRepo {
+func NewSeatRepo(data *Data, crawler biz.LibraryCrawler) biz.SeatRepo {
 	return &SeatRepo{
-		log:     log.NewHelper(logger),
 		data:    data,
 		crawler: crawler,
 	}
@@ -54,7 +52,7 @@ func (r *SeatRepo) SaveRoomSeatsInRedis(ctx context.Context, stuID string) error
 			seatID := seat.DevID
 			seatJson, err := json.Marshal(seat)
 			if err != nil {
-				r.log.Errorf("marshal seat error := %v", err)
+				r.data.log.Errorf("marshal seat error := %v", err)
 				return err
 			}
 			hash[seatID] = string(seatJson)
@@ -97,11 +95,11 @@ func (r *SeatRepo) SaveRoomSeatsInRedis(ctx context.Context, stuID string) error
 
 	_, err = pipe.Exec(ctx)
 	if err != nil {
-		r.log.Error("Save SeatInfo in redis ERROR:%s", err.Error())
+		r.data.log.Error("Save SeatInfo in redis ERROR:%s", err.Error())
 		return err
 	}
 
-	r.log.Infof("All seats saved in Redis successfully")
+	r.data.log.Infof("All seats saved in Redis successfully")
 	return nil
 }
 
@@ -111,17 +109,14 @@ func (r *SeatRepo) GetSeatsByRoom(ctx context.Context, roomID string, stuID stri
 
 	data, err := r.data.redis.HGetAll(ctx, roomKey).Result()
 	if err != nil {
-		r.log.Errorf("get seatinfo from redis error (room_id := %s)", roomKey)
-		return nil, true, err
-	} else if len(data) == 0 {
-		r.log.Infof("get no seatinfo from redis (room_id := %s) reloading", roomKey)
-		return nil, false, err
+		r.data.log.Errorf("get seatinfo from redis error (room_id := %s)", roomKey)
+		return nil, err
 	}
 
-	seats := []*biz.Seat{}
+	var seats []*biz.Seat
 	for _, v := range data {
 		var s biz.Seat
-		err := json.Unmarshal([]byte(v), &s)
+		err = json.Unmarshal([]byte(v), &s)
 		if err == nil {
 			seats = append(seats, &s)
 		}
@@ -162,18 +157,18 @@ func (r *SeatRepo) FindFirstAvailableSeat(ctx context.Context, start, end int64,
 	`
 	result, err := r.data.redis.Eval(ctx, luaScript, nil, start, end).Result()
 	// redis.Nil 来做无匹配座位的表示符，返回 false
-	if err == redis.Nil {
-		r.log.Infof("No available seat (time:%s)", time.Now().String())
+	if errors.Is(err, redis.Nil) {
+		r.data.log.Infof("No available seat (time:%s)", time.Now().String())
 		return "", false, err
 	}
 	if err != nil {
-		r.log.Errorf("Error getting first available seat from redis (time:%s)", time.Now().String())
+		r.data.log.Errorf("Error getting first available seat from redis (time:%s)", time.Now().String())
 		return "", false, err
 	}
 
 	resultStr, ok := result.(string)
 	if !ok {
-		r.log.Infof("No available seat now (time:%s)", time.Now().String())
+		r.data.log.Infof("No available seat now (time:%s)", time.Now().String())
 		return "", false, fmt.Errorf("no available seat now (time:%s)", time.Now().String())
 	}
 	return resultStr, true, nil
@@ -192,7 +187,7 @@ func (r *SeatRepo) GetSeatInfos(ctx context.Context, stuID string) (map[string][
 	for _, roomID := range biz.RoomIDs {
 		seats, ok, err := r.GetSeatsByRoom(ctx, roomID, stuID)
 		if err != nil {
-			r.log.Warnf("get room seats cache(room_id:%s) err: 	 %v", roomID, err)
+			r.data.log.Warnf("get room seats cache(room_id:%s) err: %v", roomID, err)
 			needRefresh = true
 			continue
 		}
@@ -206,7 +201,7 @@ func (r *SeatRepo) GetSeatInfos(ctx context.Context, stuID string) (map[string][
 		hitAny = true
 
 		// 判断软过期
-		if ts.IsZero() || now.Sub(ts) > freshness {
+		if ts.IsZero() || now.Sub(ts) > seatsFreshness {
 			needRefresh = true
 		}
 	}
@@ -248,8 +243,8 @@ func (r *SeatRepo) refreshAll(ctx context.Context, stuID string) (map[string][]*
 
 	for roomID, seats := range data {
 		// 回填缓存
-		if err := r.setRoomSeatsCache(ctx, roomID, seats, now); err != nil {
-			r.log.Warnf("set room seats cache(room_id:%s) err: %v", roomID, err)
+		if err = r.setRoomSeatsCache(ctx, roomID, seats, now); err != nil {
+			r.data.log.Warnf("set room seats cache(room_id:%s) err: %v", roomID, err)
 		}
 	}
 	return data, nil

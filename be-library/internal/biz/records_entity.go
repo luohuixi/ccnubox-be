@@ -1,5 +1,7 @@
 package biz
 
+import "context"
+
 type FutureRecords struct {
 	ID       string
 	Owner    string
@@ -19,4 +21,11 @@ type HistoryRecords struct {
 	Status     string
 	Date       string
 	SubmitTime string
+}
+
+type RecordRepo interface {
+	UpsertFutureRecords(ctx context.Context, stuID string, list []*FutureRecords) error
+	ListFutureRecords(ctx context.Context, stuID string) ([]*FutureRecords, error)
+	UpsertHistoryRecords(ctx context.Context, stuID string, list []*HistoryRecords) error
+	ListHistoryRecords(ctx context.Context, stuID string) ([]*HistoryRecords, error)
 }

@@ -1,5 +1,7 @@
 package biz
 
+import "context"
+
 type Discussion struct {
 	LabID    string
 	LabName  string
@@ -20,8 +22,13 @@ type DiscussionTS struct {
 }
 
 type Search struct {
-	ID    string `json:"id"`
-	Pid   string `json:"Pid"`
-	Name  string `json:"name"`
-	Label string `json:"label"`
+	ID    string `json:"id"`    // 预约研讨间id
+	Pid   string `json:"Pid"`   // 学号
+	Name  string `json:"name"`  // 姓名
+	Label string `json:"label"` // 姓名(学号)
+}
+
+type DiscussionRepo interface {
+	GetDiscussionInfos(ctx context.Context, stuID string) ([]*Discussion, error)
+	SearchUserInfos(ctx context.Context, stuID string) (*Search, error)
 }
