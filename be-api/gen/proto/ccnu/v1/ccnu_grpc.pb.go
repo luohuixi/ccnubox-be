@@ -19,10 +19,8 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	CCNUService_GetXKCookie_FullMethodName = "/ccnu.v1.CCNUService/GetXKCookie"
-	CCNUService_LoginCCNU_FullMethodName   = "/ccnu.v1.CCNUService/LoginCCNU"
 	CCNUService_GetXKCookie_FullMethodName      = "/ccnu.v1.CCNUService/GetXKCookie"
-	CCNUService_GetCCNUCookie_FullMethodName    = "/ccnu.v1.CCNUService/GetCCNUCookie"
+	CCNUService_LoginCCNU_FullMethodName        = "/ccnu.v1.CCNUService/LoginCCNU"
 	CCNUService_GetLibraryCookie_FullMethodName = "/ccnu.v1.CCNUService/GetLibraryCookie"
 )
 
@@ -32,7 +30,6 @@ const (
 type CCNUServiceClient interface {
 	GetXKCookie(ctx context.Context, in *GetXKCookieRequest, opts ...grpc.CallOption) (*GetXKCookieResponse, error)
 	LoginCCNU(ctx context.Context, in *LoginCCNURequest, opts ...grpc.CallOption) (*LoginCCNUResponse, error)
-	GetCCNUCookie(ctx context.Context, in *GetCCNUCookieRequest, opts ...grpc.CallOption) (*GetCCNUCookieResponse, error)
 	GetLibraryCookie(ctx context.Context, in *GetLibraryCookieRequest, opts ...grpc.CallOption) (*GetLibraryCookieResponse, error)
 }
 
@@ -80,7 +77,6 @@ func (c *cCNUServiceClient) GetLibraryCookie(ctx context.Context, in *GetLibrary
 type CCNUServiceServer interface {
 	GetXKCookie(context.Context, *GetXKCookieRequest) (*GetXKCookieResponse, error)
 	LoginCCNU(context.Context, *LoginCCNURequest) (*LoginCCNUResponse, error)
-	GetCCNUCookie(context.Context, *GetCCNUCookieRequest) (*GetCCNUCookieResponse, error)
 	GetLibraryCookie(context.Context, *GetLibraryCookieRequest) (*GetLibraryCookieResponse, error)
 	mustEmbedUnimplementedCCNUServiceServer()
 }

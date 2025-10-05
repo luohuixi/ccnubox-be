@@ -118,9 +118,6 @@ func (x *GetXKCookieResponse) GetCookie() string {
 }
 
 type LoginCCNURequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-type GetCCNUCookieRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	StudentId     string                 `protobuf:"bytes,1,opt,name=student_id,json=studentId,proto3" json:"student_id,omitempty"`
 	Password      string                 `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
@@ -130,13 +127,6 @@ type GetCCNUCookieRequest struct {
 
 func (x *LoginCCNURequest) Reset() {
 	*x = LoginCCNURequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_ccnu_v1_ccnu_proto_msgTypes[2]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-func (x *GetCCNUCookieRequest) Reset() {
-	*x = GetCCNUCookieRequest{}
 	mi := &file_ccnu_v1_ccnu_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
@@ -180,29 +170,14 @@ func (x *LoginCCNURequest) GetPassword() string {
 }
 
 type LoginCCNUResponse struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
 	unknownFields protoimpl.UnknownFields
-
-	Success bool `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *LoginCCNUResponse) Reset() {
 	*x = LoginCCNUResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_ccnu_v1_ccnu_proto_msgTypes[3]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-type GetCCNUCookieResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Cookie        string                 `protobuf:"bytes,1,opt,name=cookie,proto3" json:"cookie,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *GetCCNUCookieResponse) Reset() {
-	*x = GetCCNUCookieResponse{}
 	mi := &file_ccnu_v1_ccnu_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
@@ -336,41 +311,6 @@ func (x *GetLibraryCookieResponse) GetCookie() string {
 
 var File_ccnu_v1_ccnu_proto protoreflect.FileDescriptor
 
-var file_ccnu_v1_ccnu_proto_rawDesc = []byte{
-	0x0a, 0x12, 0x63, 0x63, 0x6e, 0x75, 0x2f, 0x76, 0x31, 0x2f, 0x63, 0x63, 0x6e, 0x75, 0x2e, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x12, 0x07, 0x63, 0x63, 0x6e, 0x75, 0x2e, 0x76, 0x31, 0x22, 0x4f, 0x0a,
-	0x12, 0x47, 0x65, 0x74, 0x58, 0x4b, 0x43, 0x6f, 0x6f, 0x6b, 0x69, 0x65, 0x52, 0x65, 0x71, 0x75,
-	0x65, 0x73, 0x74, 0x12, 0x1d, 0x0a, 0x0a, 0x73, 0x74, 0x75, 0x64, 0x65, 0x6e, 0x74, 0x5f, 0x69,
-	0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x73, 0x74, 0x75, 0x64, 0x65, 0x6e, 0x74,
-	0x49, 0x64, 0x12, 0x1a, 0x0a, 0x08, 0x70, 0x61, 0x73, 0x73, 0x77, 0x6f, 0x72, 0x64, 0x18, 0x02,
-	0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x70, 0x61, 0x73, 0x73, 0x77, 0x6f, 0x72, 0x64, 0x22, 0x2d,
-	0x0a, 0x13, 0x47, 0x65, 0x74, 0x58, 0x4b, 0x43, 0x6f, 0x6f, 0x6b, 0x69, 0x65, 0x52, 0x65, 0x73,
-	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x16, 0x0a, 0x06, 0x63, 0x6f, 0x6f, 0x6b, 0x69, 0x65, 0x18,
-	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x63, 0x6f, 0x6f, 0x6b, 0x69, 0x65, 0x22, 0x4d, 0x0a,
-	0x10, 0x4c, 0x6f, 0x67, 0x69, 0x6e, 0x43, 0x43, 0x4e, 0x55, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
-	0x74, 0x12, 0x1d, 0x0a, 0x0a, 0x73, 0x74, 0x75, 0x64, 0x65, 0x6e, 0x74, 0x5f, 0x69, 0x64, 0x18,
-	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x73, 0x74, 0x75, 0x64, 0x65, 0x6e, 0x74, 0x49, 0x64,
-	0x12, 0x1a, 0x0a, 0x08, 0x70, 0x61, 0x73, 0x73, 0x77, 0x6f, 0x72, 0x64, 0x18, 0x02, 0x20, 0x01,
-	0x28, 0x09, 0x52, 0x08, 0x70, 0x61, 0x73, 0x73, 0x77, 0x6f, 0x72, 0x64, 0x22, 0x2d, 0x0a, 0x11,
-	0x4c, 0x6f, 0x67, 0x69, 0x6e, 0x43, 0x43, 0x4e, 0x55, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
-	0x65, 0x12, 0x18, 0x0a, 0x07, 0x73, 0x75, 0x63, 0x63, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01,
-	0x28, 0x08, 0x52, 0x07, 0x73, 0x75, 0x63, 0x63, 0x65, 0x73, 0x73, 0x32, 0x9b, 0x01, 0x0a, 0x0b,
-	0x43, 0x43, 0x4e, 0x55, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x48, 0x0a, 0x0b, 0x47,
-	0x65, 0x74, 0x58, 0x4b, 0x43, 0x6f, 0x6f, 0x6b, 0x69, 0x65, 0x12, 0x1b, 0x2e, 0x63, 0x63, 0x6e,
-	0x75, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x58, 0x4b, 0x43, 0x6f, 0x6f, 0x6b, 0x69, 0x65,
-	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1c, 0x2e, 0x63, 0x63, 0x6e, 0x75, 0x2e, 0x76,
-	0x31, 0x2e, 0x47, 0x65, 0x74, 0x58, 0x4b, 0x43, 0x6f, 0x6f, 0x6b, 0x69, 0x65, 0x52, 0x65, 0x73,
-	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x42, 0x0a, 0x09, 0x4c, 0x6f, 0x67, 0x69, 0x6e, 0x43, 0x43,
-	0x4e, 0x55, 0x12, 0x19, 0x2e, 0x63, 0x63, 0x6e, 0x75, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x6f, 0x67,
-	0x69, 0x6e, 0x43, 0x43, 0x4e, 0x55, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1a, 0x2e,
-	0x63, 0x63, 0x6e, 0x75, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x6f, 0x67, 0x69, 0x6e, 0x43, 0x43, 0x4e,
-	0x55, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42, 0x40, 0x5a, 0x3e, 0x67, 0x69, 0x74,
-	0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x61, 0x73, 0x79, 0x6e, 0x63, 0x63, 0x6e, 0x75,
-	0x2f, 0x63, 0x63, 0x6e, 0x75, 0x62, 0x6f, 0x78, 0x2d, 0x62, 0x65, 0x2f, 0x62, 0x65, 0x2d, 0x61,
-	0x70, 0x69, 0x2f, 0x67, 0x65, 0x6e, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x63, 0x63, 0x6e,
-	0x75, 0x2f, 0x76, 0x31, 0x3b, 0x63, 0x63, 0x6e, 0x75, 0x76, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x33,
-}
 const file_ccnu_v1_ccnu_proto_rawDesc = "" +
 	"\n" +
 	"\x12ccnu/v1/ccnu.proto\x12\accnu.v1\"O\n" +
@@ -379,22 +319,22 @@ const file_ccnu_v1_ccnu_proto_rawDesc = "" +
 	"student_id\x18\x01 \x01(\tR\tstudentId\x12\x1a\n" +
 	"\bpassword\x18\x02 \x01(\tR\bpassword\"-\n" +
 	"\x13GetXKCookieResponse\x12\x16\n" +
-	"\x06cookie\x18\x01 \x01(\tR\x06cookie\"Q\n" +
-	"\x14GetCCNUCookieRequest\x12\x1d\n" +
+	"\x06cookie\x18\x01 \x01(\tR\x06cookie\"M\n" +
+	"\x10LoginCCNURequest\x12\x1d\n" +
 	"\n" +
 	"student_id\x18\x01 \x01(\tR\tstudentId\x12\x1a\n" +
-	"\bpassword\x18\x02 \x01(\tR\bpassword\"/\n" +
-	"\x15GetCCNUCookieResponse\x12\x16\n" +
-	"\x06cookie\x18\x01 \x01(\tR\x06cookie\"T\n" +
+	"\bpassword\x18\x02 \x01(\tR\bpassword\"-\n" +
+	"\x11LoginCCNUResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\"T\n" +
 	"\x17GetLibraryCookieRequest\x12\x1d\n" +
 	"\n" +
 	"student_id\x18\x01 \x01(\tR\tstudentId\x12\x1a\n" +
 	"\bpassword\x18\x02 \x01(\tR\bpassword\"2\n" +
 	"\x18GetLibraryCookieResponse\x12\x16\n" +
-	"\x06cookie\x18\x01 \x01(\tR\x06cookie2\x80\x02\n" +
+	"\x06cookie\x18\x01 \x01(\tR\x06cookie2\xf4\x01\n" +
 	"\vCCNUService\x12H\n" +
-	"\vGetXKCookie\x12\x1b.ccnu.v1.GetXKCookieRequest\x1a\x1c.ccnu.v1.GetXKCookieResponse\x12N\n" +
-	"\rGetCCNUCookie\x12\x1d.ccnu.v1.GetCCNUCookieRequest\x1a\x1e.ccnu.v1.GetCCNUCookieResponse\x12W\n" +
+	"\vGetXKCookie\x12\x1b.ccnu.v1.GetXKCookieRequest\x1a\x1c.ccnu.v1.GetXKCookieResponse\x12B\n" +
+	"\tLoginCCNU\x12\x19.ccnu.v1.LoginCCNURequest\x1a\x1a.ccnu.v1.LoginCCNUResponse\x12W\n" +
 	"\x10GetLibraryCookie\x12 .ccnu.v1.GetLibraryCookieRequest\x1a!.ccnu.v1.GetLibraryCookieResponseB@Z>github.com/asynccnu/ccnubox-be/be-api/gen/proto/ccnu/v1;ccnuv1b\x06proto3"
 
 var (
@@ -409,41 +349,24 @@ func file_ccnu_v1_ccnu_proto_rawDescGZIP() []byte {
 	return file_ccnu_v1_ccnu_proto_rawDescData
 }
 
-<<<<<<< HEAD
-var file_ccnu_v1_ccnu_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
-var file_ccnu_v1_ccnu_proto_goTypes = []interface{}{
-	(*GetXKCookieRequest)(nil),  // 0: ccnu.v1.GetXKCookieRequest
-	(*GetXKCookieResponse)(nil), // 1: ccnu.v1.GetXKCookieResponse
-	(*LoginCCNURequest)(nil),    // 2: ccnu.v1.LoginCCNURequest
-	(*LoginCCNUResponse)(nil),   // 3: ccnu.v1.LoginCCNUResponse
-}
-var file_ccnu_v1_ccnu_proto_depIdxs = []int32{
-	0, // 0: ccnu.v1.CCNUService.GetXKCookie:input_type -> ccnu.v1.GetXKCookieRequest
-	2, // 1: ccnu.v1.CCNUService.LoginCCNU:input_type -> ccnu.v1.LoginCCNURequest
-	1, // 2: ccnu.v1.CCNUService.GetXKCookie:output_type -> ccnu.v1.GetXKCookieResponse
-	3, // 3: ccnu.v1.CCNUService.LoginCCNU:output_type -> ccnu.v1.LoginCCNUResponse
-	2, // [2:4] is the sub-list for method output_type
-	0, // [0:2] is the sub-list for method input_type
-=======
 var file_ccnu_v1_ccnu_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_ccnu_v1_ccnu_proto_goTypes = []any{
 	(*GetXKCookieRequest)(nil),       // 0: ccnu.v1.GetXKCookieRequest
 	(*GetXKCookieResponse)(nil),      // 1: ccnu.v1.GetXKCookieResponse
-	(*GetCCNUCookieRequest)(nil),     // 2: ccnu.v1.GetCCNUCookieRequest
-	(*GetCCNUCookieResponse)(nil),    // 3: ccnu.v1.GetCCNUCookieResponse
+	(*LoginCCNURequest)(nil),         // 2: ccnu.v1.LoginCCNURequest
+	(*LoginCCNUResponse)(nil),        // 3: ccnu.v1.LoginCCNUResponse
 	(*GetLibraryCookieRequest)(nil),  // 4: ccnu.v1.GetLibraryCookieRequest
 	(*GetLibraryCookieResponse)(nil), // 5: ccnu.v1.GetLibraryCookieResponse
 }
 var file_ccnu_v1_ccnu_proto_depIdxs = []int32{
 	0, // 0: ccnu.v1.CCNUService.GetXKCookie:input_type -> ccnu.v1.GetXKCookieRequest
-	2, // 1: ccnu.v1.CCNUService.GetCCNUCookie:input_type -> ccnu.v1.GetCCNUCookieRequest
+	2, // 1: ccnu.v1.CCNUService.LoginCCNU:input_type -> ccnu.v1.LoginCCNURequest
 	4, // 2: ccnu.v1.CCNUService.GetLibraryCookie:input_type -> ccnu.v1.GetLibraryCookieRequest
 	1, // 3: ccnu.v1.CCNUService.GetXKCookie:output_type -> ccnu.v1.GetXKCookieResponse
-	3, // 4: ccnu.v1.CCNUService.GetCCNUCookie:output_type -> ccnu.v1.GetCCNUCookieResponse
+	3, // 4: ccnu.v1.CCNUService.LoginCCNU:output_type -> ccnu.v1.LoginCCNUResponse
 	5, // 5: ccnu.v1.CCNUService.GetLibraryCookie:output_type -> ccnu.v1.GetLibraryCookieResponse
 	3, // [3:6] is the sub-list for method output_type
 	0, // [0:3] is the sub-list for method input_type
->>>>>>> feature/library
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name
@@ -454,59 +377,6 @@ func file_ccnu_v1_ccnu_proto_init() {
 	if File_ccnu_v1_ccnu_proto != nil {
 		return
 	}
-<<<<<<< HEAD
-	if !protoimpl.UnsafeEnabled {
-		file_ccnu_v1_ccnu_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetXKCookieRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_ccnu_v1_ccnu_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetXKCookieResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_ccnu_v1_ccnu_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*LoginCCNURequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_ccnu_v1_ccnu_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*LoginCCNUResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-	}
-=======
->>>>>>> feature/library
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

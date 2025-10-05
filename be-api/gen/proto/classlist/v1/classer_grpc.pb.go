@@ -54,9 +54,9 @@ type ClasserClient interface {
 	GetStuIdByJxbId(ctx context.Context, in *GetStuIdByJxbIdRequest, opts ...grpc.CallOption) (*GetStuIdByJxbIdResponse, error)
 	// 获取相关日期
 	GetSchoolDay(ctx context.Context, in *GetSchoolDayReq, opts ...grpc.CallOption) (*GetSchoolDayResp, error)
-	//添加课程备注
+	// 添加课程备注
 	UpdateClassNote(ctx context.Context, in *UpdateClassNoteReq, opts ...grpc.CallOption) (*UpdateClassNoteResp, error)
-	//删除课程备注
+	// 删除课程备注
 	DeleteClassNote(ctx context.Context, in *DeleteClassNoteReq, opts ...grpc.CallOption) (*DeleteClassNoteResp, error)
 }
 
@@ -200,9 +200,9 @@ type ClasserServer interface {
 	GetStuIdByJxbId(context.Context, *GetStuIdByJxbIdRequest) (*GetStuIdByJxbIdResponse, error)
 	// 获取相关日期
 	GetSchoolDay(context.Context, *GetSchoolDayReq) (*GetSchoolDayResp, error)
-	//添加课程备注
+	// 添加课程备注
 	UpdateClassNote(context.Context, *UpdateClassNoteReq) (*UpdateClassNoteResp, error)
-	//删除课程备注
+	// 删除课程备注
 	DeleteClassNote(context.Context, *DeleteClassNoteReq) (*DeleteClassNoteResp, error)
 	mustEmbedUnimplementedClasserServer()
 }
