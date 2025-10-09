@@ -19,6 +19,7 @@ type ccnuService struct {
 	passport *crawler.Passport
 	timeout  time.Duration
 	l        logger.Logger
+	
 }
 
 func NewCCNUService(l logger.Logger, passport *crawler.Passport) CCNUService {

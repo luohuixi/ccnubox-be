@@ -26,7 +26,6 @@ func NewPassport(client *http.Client) *Passport {
 	}
 }
 
-// 但是出现存在的proto错误处理是否需要在 service 层创建一个 error adaptor
 // 将放入crawler层，这里的组装属于行为级组装，不用移动至服务级
 func (c *Passport) LoginPassport(ctx context.Context, stuId string, password string) (bool, error) {
 	var (

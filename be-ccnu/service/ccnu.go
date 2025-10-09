@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/rsa"
 	"errors"
-	"fmt"
 
 	ccnuv1 "github.com/asynccnu/ccnubox-be/be-api/gen/proto/ccnu/v1"
 	"github.com/asynccnu/ccnubox-be/be-ccnu/crawler"
@@ -96,7 +95,7 @@ func (c *ccnuService) loginUnderGrad(ctx context.Context, studentId string, pass
 func (c *ccnuService) getUnderGradCookie(ctx context.Context, stuId, password string) (string, error) {
 	//初始化client
 	var (
-		ug = crawler.NewUnderGrad(crawler.NewCrawlerClient( /*c.timeout*/ ))
+		ug = crawler.NewUnderGrad(crawler.NewCrawlerClient())
 	)
 
 	ok, err := c.loginUnderGrad(ctx, stuId, password)
@@ -124,7 +123,7 @@ func (c *ccnuService) getUnderGradCookie(ctx context.Context, stuId, password st
 }
 
 func (c *ccnuService) getGradCookie(ctx context.Context, stuId, password string) (string, error) {
-	pg := crawler.NewPostGraduate(crawler.NewCrawlerClient( /*c.timeout*/ ))
+	pg := crawler.NewPostGraduate(crawler.NewCrawlerClient())
 	pubkey, err := tool.Retry(func() (*rsa.PublicKey, error) {
 		return pg.FetchPublicKey(ctx)
 	})
@@ -132,22 +131,12 @@ func (c *ccnuService) getGradCookie(ctx context.Context, stuId, password string)
 		return "", err
 	}
 	return pg.GetCookie(ctx, stuId, password, pubkey)
-
-	// s, err := tool.Retry(func() (string, error) {
-	// 	_, s, err := c.loginClient(ctx, client, studentId, password, params)
-	// 	return s, err
-	// })
-	// if err != nil {
-	// 	return "", err
-	// }
-
-	// return s, nil
 }
 
 func (c *ccnuService) GetLibraryCookie(ctx context.Context, studentId, password string) (string, error) {
 	// 初始化Client
 	var (
-		l = crawler.NewLibrary(crawler.NewCrawlerClient( /*c.timeout*/ ))
+		l = crawler.NewLibrary(crawler.NewCrawlerClient())
 	)
 
 	ok, err := c.loginUnderGrad(ctx, studentId, password)
@@ -155,7 +144,6 @@ func (c *ccnuService) GetLibraryCookie(ctx context.Context, studentId, password 
 		return "", err
 	}
 
-	// 这里是不是应该解耦
 	l.Client = c.passport.Client
 
 	err = l.LoginLibrary(ctx)
@@ -167,8 +155,6 @@ func (c *ccnuService) GetLibraryCookie(ctx context.Context, studentId, password 
 	if err != nil {
 		return "", err
 	}
-
-	fmt.Println("这里是1", cookie)
 
 	return cookie, nil
 }
