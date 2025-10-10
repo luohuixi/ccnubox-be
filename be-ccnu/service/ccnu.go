@@ -42,7 +42,7 @@ func (c *ccnuService) GetXKCookie(ctx context.Context, studentId string, passwor
 func (c *ccnuService) LoginCCNU(ctx context.Context, studentId string, password string) (bool, error) {
 	if len(studentId) > 4 && (studentId[4] == '1' || studentId[4] == '0') {
 		// 研究生
-		pg := crawler.NewPostGraduate(crawler.NewCrawlerClient())
+		pg := crawler.NewPostGraduate(crawler.NewCrawlerClient(c.timeout))
 		return c.loginGrad(ctx, pg, studentId, password)
 	} else if len(studentId) > 4 && studentId[4] == '2' {
 		//本科生
@@ -85,7 +85,11 @@ func (c *ccnuService) loginGrad(ctx context.Context, pg *crawler.PostGraduate, s
 }
 
 func (c *ccnuService) loginUnderGrad(ctx context.Context, studentId string, password string) (bool, error) {
-	flag, err := c.passport.LoginPassport(ctx, studentId, password)
+	var (
+		ps = crawler.NewPassport(crawler.NewCrawlerClient(c.timeout))
+	)
+
+	flag, err := ps.LoginPassport(ctx, studentId, password)
 	if errors.Is(err, crawler.INCorrectPASSWORD) {
 		return flag, Invalid_SidOrPwd_ERROR(err)
 	}
@@ -95,7 +99,7 @@ func (c *ccnuService) loginUnderGrad(ctx context.Context, studentId string, pass
 func (c *ccnuService) getUnderGradCookie(ctx context.Context, stuId, password string) (string, error) {
 	//初始化client
 	var (
-		ug = crawler.NewUnderGrad(crawler.NewCrawlerClient())
+		ug = crawler.NewUnderGrad(crawler.NewCrawlerClient(c.timeout))
 	)
 
 	ok, err := c.loginUnderGrad(ctx, stuId, password)
@@ -123,7 +127,7 @@ func (c *ccnuService) getUnderGradCookie(ctx context.Context, stuId, password st
 }
 
 func (c *ccnuService) getGradCookie(ctx context.Context, stuId, password string) (string, error) {
-	pg := crawler.NewPostGraduate(crawler.NewCrawlerClient())
+	pg := crawler.NewPostGraduate(crawler.NewCrawlerClient(c.timeout))
 	pubkey, err := tool.Retry(func() (*rsa.PublicKey, error) {
 		return pg.FetchPublicKey(ctx)
 	})
@@ -136,7 +140,8 @@ func (c *ccnuService) getGradCookie(ctx context.Context, stuId, password string)
 func (c *ccnuService) GetLibraryCookie(ctx context.Context, studentId, password string) (string, error) {
 	// 初始化Client
 	var (
-		l = crawler.NewLibrary(crawler.NewCrawlerClient())
+		l  = crawler.NewLibrary(crawler.NewCrawlerClient(c.timeout))
+		ps = crawler.NewPassport(crawler.NewCrawlerClient(c.timeout))
 	)
 
 	ok, err := c.loginUnderGrad(ctx, studentId, password)
@@ -144,7 +149,7 @@ func (c *ccnuService) GetLibraryCookie(ctx context.Context, studentId, password 
 		return "", err
 	}
 
-	l.Client = c.passport.Client
+	l.Client = ps.Client
 
 	err = l.LoginLibrary(ctx)
 	if err != nil {

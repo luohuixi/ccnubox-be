@@ -11,7 +11,7 @@ var (
 	INCorrectPASSWORD = errors.New("账号密码错误")
 )
 
-func NewCrawlerClient() *http.Client {
+func NewCrawlerClient(t time.Duration) *http.Client {
 	j, _ := cookiejar.New(&cookiejar.Options{})
 	return &http.Client{
 		Transport: nil,
@@ -19,6 +19,6 @@ func NewCrawlerClient() *http.Client {
 			return nil
 		},
 		Jar:     j,
-		Timeout: time.Minute * 2,
+		Timeout: t,
 	}
 }

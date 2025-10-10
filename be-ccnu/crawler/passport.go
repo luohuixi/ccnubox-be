@@ -3,6 +3,7 @@ package crawler
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -87,6 +88,8 @@ func (c *Passport) getParamsFromHtml(ctx context.Context) (*accountRequestParams
 	if err != nil {
 		return params, err
 	}
+
+	fmt.Println(string(body))
 
 	// 获取 Cookie 中的 JSESSIONID
 	for _, cookie := range resp.Cookies() {
