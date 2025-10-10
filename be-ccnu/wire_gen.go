@@ -7,7 +7,6 @@
 package main
 
 import (
-	"github.com/asynccnu/ccnubox-be/be-ccnu/crawler"
 	"github.com/asynccnu/ccnubox-be/be-ccnu/grpc"
 	"github.com/asynccnu/ccnubox-be/be-ccnu/ioc"
 	"github.com/asynccnu/ccnubox-be/be-ccnu/pkg/grpcx"
@@ -18,11 +17,9 @@ import (
 
 func InitGRPCServer() grpcx.Server {
 	logger := ioc.InitLogger()
-	client := crawler.NewCrawlerClient()
-	passport := crawler.NewPassport(client)
-	ccnuService := service.NewCCNUService(logger, passport)
+	ccnuService := service.NewCCNUService(logger)
 	ccnuServiceServer := grpc.NewCCNUServiceServer(ccnuService)
-	clientv3Client := ioc.InitEtcdClient()
-	server := ioc.InitGRPCxKratosServer(ccnuServiceServer, clientv3Client, logger)
+	client := ioc.InitEtcdClient()
+	server := ioc.InitGRPCxKratosServer(ccnuServiceServer, client, logger)
 	return server
 }
