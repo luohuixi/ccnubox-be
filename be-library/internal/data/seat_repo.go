@@ -5,12 +5,22 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/asynccnu/ccnubox-be/be-library/internal/biz"
 	"github.com/asynccnu/ccnubox-be/be-library/pkg/tool"
 	"github.com/redis/go-redis/v9"
 	"golang.org/x/sync/singleflight"
+)
+
+const (
+	cacheKeyRoomFmt     = "lib:room:%s"
+	cacheKeyRoomSeatFmt = "lib:room:%s:seat:%s"
+	// 硬过期，保证夜间不丢缓存
+	seatsHardTTL = 24 * time.Hour
+	// 软过期，超时则视为需要刷新
+	seatsFreshness = 30 * time.Second
 )
 
 type SeatRepo struct {
@@ -24,6 +34,14 @@ func NewSeatRepo(data *Data, crawler biz.LibraryCrawler) biz.SeatRepo {
 		data:    data,
 		crawler: crawler,
 	}
+}
+
+func (r *SeatRepo) cacheRoomSeatsKey(roomID string) string {
+	return fmt.Sprintf(cacheKeyRoomFmt, roomID)
+}
+
+func (r *SeatRepo) cacheRoomSeatsTsKey(roomID string, seatID string) string {
+	return fmt.Sprintf(cacheKeyRoomSeatFmt, roomID, seatID)
 }
 
 // 弄个管理员账号来进行持续爬虫
@@ -42,10 +60,6 @@ func (r *SeatRepo) SaveRoomSeatsInRedis(ctx context.Context, stuID string) error
 	// 按房间存储 房间里的所有座位数据
 	for roomId, seats := range allSeats {
 		key := r.cacheRoomSeatsKey(roomId)
-		tsKey := r.cacheRoomTsKey(roomId)
-		// 存储每个获取每个房间的时间戳，用于比较软更新时使用
-		pipe.HSet(ctx, tsKey, time.Now().UnixMilli())
-
 		// seatID : seatJson
 		hash := make(map[string]string)
 		for _, seat := range seats {
@@ -58,7 +72,7 @@ func (r *SeatRepo) SaveRoomSeatsInRedis(ctx context.Context, stuID string) error
 			hash[seatID] = string(seatJson)
 
 			// 建立时间序列 zSet
-			zKey := r.cacheSeatTsKey(seatID)
+			zKey := r.cacheRoomSeatsTsKey(roomId, seatID)
 			var zs []redis.Z
 			for _, ts := range seat.Ts {
 				startUnix, _ := tool.ParseToUnix(ts.Start)
@@ -104,7 +118,7 @@ func (r *SeatRepo) SaveRoomSeatsInRedis(ctx context.Context, stuID string) error
 }
 
 // RoomSeat 是否保留待商榷
-func (r *SeatRepo) GetSeatsByRoom(ctx context.Context, roomID string, stuID string) ([]*biz.Seat, bool, error) {
+func (r *SeatRepo) GetSeatsByRoom(ctx context.Context, roomID string) ([]*biz.Seat, error) {
 	roomKey := r.cacheRoomSeatsKey(roomID)
 
 	data, err := r.data.redis.HGetAll(ctx, roomKey).Result()
@@ -121,7 +135,7 @@ func (r *SeatRepo) GetSeatsByRoom(ctx context.Context, roomID string, stuID stri
 			seats = append(seats, &s)
 		}
 	}
-	return seats, true, nil
+	return seats, nil
 }
 
 // 返回 座位号 座位是否找到 err
@@ -129,33 +143,53 @@ func (r *SeatRepo) FindFirstAvailableSeat(ctx context.Context, start, end int64,
 	luaScript := `
 		local qStart = tonumber(ARGV[1])
 		local qEnd = tonumber(ARGV[2])
-		local cursor = "0"
 
-		repeat
-			local scanResult = redis.call("SCAN", cursor, "MATCH", "seat:*:times", "COUNT", 100)
-			cursor = scanResult[1]
-			local keys = scanResult[2]
+		-- 收集房间ID
+		local roomIDs = {}
+		for i = 3, #ARGV do
+			table.insert(roomIDs, ARGV[i])
+		end
 
-			for i=1,#keys do
-				local members = redis.call("ZRANGE", keys[i], 0, -1, "WITHSCORES")
-				local free = true
-				for j=2,#members,2 do
-					local startTime = tonumber(members[j-1])
-					local endTime = tonumber(members[j])
-					if startTime < qEnd and endTime > qStart then
-						free = false
-						break
+		-- 遍历所有房间ID
+		for _, roomID in ipairs(roomIDs) do
+			local cursor = "0"
+			repeat
+				-- 只扫描当前房间下的 seat
+				local pattern = "lib:room:" .. roomID .. ":seat:*"
+				local scanResult = redis.call("SCAN", cursor, "MATCH", pattern, "COUNT", 100)
+				cursor = scanResult[1]
+				local keys = scanResult[2]
+
+				for i = 1, #keys do
+					local key = keys[i]
+					local members = redis.call("ZRANGE", key, 0, -1, "WITHSCORES")
+
+					local free = true
+					for j = 2, #members, 2 do
+						local startTime = tonumber(members[j - 1])
+						local endTime = tonumber(members[j])
+						if startTime < qEnd and endTime > qStart then
+							free = false
+							break
+						end
+					end
+
+					if free then
+						return key -- 找到空闲座位直接返回
 					end
 				end
-				if free then
-					return keys[i]  -- 返回第一个空闲座位 key
-				end
-			end
-		until cursor == "0"
+			until cursor == "0"
+		end
 
 		return nil
 	`
-	result, err := r.data.redis.Eval(ctx, luaScript, nil, start, end).Result()
+	args := make([]interface{}, 0, 2+len(roomID))
+	args = append(args, start, end)
+	for _, id := range roomID {
+		args = append(args, id)
+	}
+
+	result, err := r.data.redis.Eval(ctx, luaScript, nil, args...).Result()
 	// redis.Nil 来做无匹配座位的表示符，返回 false
 	if errors.Is(err, redis.Nil) {
 		r.data.log.Infof("No available seat (time:%s)", time.Now().String())
@@ -171,12 +205,16 @@ func (r *SeatRepo) FindFirstAvailableSeat(ctx context.Context, start, end int64,
 		r.data.log.Infof("No available seat now (time:%s)", time.Now().String())
 		return "", false, fmt.Errorf("no available seat now (time:%s)", time.Now().String())
 	}
-	return resultStr, true, nil
+
+	idx := strings.LastIndexByte(resultStr, ':')
+	freeSeatID := resultStr[idx+1:]
+
+	return freeSeatID, true, nil
 }
 
 // GetSeatInfos 按楼层查缓存
 func (r *SeatRepo) GetSeatInfos(ctx context.Context, stuID string) (map[string][]*biz.Seat, error) {
-	now := time.Now()
+	// now := time.Now()
 	result := make(map[string][]*biz.Seat, len(biz.RoomIDs))
 
 	// 是否有房间命中缓存
@@ -184,26 +222,27 @@ func (r *SeatRepo) GetSeatInfos(ctx context.Context, stuID string) (map[string][
 	// 是否需要后台刷新
 	needRefresh := false
 
+	// 循环每个房间
 	for _, roomID := range biz.RoomIDs {
-		seats, ok, err := r.GetSeatsByRoom(ctx, roomID, stuID)
+		seats, err := r.GetSeatsByRoom(ctx, roomID)
 		if err != nil {
 			r.data.log.Warnf("get room seats cache(room_id:%s) err: %v", roomID, err)
 			needRefresh = true
 			continue
 		}
-		if !ok {
-			needRefresh = true
-			continue
-		}
+		// if !ok {
+		// 	needRefresh = true
+		// 	continue
+		// }
 
 		// 命中缓存
 		result[roomID] = seats
 		hitAny = true
 
-		// 判断软过期
-		if ts.IsZero() || now.Sub(ts) > seatsFreshness {
-			needRefresh = true
-		}
+		// // 判断软过期
+		// if ts.IsZero() || now.Sub(ts) > seatsFreshness {
+		// 	needRefresh = true
+		// }
 	}
 
 	if hitAny {
@@ -249,3 +288,4 @@ func (r *SeatRepo) refreshAll(ctx context.Context, stuID string) (map[string][]*
 	}
 	return data, nil
 }
+

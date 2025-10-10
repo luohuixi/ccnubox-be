@@ -45,7 +45,7 @@ func wireApp(confServer *conf.Server, confData *conf.Data, confRegistry *conf.Re
 	if err != nil {
 		return nil, nil, err
 	}
-	seatRepo := data.NewSeatRepo(dataData, logger, libraryCrawler)
+	seatRepo := data.NewSeatRepo(dataData, libraryCrawler)
 	recordRepo := data.NewRecordRepo(dataData)
 	creditPointsRepo := data.NewCreditPointsRepo(dataData)
 	libraryBiz := biz.NewLibraryBiz(libraryCrawler, logger, seatRepo, recordRepo, creditPointsRepo)

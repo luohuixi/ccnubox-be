@@ -72,8 +72,8 @@ func TestMain(m *testing.M) {
 		panic(err)
 	}
 
-	repo = data.NewSeatRepo(d, log.NewStdLogger(os.Stdout), libraryCrawler).(*data.SeatRepo)
-	bizz = biz.NewLibraryBiz(libraryCrawler, log.NewStdLogger(os.Stdout), repo)
+	repo = data.NewSeatRepo(d, libraryCrawler).(*data.SeatRepo)
+	bizz = biz.NewLibraryBiz(libraryCrawler, log.NewStdLogger(os.Stdout), repo, nil, nil)
 
 	// 执行测试
 	m.Run()
@@ -105,8 +105,9 @@ func TestGetSeat(t *testing.T) {
 }
 
 func TestFindFirstAvailbleSeat(t *testing.T) {
+	roomIDs := []string{"100455824"}
 	ctx := context.Background()
-	devid, _, err := repo.FindFirstAvailableSeat(ctx, 2000, 2100)
+	devid, _, err := repo.FindFirstAvailableSeat(ctx, 2000, 2100, roomIDs)
 	if err != nil {
 		panic(err)
 	}
@@ -114,7 +115,7 @@ func TestFindFirstAvailbleSeat(t *testing.T) {
 }
 
 func TestReserveSeatRandomly(t *testing.T) {
-	id := "2024214744"
+	id := ""
 	start := "2025-09-02 20:00"
 	end := "2025-09-02 21:00"
 	ctx := context.Background()

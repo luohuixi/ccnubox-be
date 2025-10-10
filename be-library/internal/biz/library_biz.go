@@ -151,7 +151,7 @@ func (b *libraryBiz) ReserveSeatRandomly(ctx context.Context, stuID, start, end 
 	qEnd := tEnd.Hour()*100 + tEnd.Minute()
 
 	// 查找空闲预约
-	seatDevID, isExist, err := b.SeatRepo.FindFirstAvailableSeat(ctx, int64(qStart), int64(qEnd))
+	seatDevID, isExist, err := b.SeatRepo.FindFirstAvailableSeat(ctx, int64(qStart), int64(qEnd), nil)
 	if err != nil {
 		return "", err
 	}
