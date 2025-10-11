@@ -25,6 +25,7 @@ const (
 type GetSeatRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	StuId         string                 `protobuf:"bytes,1,opt,name=stu_id,json=stuId,proto3" json:"stu_id,omitempty"`
+	RoomIds       []string               `protobuf:"bytes,2,rep,name=room_ids,json=roomIds,proto3" json:"room_ids,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -64,6 +65,13 @@ func (x *GetSeatRequest) GetStuId() string {
 		return x.StuId
 	}
 	return ""
+}
+
+func (x *GetSeatRequest) GetRoomIds() []string {
+	if x != nil {
+		return x.RoomIds
+	}
+	return nil
 }
 
 type GetSeatResponse struct {
@@ -2063,9 +2071,10 @@ var File_library_v1_library_proto protoreflect.FileDescriptor
 const file_library_v1_library_proto_rawDesc = "" +
 	"\n" +
 	"\x18library/v1/library.proto\x12\n" +
-	"library.v1\"'\n" +
+	"library.v1\"B\n" +
 	"\x0eGetSeatRequest\x12\x15\n" +
-	"\x06stu_id\x18\x01 \x01(\tR\x05stuId\"F\n" +
+	"\x06stu_id\x18\x01 \x01(\tR\x05stuId\x12\x19\n" +
+	"\broom_ids\x18\x02 \x03(\tR\aroomIds\"F\n" +
 	"\x0fGetSeatResponse\x123\n" +
 	"\n" +
 	"room_seats\x18\x01 \x03(\v2\x14.library.v1.RoomSeatR\troomSeats\"K\n" +

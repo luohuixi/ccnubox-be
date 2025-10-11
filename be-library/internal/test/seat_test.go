@@ -81,10 +81,10 @@ func TestMain(m *testing.M) {
 
 // 10s -> 8s
 func TestSaveRoomSeatsInRedis(t *testing.T) {
-	stuID := "2024214744"
+	stuID := ""
 	ctx := context.Background()
 
-	err := repo.SaveRoomSeatsInRedis(ctx, stuID)
+	err := repo.SaveRoomSeatsInRedis(ctx, stuID, biz.RoomIDs)
 	if err != nil {
 		panic(err)
 	}
@@ -94,7 +94,7 @@ func TestGetSeat(t *testing.T) {
 	ctx := context.Background()
 	roomID := "101699179"
 
-	seats, err := repo.GetSeatsByRoom(ctx, roomID)
+	seats, err := repo.GetSeatInfos(ctx, roomID, biz.RoomIDs)
 	if err != nil {
 		panic(err)
 	}

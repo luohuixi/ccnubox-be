@@ -26,7 +26,7 @@ func NewLibraryService(biz biz.LibraryBiz, logger log.Logger, comment biz.Commen
 }
 
 func (ls *LibraryService) GetSeat(ctx context.Context, req *pb.GetSeatRequest) (*pb.GetSeatResponse, error) {
-	data, err := ls.biz.GetSeat(ctx, req.StuId)
+	data, err := ls.biz.GetSeat(ctx, req.StuId, req.RoomIds)
 	if err != nil {
 		return nil, err
 	}

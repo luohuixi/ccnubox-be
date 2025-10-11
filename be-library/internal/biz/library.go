@@ -5,7 +5,7 @@ import (
 )
 
 type LibraryBiz interface {
-	GetSeat(ctx context.Context, stuID string) (map[string][]*Seat, error)
+	GetSeat(ctx context.Context, stuID string, RoomIDs []string) (map[string][]*Seat, error)
 	ReserveSeat(ctx context.Context, stuID, devID, start, end string) (string, error)
 	GetSeatRecord(ctx context.Context, stuID string) ([]*FutureRecords, error)
 	GetHistory(ctx context.Context, stuID string) ([]*HistoryRecords, error)
@@ -18,7 +18,7 @@ type LibraryBiz interface {
 }
 
 type LibraryCrawler interface {
-	GetSeatInfos(ctx context.Context, stuID string) (map[string][]*Seat, error)
+	GetSeatInfos(ctx context.Context, stuID string, roomIDs []string) (map[string][]*Seat, error)
 	ReserveSeat(ctx context.Context, stuID string, devid, start, end string) (string, error)
 	GetRecord(ctx context.Context, stuID string) ([]*FutureRecords, error)
 	GetHistory(ctx context.Context, stuID string) ([]*HistoryRecords, error)

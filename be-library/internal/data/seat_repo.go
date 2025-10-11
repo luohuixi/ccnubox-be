@@ -15,8 +15,9 @@ import (
 )
 
 const (
-	cacheKeyRoomFmt     = "lib:room:%s"
-	cacheKeyRoomSeatFmt = "lib:room:%s:seat:%s"
+	cacheKeyRoomFmt      = "lib:room:%s"
+	cacheKeyRoomSeatFmt  = "lib:room:%s:seat:%s"
+	cacheKeyDataUpdateTs = "lib:room:%s:update_ts"
 	// 硬过期，保证夜间不丢缓存
 	seatsHardTTL = 24 * time.Hour
 	// 软过期，超时则视为需要刷新
@@ -44,21 +45,27 @@ func (r *SeatRepo) cacheRoomSeatsTsKey(roomID string, seatID string) string {
 	return fmt.Sprintf(cacheKeyRoomSeatFmt, roomID, seatID)
 }
 
+func (r *SeatRepo) cacheRoomUpdateTsKey(roomID string) string {
+	return fmt.Sprintf(cacheKeyDataUpdateTs, roomID)
+}
+
 // 弄个管理员账号来进行持续爬虫
 // ZADD seat:{seatID}:times startTimestamp "{start}-{end}"
 // HSET roomid timestamp(UnixMilli)
-func (r *SeatRepo) SaveRoomSeatsInRedis(ctx context.Context, stuID string) error {
+func (r *SeatRepo) SaveRoomSeatsInRedis(ctx context.Context, stuID string, roomID []string) error {
 	ttl := r.data.cfg.Redis.Ttl
 	// 用pipe收集redis指令，减少网络IO造成的时间损耗
 	pipe := r.data.redis.Pipeline()
 
-	allSeats, err := r.crawler.GetSeatInfos(ctx, stuID)
+	allSeats, err := r.crawler.GetSeatInfos(ctx, stuID, roomID)
 	if err != nil {
 		return err
 	}
+	ts := time.Now()
 
 	// 按房间存储 房间里的所有座位数据
 	for roomId, seats := range allSeats {
+		tskey := r.cacheRoomUpdateTsKey(roomId)
 		key := r.cacheRoomSeatsKey(roomId)
 		// seatID : seatJson
 		hash := make(map[string]string)
@@ -103,6 +110,8 @@ func (r *SeatRepo) SaveRoomSeatsInRedis(ctx context.Context, stuID string) error
 		// RoomID : {N1111: json1 N2222: json2}
 		// 单个房间的座位存储
 		pipe.HSet(ctx, key, hash)
+		// 房间数据更新时间戳
+		pipe.Set(ctx, tskey, ts, 0)
 		// 设置 TTL , 过时自动删除捏
 		pipe.Expire(ctx, key, ttl.AsDuration()).Err()
 	}
@@ -117,14 +126,34 @@ func (r *SeatRepo) SaveRoomSeatsInRedis(ctx context.Context, stuID string) error
 	return nil
 }
 
-// RoomSeat 是否保留待商榷
-func (r *SeatRepo) GetSeatsByRoom(ctx context.Context, roomID string) ([]*biz.Seat, error) {
+// GetSeatsByRoomFrom 从缓存获取指定房间的所有座位信息
+func (r *SeatRepo) GetSeatsByRoomFromCache(ctx context.Context, roomID string) ([]*biz.Seat, *time.Time, error) {
 	roomKey := r.cacheRoomSeatsKey(roomID)
+	tsKey := r.cacheRoomUpdateTsKey(roomID)
 
 	data, err := r.data.redis.HGetAll(ctx, roomKey).Result()
 	if err != nil {
 		r.data.log.Errorf("get seatinfo from redis error (room_id := %s)", roomKey)
-		return nil, err
+		return nil, nil, err
+	}
+	if len(data) == 0 {
+		r.data.log.Errorf("get no seatinfo from redis(room_id := %s)", roomKey)
+		return nil, nil, errors.New(fmt.Sprintf("get no seatinfo from redis(room_id := %s)", roomKey))
+	}
+
+	tsData, err := r.data.redis.Get(ctx, tsKey).Result()
+	if err != nil {
+		r.data.log.Errorf("get seatTs from redis error (room_id := %s)", roomKey)
+		return nil, nil, err
+	}
+	if len(data) == 0 {
+		r.data.log.Errorf("get no seatTs from redis(room_id := %s)", roomKey)
+		return nil, nil, errors.New(fmt.Sprintf("get no seatTs from redis(room_id := %s)", roomKey))
+	}
+
+	ts, err := time.Parse(time.RFC3339Nano, tsData)
+	if err != nil {
+		return nil, nil, err
 	}
 
 	var seats []*biz.Seat
@@ -135,7 +164,7 @@ func (r *SeatRepo) GetSeatsByRoom(ctx context.Context, roomID string) ([]*biz.Se
 			seats = append(seats, &s)
 		}
 	}
-	return seats, nil
+	return seats, &ts, nil
 }
 
 // 返回 座位号 座位是否找到 err
@@ -213,79 +242,61 @@ func (r *SeatRepo) FindFirstAvailableSeat(ctx context.Context, start, end int64,
 }
 
 // GetSeatInfos 按楼层查缓存
-func (r *SeatRepo) GetSeatInfos(ctx context.Context, stuID string) (map[string][]*biz.Seat, error) {
-	// now := time.Now()
+func (r *SeatRepo) GetSeatInfos(ctx context.Context, stuID string, roomIDs []string) (map[string][]*biz.Seat, error) {
+	now := time.Now()
 	result := make(map[string][]*biz.Seat, len(biz.RoomIDs))
 
-	// 是否有房间命中缓存
-	hitAny := false
 	// 是否需要后台刷新
 	needRefresh := false
 
 	// 循环每个房间
-	for _, roomID := range biz.RoomIDs {
-		seats, err := r.GetSeatsByRoom(ctx, roomID)
+	for _, roomID := range roomIDs {
+		seats, ts, err := r.GetSeatsByRoomFromCache(ctx, roomID)
 		if err != nil {
 			r.data.log.Warnf("get room seats cache(room_id:%s) err: %v", roomID, err)
 			needRefresh = true
-			continue
 		}
-		// if !ok {
-		// 	needRefresh = true
-		// 	continue
-		// }
 
-		// 命中缓存
-		result[roomID] = seats
-		hitAny = true
+		// 判断软过期
+		if ts.IsZero() || now.Sub(*ts) > seatsFreshness {
+			needRefresh = true
+		}
 
-		// // 判断软过期
-		// if ts.IsZero() || now.Sub(ts) > seatsFreshness {
-		// 	needRefresh = true
-		// }
-	}
-
-	if hitAny {
-		// 返回缓存同时在后台刷新
+		// 这里需要刷新的房间数据不应该是必须得到的吗，这里异步不会导致这几个加载的房间数据无法传递吗
 		if needRefresh {
 			go func() {
 				bgCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 				defer cancel()
 				_, _, _ = r.sf.Do("lib:getSeatInfos:refresh", func() (interface{}, error) {
-					_, err := r.refreshAll(bgCtx, stuID)
+					err := r.SaveRoomSeatsInRedis(bgCtx, stuID, []string{roomID})
 					return nil, err
 				})
 			}()
+
+			continue
 		}
-		return result, nil
+
+		result[roomID] = seats
 	}
 
-	// 走到这里说明完全没有缓存,阻塞一次并拉取座位信息
-	val, err, _ := r.sf.Do("lib:getSeatInfos:refresh", func() (interface{}, error) {
-		ctx2, cancel := context.WithTimeout(ctx, 30*time.Second)
-		defer cancel()
-		return r.refreshAll(ctx2, stuID)
-	})
-	if err != nil {
-		return nil, err
-	}
-	return val.(map[string][]*biz.Seat), nil
-}
+	if len(result) == 0 {
+		// 走到这里说明完全没有缓存,阻塞一次并拉取座位信息
+		val, err, _ := r.sf.Do("lib:getSeatInfos:refresh", func() (interface{}, error) {
+			ctx2, cancel := context.WithTimeout(ctx, 30*time.Second)
+			defer cancel()
+			err := r.SaveRoomSeatsInRedis(ctx2, stuID, roomIDs)
+			if err != nil {
+				return nil, err
+			}
 
-// refreshAll 从爬虫获取所有房间最新座位信息并回填缓存与时间戳
-func (r *SeatRepo) refreshAll(ctx context.Context, stuID string) (map[string][]*biz.Seat, error) {
-	data, err := r.crawler.GetSeatInfos(ctx, stuID)
-	if err != nil {
-		return nil, err
-	}
-	now := time.Now()
-
-	for roomID, seats := range data {
-		// 回填缓存
-		if err = r.setRoomSeatsCache(ctx, roomID, seats, now); err != nil {
-			r.data.log.Warnf("set room seats cache(room_id:%s) err: %v", roomID, err)
+			return r.GetSeatInfos(ctx2, stuID, roomIDs)
+		})
+		if err != nil {
+			return nil, err
 		}
-	}
-	return data, nil
-}
+		return val.(map[string][]*biz.Seat), nil
 
+	}
+
+	return result, nil
+}

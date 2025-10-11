@@ -27,8 +27,8 @@ func NewLibraryBiz(crawler LibraryCrawler, logger log.Logger, seatRepo SeatRepo,
 	}
 }
 
-func (b *libraryBiz) GetSeat(ctx context.Context, stuID string) (map[string][]*Seat, error) {
-	data, err := b.SeatRepo.GetSeatInfos(ctx, stuID)
+func (b *libraryBiz) GetSeat(ctx context.Context, stuID string, RoomIDs []string) (map[string][]*Seat, error) {
+	data, err := b.SeatRepo.GetSeatInfos(ctx, stuID, RoomIDs)
 	if err != nil {
 		b.log.Errorf("get seats from cache(stu_id:%v) failed: %v", stuID, err)
 		return nil, err

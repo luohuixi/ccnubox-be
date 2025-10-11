@@ -102,8 +102,8 @@ func (c *Crawler) doRequest(ctx context.Context, client *client.CookieClient, me
 	})
 }
 
-// GetSeatInfos 获取座位信息
-func (c *Crawler) GetSeatInfos(ctx context.Context, stuID string) (map[string][]*biz.Seat, error) {
+// GetSeatInfos 获取不定个给定的房间的座位信息
+func (c *Crawler) GetSeatInfos(ctx context.Context, stuID string, roomIDs []string) (map[string][]*biz.Seat, error) {
 	cli, err := c.getClient(ctx, stuID)
 	if err != nil {
 		c.log.Errorf("Error getting client(stu_id:%v): %v", stuID, err)
@@ -114,7 +114,7 @@ func (c *Crawler) GetSeatInfos(ctx context.Context, stuID string) (map[string][]
 	results := make(map[string][]*biz.Seat)
 	mutex := &sync.Mutex{}
 
-	for _, roomID := range biz.RoomIDs {
+	for _, roomID := range roomIDs {
 		wg.Add(1)
 		go func(roomID string) {
 			defer wg.Done()

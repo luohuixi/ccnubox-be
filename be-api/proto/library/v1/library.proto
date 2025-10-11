@@ -23,6 +23,7 @@ service Library {
 // 获取座位信息
 message GetSeatRequest {
     string stu_id = 1;
+    repeated string room_ids = 2;
 }
 
 message GetSeatResponse {
