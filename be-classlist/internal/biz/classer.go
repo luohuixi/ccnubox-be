@@ -393,13 +393,15 @@ func (cluc *ClassUsecase) addClass(ctx context.Context, stuID string, info *Clas
 
 func (cluc *ClassUsecase) getCourseFromCrawler(ctx context.Context, stuID string, year string, semester string) ([]*ClassInfo, []*StudentCourse, error) {
 	logh := classLog.GetLogHelperFromCtx(ctx)
+	crawSuccess := true
 	defer func(currentTime time.Time) {
-		logh.Infof("[%v %v %v] getCourseFromCrawler took %v", stuID, year, semester, time.Since(currentTime))
+		logh.Infof("[%v %v %v] getCourseFromCrawler(success:%v) took %v", stuID, year, semester, crawSuccess, time.Since(currentTime))
 	}(time.Now())
 
 	cookie, err := func() (string, error) {
+		cookieSuccess := true
 		defer func(currentTime time.Time) {
-			logh.Infof("Get cookie (stu_id:%v) from other service,cost %v", stuID, time.Since(currentTime))
+			logh.Infof("Get cookie (stu_id:%v,success:%v) from other service,cost %v", stuID, cookieSuccess, time.Since(currentTime))
 		}(time.Now())
 
 		timeoutCtx, cancel := context.WithTimeout(ctx, cluc.waitUserSvcTime) //防止影响
@@ -407,12 +409,14 @@ func (cluc *ClassUsecase) getCourseFromCrawler(ctx context.Context, stuID string
 
 		cookie, err := cluc.ccnu.GetCookie(timeoutCtx, stuID)
 		if err != nil {
+			cookieSuccess = false // 设置cookie获取状态
 			logh.Errorf("Error getting cookie(stu_id:%v) from other service: %v", stuID, err)
 		}
 		return cookie, err
 	}()
 
 	if err != nil {
+		crawSuccess = false
 		return nil, nil, err
 	}
 
