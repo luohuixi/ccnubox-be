@@ -1090,7 +1090,7 @@ type ClassInfo struct {
 	Id string `protobuf:"bytes,12,opt,name=id,proto3" json:"id,omitempty"`
 	// 备注
 	Note string `protobuf:"bytes,13,opt,name=note,proto3" json:"note,omitempty"`
-	// 是否为官方课程（非手动添加）
+	// 是否为官方课程
 	IsOfficial    bool `protobuf:"varint,14,opt,name=is_official,json=isOfficial,proto3" json:"is_official,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

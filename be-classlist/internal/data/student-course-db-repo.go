@@ -1,13 +1,14 @@
 package data
 
 import (
-	"context"
-	"errors"
-	"github.com/asynccnu/ccnubox-be/be-classlist/internal/classLog"
+    "context"
+    "errors"
 
-	"github.com/asynccnu/ccnubox-be/be-classlist/internal/data/do"
-	"github.com/asynccnu/ccnubox-be/be-classlist/internal/errcode"
-	"gorm.io/gorm/clause"
+    "github.com/asynccnu/ccnubox-be/be-classlist/internal/classLog"
+
+    "github.com/asynccnu/ccnubox-be/be-classlist/internal/data/do"
+    "github.com/asynccnu/ccnubox-be/be-classlist/internal/errcode"
+    "gorm.io/gorm/clause"
 )
 
 type StudentAndCourseDBRepo struct {
@@ -109,11 +110,47 @@ func (s StudentAndCourseDBRepo) CheckManualCourseStatus(ctx context.Context, stu
 	return isAdded
 }
 
-func(s StudentAndCourseDBRepo) UpdateCourseNoteToDB(ctx context.Context,stuID,classID,year,semester,note string)error{
-	db:=s.data.DB(ctx).Table(do.StudentCourseTableName).WithContext(ctx)
+func (s StudentAndCourseDBRepo) GetCourseNote(ctx context.Context, stuID, year, semester, classID string) string {
+    logh := classLog.GetLogHelperFromCtx(ctx)
+    db := s.data.DB(ctx).Table(do.CourseNoteTableName).WithContext(ctx)
 
-	err:=db.Where("stu_id = ? and year = ? and semester = ? and cla_id = ?",stuID,year,semester,classID).Update("note",note).Error
-	if err!=nil{
+    var note string
+
+    err := db.Where("stu_id = ? and year = ? and semester = ? and cla_id = ?", stuID, year, semester, classID).
+        Pluck("note", &note).Error
+    if err != nil {
+        logh.Warnf("Query course_note failed[stu_id:%v year:%v semester:%v cla_id:%v]: %v", stuID, year, semester, classID, err)
+        return ""
+    }
+
+    if note == "" {
+        logh.Warnf("Course note empty[stu_id:%v year:%v semester:%v cla_id:%v]", stuID, year, semester, classID)
+    } else {
+        logh.Infof("Course note found[stu_id:%v year:%v semester:%v cla_id:%v] len=%d", stuID, year, semester, classID, len(note))
+    }
+
+    return note
+}
+
+//func (s StudentAndCourseDBRepo) UpdateCourseNoteToDB(ctx context.Context, stuID, classID, year, semester, note string) error {
+//	db := s.data.DB(ctx).Table(do.StudentCourseTableName).WithContext(ctx)
+//
+//	err := db.Where("stu_id = ? and year = ? and semester = ? and cla_id = ?", stuID, year, semester, classID).Update("note", note).Error
+//	if err != nil {
+//		return errcode.ErrClassUpdate
+//	}
+//	return nil
+
+func (s StudentAndCourseDBRepo) UpdateCourseNote(ctx context.Context, stuID, year, semester, classID, note string) error {
+	db := s.data.DB(ctx).Table(do.CourseNoteTableName).WithContext(ctx)
+
+	cn := &do.CourseNote{StuID: stuID, Year: year, Semester: semester, ClaID: classID, Note: note}
+
+	err := db.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "stu_id"}, {Name: "year"}, {Name: "semester"}, {Name: "cla_id"}},
+		DoUpdates: clause.Assignments(map[string]interface{}{"note": note}),
+	}).Create(cn).Error
+	if err != nil {
 		return errcode.ErrClassUpdate
 	}
 	return nil

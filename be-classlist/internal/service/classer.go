@@ -212,7 +212,7 @@ func (s *ClassListService) GetRecycleBinClassInfos(ctx context.Context, req *pb.
 	for _, classInfo := range classInfos {
 		var pbClassInfo = new(pb.ClassInfo)
 		_ = copier.Copy(&pbClassInfo, &classInfo)
-
+		pbClassInfo.Note = s.clu.GetClassNote(ctx, req.GetStuId(), req.GetYear(), req.GetSemester(), classInfo.ID)
 		pbClassInfos = append(pbClassInfos, pbClassInfo)
 	}
 	return &pb.GetRecycleBinClassResponse{

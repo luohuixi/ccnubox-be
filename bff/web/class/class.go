@@ -2,6 +2,7 @@ package class
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	cs "github.com/asynccnu/ccnubox-be/be-api/gen/proto/classService/v1"
@@ -59,12 +60,14 @@ func (c *ClassHandler) GetClassList(ctx *gin.Context, req GetClassListRequest, u
 		req.Refresh = new(bool)
 		*req.Refresh = false
 	}
+	fmt.Println("--get GetClassListRequest: ", req)
 	getResp, err := c.ClassListClient.GetClass(ctx, &classlistv1.GetClassRequest{
 		StuId:    uc.StudentId,
 		Semester: req.Semester,
 		Year:     req.Year,
 		Refresh:  *req.Refresh,
 	})
+	fmt.Println("--get GetClassListResponse: ", getResp)
 	if err != nil {
 		return web.Response{}, errs.GET_CLASS_LIST_ERROR(err)
 	}
@@ -365,6 +368,7 @@ func (c *ClassHandler) InsertClassNote(ctx *gin.Context, req UpdateClassNoteReq,
 		ClassId:  req.ClassId,
 		Note:     req.Note,
 	})
+	fmt.Println("result:", resp)
 	if err != nil {
 		return web.Response{}, errs.UPDATE_CLASS_ERROR(err)
 	}
@@ -373,7 +377,7 @@ func (c *ClassHandler) InsertClassNote(ctx *gin.Context, req UpdateClassNoteReq,
 	}, nil
 }
 
-// InsertClassNote 删除课程备注
+// DeleteClassNote 删除课程备注
 // @Summary 删除课程备注
 // @Description 根据课程 ID 删除课程备注
 // @Tags class

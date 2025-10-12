@@ -258,6 +258,10 @@ wrapRes: //包装结果
 		return nil, nil, errcode.ErrClassNotFound
 	}
 
+	for _, ci := range classInfos {
+		ci.Note = cluc.GetClassNote(ctx, stuID, year, semester, ci.ID)
+	}
+
 	currentTime := time.Now()
 	lastRefreshTime := cluc.refreshLogRepo.GetLastRefreshTime(ctx, stuID, year, semester, currentTime)
 
@@ -304,6 +308,7 @@ func (cluc *ClassUsecase) GetRecycledClassInfos(ctx context.Context, stuID, year
 		if err != nil {
 			continue
 		}
+		info.Note = cluc.GetClassNote(ctx, stuID, year, semester, info.ID)
 		classInfos = append(classInfos, info)
 	}
 	return classInfos, nil
@@ -440,6 +445,10 @@ func (cluc *ClassUsecase) getCourseFromCrawler(ctx context.Context, stuID string
 
 func (cluc *ClassUsecase) IsClassOfficial(ctx context.Context, stuID, year, semester, classID string) bool {
 	return cluc.classRepo.IsClassOfficial(ctx, stuID, year, semester, classID)
+}
+
+func (cluc *ClassUsecase) GetClassNote(ctx context.Context, stuID, year, semester, classID string) string {
+	return cluc.classRepo.GetClassNote(ctx, stuID, year, semester, classID)
 }
 
 func extractJxb(infos []*ClassInfo) []string {

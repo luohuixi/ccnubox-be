@@ -3,6 +3,10 @@ package data
 import (
 	"context"
 	"fmt"
+	"io"
+	logger3 "log"
+	"time"
+
 	"github.com/IBM/sarama"
 	"github.com/asynccnu/ccnubox-be/be-classlist/internal/conf"
 	"github.com/asynccnu/ccnubox-be/be-classlist/internal/data/do"
@@ -12,9 +16,6 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	logger2 "gorm.io/gorm/logger"
-	"io"
-	logger3 "log"
-	"time"
 )
 
 // ProviderSet is data providers.
@@ -90,7 +91,7 @@ func NewDB(c *conf.Data, logfile io.Writer, logger log.Logger) *gorm.DB {
 	if err != nil {
 		panic(fmt.Sprintf("connect mysql failed:%v", err))
 	}
-	if err := db.AutoMigrate(&do.ClassInfo{}, &do.StudentCourse{}, &do.Jxb{}, &do.ClassRefreshLog{}); err != nil {
+	if err := db.AutoMigrate(&do.ClassInfo{}, &do.StudentCourse{}, &do.Jxb{}, &do.ClassRefreshLog{}, &do.CourseNote{}); err != nil {
 		panic(fmt.Sprintf("mysql auto migrate failed:%v", err))
 	}
 
