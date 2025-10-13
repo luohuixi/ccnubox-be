@@ -26,7 +26,6 @@ type GradeService interface {
 	GetGradeByTerm(ctx context.Context, req *domain.GetGradeByTermReq) ([]domain.Grade, error)
 	GetGradeScore(ctx context.Context, studentId string) ([]domain.TypeOfGradeScore, error)
 	GetUpdateScore(ctx context.Context, studentId string) ([]domain.Grade, error)
-	GetGraduateUpdateScore(ctx context.Context, studentId string, xnm, xqm, cjzt int64) ([]domain.GraduateGrade, error)
 }
 
 type gradeService struct {
@@ -123,13 +122,20 @@ func (s *gradeService) fetchGradesFromRemote(ctx context.Context, studentId stri
 			return nil, err
 		}
 
-		grades, err := GetGrade(ctx, cookieResp.GetCookie(), 0, 0, 300)
+		var stu Student
+		if isUndergraduate(studentId) {
+			stu = &UndergraduateStudent{}
+		} else {
+			stu = &GraduateStudent{}
+		}
+
+		grades, err := stu.GetGrades(ctx, cookieResp.GetCookie(), 0, 0, 300)
 		if errors.Is(err, COOKIE_TIMEOUT) {
 			cookieResp, err = s.userClient.GetCookie(ctx, &userv1.GetCookieRequest{StudentId: studentId})
 			if err != nil {
 				return nil, err
 			}
-			return GetGrade(ctx, cookieResp.GetCookie(), 0, 0, 300)
+			return stu.GetGrades(ctx, cookieResp.GetCookie(), 0, 0, 300)
 		}
 		s.l.Info("获取成绩耗时", logger.String("耗时", time.Since(start).String()))
 
@@ -182,52 +188,25 @@ func (s *gradeService) fetchGradesFromRemoteAndUpdate(ctx context.Context, stude
 	return update, remote, nil
 }
 
-func (s *gradeService) GetGraduateUpdateScore(ctx context.Context, studentId string, xnm, xqm, cjzt int64) ([]domain.GraduateGrade, error) {
-	grades, err := s.fetchGraduateGradesFromRemote(ctx, studentId, xnm, xqm, cjzt)
-	if err != nil {
-		return nil, ErrGetGrade(err)
-	}
-
-	// 异步更新数据库
-	go func() {
-		updated, err := s.gradeDAO.BatchInsertOrUpdateGraduate(context.Background(), grades)
-		if err != nil {
-			s.l.Warn("更新研究生成绩失败", logger.Error(err))
-			return
-		}
-		for _, g := range updated {
-			s.l.Info("更新研究生成绩成功", logger.String("studentId", g.StudentID), logger.String("课程", g.ClassName))
-		}
-	}()
-	return modelGraduateConvDomain(grades), nil
+type Student interface {
+	GetGrades(ctx context.Context, cookie string, xnm, xqm, showCount int64) ([]model.Grade, error)
 }
 
-func (s *gradeService) fetchGraduateGradesFromRemote(ctx context.Context, studentId string, xnm, xqm, cjzt int64) ([]model.GraduateGrade, error) {
-	key := studentId + ":graduate"
+type UndergraduateStudent struct{}
 
-	result, err, _ := s.sf.Do(key, func() (interface{}, error) {
-		ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
-		defer cancel()
+func (u *UndergraduateStudent) GetGrades(ctx context.Context, cookie string, xnm, xqm, showCount int64) ([]model.Grade, error) {
+	return GetGrade(ctx, cookie, xnm, xqm, showCount)
+}
 
-		start := time.Now()
-		cookieResp, err := s.userClient.GetCookie(ctx, &userv1.GetCookieRequest{StudentId: studentId})
-		if err != nil {
-			return nil, err
-		}
+type GraduateStudent struct{}
 
-		grades, err := GetGraduateGrades(ctx, cookieResp.GetCookie(), xnm, xqm, 300, cjzt)
-		if err != nil {
-			return nil, err
-		}
+func (g *GraduateStudent) GetGrades(ctx context.Context, cookie string, xnm, xqm, showCount int64) ([]model.Grade, error) {
+	return GetGraduateGrades(ctx, cookie, xnm, xqm, showCount)
+}
 
-		s.l.Info("获取研究生成绩耗时", logger.String("studentId", studentId), logger.String("耗时", time.Since(start).String()))
-		return grades, nil
-	})
-
-	grades, ok := result.([]model.GraduateGrade)
-	if !ok {
-		s.l.Warn("类型断言失败(研究生成绩)", logger.Error(err))
+func isUndergraduate(stuID string) bool {
+	if len(stuID) < 5 {
+		return false
 	}
-
-	return grades, err
+	return stuID[4] == '2'
 }
