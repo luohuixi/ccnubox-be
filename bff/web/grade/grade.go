@@ -41,7 +41,6 @@ func (h *GradeHandler) RegisterRoutes(s *gin.RouterGroup, authMiddleware gin.Han
 	//这里有三类路由,分别是ginx.WrapClaimsAndReq()有参数且要验证
 	sg.POST("/getGradeByTerm", authMiddleware, ginx.WrapClaimsAndReq(h.GetGradeByTerm))
 	sg.GET("/getGradeScore", authMiddleware, ginx.WrapClaims(h.GetGradeScore))
-	sg.POST("/getGraduateGrade", authMiddleware, ginx.WrapClaimsAndReq(h.UpdateGraduateGrades))
 }
 
 // GetGradeByTerm 查询按学年和学期的成绩
@@ -177,55 +176,4 @@ func convTermsToProto(terms []string) []*gradev1.Terms {
 	}
 
 	return result
-}
-
-// UpdateGraduateGrades 查询研究生成绩
-// @Summary 查询研究生成绩
-// @Description 根据学年号和学期号获取用户的成绩
-// @Tags grade
-// @Accept json
-// @Produce json
-// @Param data body UpdateGraduateGradesReq  true "获取学年和学期的成绩请求参数"
-// @Success 200 {object} web.Response{data=UpdateGraduateGradesResp} "成功返回学年和学期的成绩信息"
-// @Failure 500 {object} web.Response "系统异常，获取失败"
-// @Router /grade/getGraduateGrade [post]
-func (h *GradeHandler) UpdateGraduateGrades(ctx *gin.Context, req UpdateGraduateGradesReq, uc ijwt.UserClaims) (web.Response, error) {
-	grpcResp, err := h.GradeClient.GetGraduateGrade(ctx, &gradev1.GetGraduateUpdateReq{
-		StudentId: uc.StudentId,
-		Xnm:       req.Xnm,
-		Xqm:       req.Xqm,
-		Cjzt:      req.Cjzt,
-	})
-	if err != nil {
-		return web.Response{}, errs.GET_GRADE_SCORE_ERROR(err)
-	}
-
-	var resp UpdateGraduateGradesResp
-	for _, g := range grpcResp.Grades {
-		resp.Grades = append(resp.Grades, GraduateGrade{
-			JxbId:           g.JxbId,
-			Status:          g.Status,
-			Year:            g.Year,
-			Term:            g.Term,
-			Name:            g.Name,
-			StudentCategory: g.StudentCategory,
-			College:         g.College,
-			Major:           g.Major,
-			Grade:           g.Grade,
-			ClassCode:       g.ClassCode,
-			ClassName:       g.ClassName,
-			ClassNature:     g.ClassNature,
-			Credit:          g.Credit,
-			Point:           g.Point,
-			GradePoints:     g.GradePoints,
-			IsAvailable:     g.IsAvailable,
-			IsDegree:        g.IsDegree,
-			SetCollege:      g.SetCollege,
-			ClassMark:       g.ClassMark,
-			ClassCategory:   g.ClassCategory,
-			ClassID:         g.ClassID,
-			Teacher:         g.Teacher,
-		})
-	}
-	return web.Response{Data: resp}, nil
 }
