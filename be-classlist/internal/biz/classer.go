@@ -258,9 +258,9 @@ wrapRes: //包装结果
 		return nil, nil, errcode.ErrClassNotFound
 	}
 
-	for _, ci := range classInfos {
-		ci.Note = cluc.GetClassNote(ctx, stuID, year, semester, ci.ID)
-	}
+	//for _, ci := range classInfos {
+	//	ci.Note = cluc.GetClassNote(ctx, stuID, year, semester, ci.ID)
+	//}
 
 	currentTime := time.Now()
 	lastRefreshTime := cluc.refreshLogRepo.GetLastRefreshTime(ctx, stuID, year, semester, currentTime)

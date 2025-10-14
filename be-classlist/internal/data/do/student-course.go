@@ -16,6 +16,7 @@ type StudentCourse struct {
 	Year            string    `gorm:"type:varchar(5);column:year;not null;uniqueIndex:idx_sc,priority:2" json:"year"`                //学年
 	Semester        string    `gorm:"type:varchar(1);column:semester;not null;uniqueIndex:idx_sc,priority:3" json:"semester"`        //学期
 	IsManuallyAdded bool      `gorm:"column:is_manually_added;default:false;uniqueIndex:idx_sc,priority:5" json:"is_manually_added"` //是否为手动添加
+	Note            string    `gorm:"type:varchar(100);column:note;default:''" json:"note"`                                          //课程备注
 	CreatedAt       time.Time `json:"-"`
 	UpdatedAt       time.Time `json:"-"`
 }

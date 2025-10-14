@@ -3,8 +3,9 @@ package do
 import (
 	"encoding/json"
 	"fmt"
-	"gorm.io/gorm"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 const (
@@ -26,6 +27,7 @@ type ClassInfo struct {
 	Weeks        int64     `gorm:"column:weeks;not null" json:"weeks"`                                                 //哪些周
 	Semester     string    `gorm:"type:varchar(1);column:semester;not null;index:idx_time,priority:2" json:"semester"` //学期
 	Year         string    `gorm:"type:varchar(5);column:year;not null;index:idx_time,priority:1" json:"year"`         //学年
+	Note         string    `json:"note"`                                                                               //备注，用于和学生课程表联合查询
 }
 
 func (ci *ClassInfo) TableName() string {
