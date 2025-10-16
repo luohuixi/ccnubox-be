@@ -116,7 +116,7 @@ func (ls *LibraryService) CancelReserve(ctx context.Context, req *pb.CancelReser
 }
 
 func (ls *LibraryService) ReserveSeatRandomly(ctx context.Context, req *pb.ReserveSeatRandomlyRequest) (*pb.ReserveSeatRandomlyResponse, error) {
-	msg, err := ls.biz.ReserveSeatRandomly(ctx, req.StuId, req.Start, req.End)
+	msg, err := ls.biz.ReserveSeatRandomly(ctx, req.StuId, req.Start, req.End, req.RoomIds)
 	if err != nil {
 		return nil, err
 	}

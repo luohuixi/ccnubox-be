@@ -23,7 +23,7 @@ func NewLibraryHandler(client libraryv1.LibraryClient, admins map[string]struct{
 
 func (h *LibraryHandler) RegisterRoutes(s *gin.RouterGroup, authMiddleware gin.HandlerFunc) {
 	sg := s.Group("/library")
-	sg.GET("/get_seat", authMiddleware, ginx.WrapClaims(h.GetSeatInfos))
+	sg.POST("/get_seat", authMiddleware, ginx.WrapClaimsAndReq(h.GetSeatInfos))
 	sg.POST("/reserve_seat", authMiddleware, ginx.WrapClaimsAndReq(h.ReserveSeat))
 	sg.GET("/get_seat_records", authMiddleware, ginx.WrapClaims(h.GetSeatRecord))
 	sg.GET("/get_history_records", authMiddleware, ginx.WrapClaims(h.GetHistory))
@@ -45,13 +45,15 @@ func (h *LibraryHandler) RegisterRoutes(s *gin.RouterGroup, authMiddleware gin.H
 // @Accept json
 // @Produce json
 // @Param Authorization header string true "Bearer Token"
+// @Param request body GetSeatRequest true "获取座位请求"
 // @Success 200 {object} web.Response{data=GetSeatResponse} "成功返回图书馆座位信息"
 // @Failure 500 {object} web.Response "系统异常，获取失败"
-// @Router /library/get_seat [get]
-func (h *LibraryHandler) GetSeatInfos(ctx *gin.Context, uc ijwt.UserClaims) (web.Response, error) {
+// @Router /library/get_seat [post]
+func (h *LibraryHandler) GetSeatInfos(ctx *gin.Context, req GetSeatRequest, uc ijwt.UserClaims) (web.Response, error) {
 
 	res, err := h.LibraryClient.GetSeat(ctx, &libraryv1.GetSeatRequest{
-		StuId: uc.StudentId,
+		RoomIds: req.RoomIDs,
+		StuId:   uc.StudentId,
 	})
 
 	if err != nil {
@@ -402,6 +404,17 @@ func (h *LibraryHandler) CancelReserve(ctx *gin.Context, req CancelReserveReques
 	}, nil
 }
 
+// CreateComment 创建评论
+// @Summary 创建评论
+// @Description 创建座位评论
+// @Tags library
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "Bearer Token"
+// @Param request body CreateCommentReq true "评论参数"
+// @Success 200 {object} web.Response "成功返回创建信息"
+// @Failure 500 {object} web.Response "系统异常，创建失败"
+// @Router /library/create_comment [post]
 func (h *LibraryHandler) CreateComment(ctx *gin.Context, req CreateCommentReq, uc ijwt.UserClaims) (web.Response, error) {
 	// 不知道用户名到底要不要实现，这里直接用学号代替了先
 	msg, err := h.LibraryClient.CreateComment(ctx, &libraryv1.CreateCommentReq{
@@ -419,6 +432,17 @@ func (h *LibraryHandler) CreateComment(ctx *gin.Context, req CreateCommentReq, u
 	}, nil
 }
 
+// GetComments 获取评论
+// @Summary 获取评论
+// @Description 获取某个座位的评论列表
+// @Tags library
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "Bearer Token"
+// @Param id query int true "座位或评论关联 ID"
+// @Success 200 {object} web.Response{data=[]Comment} "成功返回评论列表"
+// @Failure 500 {object} web.Response "系统异常，获取失败"
+// @Router /library/get_comments [get]
 func (h *LibraryHandler) GetComments(ctx *gin.Context, req IDreq, uc ijwt.UserClaims) (web.Response, error) {
 	comments, err := h.LibraryClient.GetComments(ctx, &libraryv1.ID{Id: int64(req.ID)})
 	if err != nil {
@@ -431,6 +455,17 @@ func (h *LibraryHandler) GetComments(ctx *gin.Context, req IDreq, uc ijwt.UserCl
 	}, nil
 }
 
+// DeleteComment 删除评论
+// @Summary 删除评论
+// @Description 通过评论 ID 删除评论
+// @Tags library
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "Bearer Token"
+// @Param id query int true "评论 ID"
+// @Success 200 {object} web.Response "成功返回删除信息"
+// @Failure 500 {object} web.Response "系统异常，删除失败"
+// @Router /library/delete_comment [get]
 func (h *LibraryHandler) DeleteComment(ctx *gin.Context, req IDreq, uc ijwt.UserClaims) (web.Response, error) {
 	msg, err := h.LibraryClient.DeleteComment(ctx, &libraryv1.ID{Id: int64(req.ID)})
 	if err != nil {
@@ -442,12 +477,23 @@ func (h *LibraryHandler) DeleteComment(ctx *gin.Context, req IDreq, uc ijwt.User
 	}, nil
 }
 
-// 快速随机全校所有座位随机选座（后续设计传入 roomid []string 指定楼层随机）
+// ReserveSeatRandomly 随机预约座位
+// @Summary 随机预约座位
+// @Description 全校随机选座（可指定楼层）
+// @Tags library
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "Bearer Token"
+// @Param request body ReserveSeatRandomlyRequest true "随机预约参数"
+// @Success 200 {object} web.Response{data=ReserveSeatRandomlyResponse} "成功返回预约信息"
+// @Failure 500 {object} web.Response "系统异常，预约失败"
+// @Router /library/reserve_randomly [post]
 func (h *LibraryHandler) ReserveSeatRandomly(ctx *gin.Context, req ReserveSeatRandomlyRequest, uc ijwt.UserClaims) (web.Response, error) {
 	msg, err := h.LibraryClient.ReserveSeatRandomly(ctx, &libraryv1.ReserveSeatRandomlyRequest{
-		Start: req.Start,
-		End:   req.End,
-		StuId: uc.StudentId,
+		Start:   req.Start,
+		End:     req.End,
+		StuId:   uc.StudentId,
+		RoomIds: req.RoomIDs,
 	})
 	if err != nil {
 		return web.Response{}, errs.RESERVE_SEAT_ERROR(err)

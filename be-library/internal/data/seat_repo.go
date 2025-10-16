@@ -221,7 +221,7 @@ func (r *SeatRepo) FindFirstAvailableSeat(ctx context.Context, start, end int64,
 	result, err := r.data.redis.Eval(ctx, luaScript, nil, args...).Result()
 	// redis.Nil 来做无匹配座位的表示符，返回 false
 	if errors.Is(err, redis.Nil) {
-		r.data.log.Infof("No available seat (time:%s)", time.Now().String())
+		r.data.log.Errorf("No available seat (time:%s)", time.Now().String())
 		return "", false, err
 	}
 	if err != nil {
@@ -231,7 +231,7 @@ func (r *SeatRepo) FindFirstAvailableSeat(ctx context.Context, start, end int64,
 
 	resultStr, ok := result.(string)
 	if !ok {
-		r.data.log.Infof("No available seat now (time:%s)", time.Now().String())
+		r.data.log.Errorf("No available seat now (time:%s)", time.Now().String())
 		return "", false, fmt.Errorf("no available seat now (time:%s)", time.Now().String())
 	}
 
