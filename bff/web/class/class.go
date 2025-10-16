@@ -60,14 +60,12 @@ func (c *ClassHandler) GetClassList(ctx *gin.Context, req GetClassListRequest, u
 		req.Refresh = new(bool)
 		*req.Refresh = false
 	}
-	fmt.Println("--get GetClassListRequest: ", req)
 	getResp, err := c.ClassListClient.GetClass(ctx, &classlistv1.GetClassRequest{
 		StuId:    uc.StudentId,
 		Semester: req.Semester,
 		Year:     req.Year,
 		Refresh:  *req.Refresh,
 	})
-	fmt.Println("--get GetClassListResponse: ", getResp)
 	if err != nil {
 		return web.Response{}, errs.GET_CLASS_LIST_ERROR(err)
 	}

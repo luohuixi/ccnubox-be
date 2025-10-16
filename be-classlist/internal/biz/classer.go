@@ -196,15 +196,17 @@ Local: //从本地获取数据
 				return
 			}
 
+			// 标记爬虫返回的课程为官方课程
+			for _, ci := range crawClassInfos_ {
+				ci.IsOfficial = true
+				ci.Note = cluc.classRepo.GetClassNote(ctx, stuID, year, semester, ci.ID)
+			}
+
 			// 确保在赋值前获取锁
 			crawLock.Lock()
 
 			// 将数据赋值到闭包外
 			crawClassInfos = crawClassInfos_
-			// 标记爬虫返回的课程为官方课程
-			for _, ci := range crawClassInfos {
-				ci.IsOfficial = true
-			}
 
 			// 释放锁
 			crawLock.Unlock()
@@ -257,10 +259,6 @@ wrapRes: //包装结果
 	if len(classInfos) == 0 {
 		return nil, nil, errcode.ErrClassNotFound
 	}
-
-	//for _, ci := range classInfos {
-	//	ci.Note = cluc.GetClassNote(ctx, stuID, year, semester, ci.ID)
-	//}
 
 	currentTime := time.Now()
 	lastRefreshTime := cluc.refreshLogRepo.GetLastRefreshTime(ctx, stuID, year, semester, currentTime)

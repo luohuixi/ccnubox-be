@@ -1,14 +1,14 @@
 package data
 
 import (
-    "context"
-    "errors"
+	"context"
+	"errors"
 
-    "github.com/asynccnu/ccnubox-be/be-classlist/internal/classLog"
+	"github.com/asynccnu/ccnubox-be/be-classlist/internal/classLog"
 
-    "github.com/asynccnu/ccnubox-be/be-classlist/internal/data/do"
-    "github.com/asynccnu/ccnubox-be/be-classlist/internal/errcode"
-    "gorm.io/gorm/clause"
+	"github.com/asynccnu/ccnubox-be/be-classlist/internal/data/do"
+	"github.com/asynccnu/ccnubox-be/be-classlist/internal/errcode"
+	"gorm.io/gorm/clause"
 )
 
 type StudentAndCourseDBRepo struct {
@@ -111,25 +111,25 @@ func (s StudentAndCourseDBRepo) CheckManualCourseStatus(ctx context.Context, stu
 }
 
 func (s StudentAndCourseDBRepo) GetCourseNote(ctx context.Context, stuID, year, semester, classID string) string {
-    logh := classLog.GetLogHelperFromCtx(ctx)
-    db := s.data.DB(ctx).Table(do.CourseNoteTableName).WithContext(ctx)
+	logh := classLog.GetLogHelperFromCtx(ctx)
+	db := s.data.DB(ctx).Table(do.StudentCourseTableName).WithContext(ctx)
 
-    var note string
+	var note string
 
-    err := db.Where("stu_id = ? and year = ? and semester = ? and cla_id = ?", stuID, year, semester, classID).
-        Pluck("note", &note).Error
-    if err != nil {
-        logh.Warnf("Query course_note failed[stu_id:%v year:%v semester:%v cla_id:%v]: %v", stuID, year, semester, classID, err)
-        return ""
-    }
+	err := db.Where("stu_id = ? and year = ? and semester = ? and cla_id = ?", stuID, year, semester, classID).
+		Pluck("note", &note).Error
+	if err != nil {
+		logh.Warnf("Query course_note failed[stu_id:%v year:%v semester:%v cla_id:%v]: %v", stuID, year, semester, classID, err)
+		return ""
+	}
 
-    if note == "" {
-        logh.Warnf("Course note empty[stu_id:%v year:%v semester:%v cla_id:%v]", stuID, year, semester, classID)
-    } else {
-        logh.Infof("Course note found[stu_id:%v year:%v semester:%v cla_id:%v] len=%d", stuID, year, semester, classID, len(note))
-    }
+	if note == "" {
+		logh.Warnf("Course note empty[stu_id:%v year:%v semester:%v cla_id:%v]", stuID, year, semester, classID)
+	} else {
+		logh.Infof("Course note found[stu_id:%v year:%v semester:%v cla_id:%v] len=%d", stuID, year, semester, classID, len(note))
+	}
 
-    return note
+	return note
 }
 
 //func (s StudentAndCourseDBRepo) UpdateCourseNoteToDB(ctx context.Context, stuID, classID, year, semester, note string) error {
