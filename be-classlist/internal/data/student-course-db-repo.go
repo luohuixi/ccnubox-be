@@ -116,8 +116,11 @@ func (s StudentAndCourseDBRepo) GetCourseNote(ctx context.Context, stuID, year, 
 
 	var note string
 
-	err := db.Where("stu_id = ? and year = ? and semester = ? and cla_id = ?", stuID, year, semester, classID).
-		Pluck("note", &note).Error
+	err := db.
+		Select("note").
+		Where("stu_id = ? and year = ? and semester = ? and cla_id = ?", stuID, year, semester, classID).
+		Limit(1).
+		Scan(&note).Error
 	if err != nil {
 		logh.Warnf("Query course_note failed[stu_id:%v year:%v semester:%v cla_id:%v]: %v", stuID, year, semester, classID, err)
 		return ""

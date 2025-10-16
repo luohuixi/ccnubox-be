@@ -40,6 +40,7 @@ type StudentCourse struct {
 	Year            string //学年
 	Semester        string //学期
 	IsManuallyAdded bool   //是否为手动添加
+	Note            string //课程备注
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 }

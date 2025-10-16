@@ -199,7 +199,15 @@ Local: //从本地获取数据
 			// 标记爬虫返回的课程为官方课程
 			for _, ci := range crawClassInfos_ {
 				ci.IsOfficial = true
-				ci.Note = cluc.classRepo.GetClassNote(ctx, stuID, year, semester, ci.ID)
+				ci.Note = cluc.classRepo.GetClassNote(noExpireCtx, stuID, year, semester, ci.ID)
+				if ci.Note != "" {
+					for _, sc := range crawScs {
+						if sc.ClaID == ci.ID {
+							sc.Note = ci.Note
+							break
+						}
+					}
+				}
 			}
 
 			// 确保在赋值前获取锁
