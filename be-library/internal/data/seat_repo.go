@@ -255,10 +255,8 @@ func (r *SeatRepo) GetSeatInfos(ctx context.Context, stuID string, roomIDs []str
 		if err != nil {
 			r.data.log.Warnf("get room seats cache(room_id:%s) err: %v", roomID, err)
 			needRefresh = true
-		}
-
-		// 判断软过期
-		if ts.IsZero() || now.Sub(*ts) > seatsFreshness {
+		} else if ts.IsZero() || now.Sub(*ts) > seatsFreshness {
+			// 判断软过期
 			needRefresh = true
 		}
 
@@ -275,13 +273,13 @@ func (r *SeatRepo) GetSeatInfos(ctx context.Context, stuID string, roomIDs []str
 
 			continue
 		}
-
 		result[roomID] = seats
 	}
 
 	if len(result) == 0 {
 		// 走到这里说明完全没有缓存,阻塞一次并拉取座位信息
-		val, err, _ := r.sf.Do("lib:getSeatInfos:refresh", func() (interface{}, error) {
+		// 这里的sf键要与前面的键不同，否则当缓存中完全没有数据时会导致键冲突
+		val, err, _ := r.sf.Do("lib:getSeatInfos:refresh:all", func() (interface{}, error) {
 			ctx2, cancel := context.WithTimeout(ctx, 30*time.Second)
 			defer cancel()
 			err := r.SaveRoomSeatsInRedis(ctx2, stuID, roomIDs)
@@ -290,6 +288,7 @@ func (r *SeatRepo) GetSeatInfos(ctx context.Context, stuID string, roomIDs []str
 			}
 
 			return r.GetSeatInfos(ctx2, stuID, roomIDs)
+
 		})
 		if err != nil {
 			return nil, err

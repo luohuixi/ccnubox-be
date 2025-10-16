@@ -29,7 +29,7 @@ func (h *LibraryHandler) RegisterRoutes(s *gin.RouterGroup, authMiddleware gin.H
 	sg.GET("/get_history_records", authMiddleware, ginx.WrapClaims(h.GetHistory))
 	sg.GET("/get_credit_points", authMiddleware, ginx.WrapClaims(h.GetCreditPoint))
 	sg.POST("/get_discussion", authMiddleware, ginx.WrapClaimsAndReq(h.GetDiscussion))
-	sg.POST("/search_user", authMiddleware, ginx.WrapClaimsAndReq(h.SearchUser))
+	sg.GET("/search_user", authMiddleware, ginx.WrapClaimsAndReq(h.SearchUser))
 	sg.POST("/reserve_discussion", authMiddleware, ginx.WrapClaimsAndReq(h.ReserveDiscussion))
 	sg.POST("/cancel_reserve", authMiddleware, ginx.WrapClaimsAndReq(h.CancelReserve))
 	sg.POST("/create_comment", authMiddleware, ginx.WrapClaimsAndReq(h.CreateComment))
@@ -439,7 +439,7 @@ func (h *LibraryHandler) CreateComment(ctx *gin.Context, req CreateCommentReq, u
 // @Accept json
 // @Produce json
 // @Param Authorization header string true "Bearer Token"
-// @Param id query int true "座位或评论关联 ID"
+// @Param id query int true "座位 ID (devID)"
 // @Success 200 {object} web.Response{data=[]Comment} "成功返回评论列表"
 // @Failure 500 {object} web.Response "系统异常，获取失败"
 // @Router /library/get_comments [get]
