@@ -174,6 +174,12 @@ definitions:
       id:
         description: 集合了课程信息的字符串，便于标识（课程ID）
         type: string
+      is_official:
+        description: 是否为官方课程
+        type: boolean
+      note:
+        description: 备注
+        type: string
       semester:
         description: 学期
         type: string
@@ -200,6 +206,8 @@ definitions:
     - credit
     - day
     - id
+    - is_official
+    - note
     - semester
     - teacher
     - week_duration
@@ -1006,6 +1014,38 @@ definitions:
     - link
     - name
     type: object
+  library.Comment:
+    properties:
+      content:
+        description: 评论内容
+        type: string
+      created_at:
+        description: 创建时间
+        type: string
+      id:
+        description: 评论ID
+        type: integer
+      rating:
+        description: 评分（1-5）
+        type: integer
+      seat_id:
+        description: 关联座位
+        type: string
+      user_id:
+        description: 发表评论的用户
+        type: string
+    type: object
+  library.CreateCommentReq:
+    properties:
+      content:
+        type: string
+      rating:
+        type: integer
+      seat_id:
+        type: string
+      username:
+        type: string
+    type: object
   library.CreditPoints:
     properties:
       records:
@@ -1104,6 +1144,13 @@ definitions:
           $ref: '#/definitions/library.Record'
         type: array
     type: object
+  library.GetSeatRequest:
+    properties:
+      room_ids:
+        items:
+          type: string
+        type: array
+    type: object
   library.GetSeatResponse:
     properties:
       rooms:
@@ -1164,6 +1211,24 @@ definitions:
       start:
         type: string
       title:
+        type: string
+    type: object
+  library.ReserveSeatRandomlyRequest:
+    properties:
+      dev_id:
+        type: string
+      end:
+        type: string
+      room_ids:
+        items:
+          type: string
+        type: array
+      start:
+        type: string
+    type: object
+  library.ReserveSeatRandomlyResponse:
+    properties:
+      message:
         type: string
     type: object
   library.ReserveSeatRequest:
@@ -1708,14 +1773,13 @@ paths:
         name: refresh
         required: true
         type: boolean
-      - in: query
+      - description: binding:"required" // 为添加默认值处理的妥协做法
+        in: query
         name: semester
-        required: true
         type: string
-      - description: 学年,格式为"2024"代表"2024-2025学年"`
+      - description: binding:"required" //学年,格式为"2024"代表"2024-2025学年"`
         in: query
         name: year
-        required: true
         type: string
       produces:
       - application/json
@@ -2823,7 +2887,6 @@ paths:
       summary: 查询学分
       tags:
       - grade
-<<<<<<< HEAD
   /grade/getGraduateGrade:
     post:
       consumes:
@@ -2836,7 +2899,25 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/grade.UpdateGraduateGradesReq'
-=======
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回学年和学期的成绩信息
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/grade.UpdateGraduateGradesResp'
+              type: object
+        "500":
+          description: 系统异常，获取失败
+          schema:
+            $ref: '#/definitions/web.Response'
+      summary: 查询研究生成绩
+      tags:
+      - grade
   /library/cancel_reserve:
     post:
       consumes:
@@ -2852,14 +2933,10 @@ paths:
         name: id
         required: true
         type: string
->>>>>>> feature/library
       produces:
       - application/json
       responses:
         "200":
-<<<<<<< HEAD
-          description: 成功返回学年和学期的成绩信息
-=======
           description: 成功返回取消预约成功
           schema:
             $ref: '#/definitions/web.Response'
@@ -2868,6 +2945,104 @@ paths:
           schema:
             $ref: '#/definitions/web.Response'
       summary: 取消预约
+      tags:
+      - library
+  /library/create_comment:
+    post:
+      consumes:
+      - application/json
+      description: 创建座位评论
+      parameters:
+      - description: Bearer Token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: 评论参数
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/library.CreateCommentReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回创建信息
+          schema:
+            $ref: '#/definitions/web.Response'
+        "500":
+          description: 系统异常，创建失败
+          schema:
+            $ref: '#/definitions/web.Response'
+      summary: 创建评论
+      tags:
+      - library
+  /library/delete_comment:
+    get:
+      consumes:
+      - application/json
+      description: 通过评论 ID 删除评论
+      parameters:
+      - description: Bearer Token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: 评论 ID
+        in: query
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回删除信息
+          schema:
+            $ref: '#/definitions/web.Response'
+        "500":
+          description: 系统异常，删除失败
+          schema:
+            $ref: '#/definitions/web.Response'
+      summary: 删除评论
+      tags:
+      - library
+  /library/get_comments:
+    get:
+      consumes:
+      - application/json
+      description: 获取某个座位的评论列表
+      parameters:
+      - description: Bearer Token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: 座位或评论关联 ID
+        in: query
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回评论列表
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/library.Comment'
+                  type: array
+              type: object
+        "500":
+          description: 系统异常，获取失败
+          schema:
+            $ref: '#/definitions/web.Response'
+      summary: 获取评论
       tags:
       - library
   /library/get_credit_points:
@@ -2886,27 +3061,17 @@ paths:
       responses:
         "200":
           description: 成功返回信誉分
->>>>>>> feature/library
           schema:
             allOf:
             - $ref: '#/definitions/web.Response'
             - properties:
                 data:
-<<<<<<< HEAD
-                  $ref: '#/definitions/grade.UpdateGraduateGradesResp'
-=======
                   $ref: '#/definitions/library.GetCreditPointResponse'
->>>>>>> feature/library
               type: object
         "500":
           description: 系统异常，获取失败
           schema:
             $ref: '#/definitions/web.Response'
-<<<<<<< HEAD
-      summary: 查询研究生成绩
-      tags:
-      - grade
-=======
       summary: 获取信誉分
       tags:
       - library
@@ -2977,7 +3142,7 @@ paths:
       tags:
       - library
   /library/get_seat:
-    get:
+    post:
       consumes:
       - application/json
       description: 默认获取当天图书馆座位信息
@@ -2987,6 +3152,12 @@ paths:
         name: Authorization
         required: true
         type: string
+      - description: 获取座位请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/library.GetSeatRequest'
       produces:
       - application/json
       responses:
@@ -3067,6 +3238,42 @@ paths:
       summary: 预约研讨间
       tags:
       - library
+  /library/reserve_randomly:
+    post:
+      consumes:
+      - application/json
+      description: 全校随机选座（可指定楼层）
+      parameters:
+      - description: Bearer Token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: 随机预约参数
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/library.ReserveSeatRandomlyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回预约信息
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/library.ReserveSeatRandomlyResponse'
+              type: object
+        "500":
+          description: 系统异常，预约失败
+          schema:
+            $ref: '#/definitions/web.Response'
+      summary: 随机预约座位
+      tags:
+      - library
   /library/reserve_seat:
     post:
       consumes:
@@ -3132,7 +3339,6 @@ paths:
       summary: 搜索学生ID
       tags:
       - library
->>>>>>> feature/library
   /metrics/:type/:name:
     post:
       description: 用于打点的路由,如果是不经过后端的服务但是需要打点的话,可以使用这个路由自动记录(例如:/metrics/banner/xxx)表示跳转banner的xxx页面,使用这一路由必须携带Auth请求头

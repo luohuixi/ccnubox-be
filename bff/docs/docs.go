@@ -593,16 +593,15 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
+                        "description": "binding:\"required\" // 为添加默认值处理的妥协做法",
                         "name": "semester",
-                        "in": "query",
-                        "required": true
+                        "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "学年,格式为\"2024\"代表\"2024-2025学年\"` + "`" + `",
+                        "description": "binding:\"required\" //学年,格式为\"2024\"代表\"2024-2025学年\"` + "`" + `",
                         "name": "year",
-                        "in": "query",
-                        "required": true
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -2387,9 +2386,6 @@ const docTemplate = `{
         "/grade/getGraduateGrade": {
             "post": {
                 "description": "根据学年号和学期号获取用户的成绩",
-        "/library/cancel_reserve": {
-            "post": {
-                "description": "取消预约",
                 "consumes": [
                     "application/json"
                 ],
@@ -2409,6 +2405,46 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/grade.UpdateGraduateGradesReq"
                         }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功返回学年和学期的成绩信息",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/web.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/grade.UpdateGraduateGradesResp"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "系统异常，获取失败",
+                        "schema": {
+                            "$ref": "#/definitions/web.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/library/cancel_reserve": {
+            "post": {
+                "description": "取消预约",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
                     "library"
                 ],
                 "summary": "取消预约",
@@ -2429,10 +2465,161 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功返回学年和学期的成绩信息",
                         "description": "成功返回取消预约成功",
                         "schema": {
                             "$ref": "#/definitions/web.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "系统异常，获取失败",
+                        "schema": {
+                            "$ref": "#/definitions/web.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/library/create_comment": {
+            "post": {
+                "description": "创建座位评论",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "library"
+                ],
+                "summary": "创建评论",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer Token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "评论参数",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/library.CreateCommentReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功返回创建信息",
+                        "schema": {
+                            "$ref": "#/definitions/web.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "系统异常，创建失败",
+                        "schema": {
+                            "$ref": "#/definitions/web.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/library/delete_comment": {
+            "get": {
+                "description": "通过评论 ID 删除评论",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "library"
+                ],
+                "summary": "删除评论",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer Token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "评论 ID",
+                        "name": "id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功返回删除信息",
+                        "schema": {
+                            "$ref": "#/definitions/web.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "系统异常，删除失败",
+                        "schema": {
+                            "$ref": "#/definitions/web.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/library/get_comments": {
+            "get": {
+                "description": "获取某个座位的评论列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "library"
+                ],
+                "summary": "获取评论",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer Token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "座位或评论关联 ID",
+                        "name": "id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功返回评论列表",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/web.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/library.Comment"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "500": {
@@ -2478,9 +2665,6 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-<<<<<<< HEAD
-                                            "$ref": "#/definitions/grade.UpdateGraduateGradesResp"
-=======
                                             "$ref": "#/definitions/library.GetCreditPointResponse"
                                         }
                                     }
@@ -2607,7 +2791,7 @@ const docTemplate = `{
             }
         },
         "/library/get_seat": {
-            "get": {
+            "post": {
                 "description": "默认获取当天图书馆座位信息",
                 "consumes": [
                     "application/json"
@@ -2626,6 +2810,15 @@ const docTemplate = `{
                         "name": "Authorization",
                         "in": "header",
                         "required": true
+                    },
+                    {
+                        "description": "获取座位请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/library.GetSeatRequest"
+                        }
                     }
                 ],
                 "responses": {
@@ -2753,6 +2946,65 @@ const docTemplate = `{
                 }
             }
         },
+        "/library/reserve_randomly": {
+            "post": {
+                "description": "全校随机选座（可指定楼层）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "library"
+                ],
+                "summary": "随机预约座位",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer Token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "随机预约参数",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/library.ReserveSeatRandomlyRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功返回预约信息",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/web.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/library.ReserveSeatRandomlyResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "系统异常，预约失败",
+                        "schema": {
+                            "$ref": "#/definitions/web.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/library/reserve_seat": {
             "post": {
                 "description": "预约图书馆座位",
@@ -2841,7 +3093,6 @@ const docTemplate = `{
                                     "properties": {
                                         "data": {
                                             "$ref": "#/definitions/library.SearchUserResponse"
->>>>>>> feature/library
                                         }
                                     }
                                 }
@@ -3465,6 +3716,8 @@ const docTemplate = `{
                 "credit",
                 "day",
                 "id",
+                "is_official",
+                "note",
                 "semester",
                 "teacher",
                 "week_duration",
@@ -3491,6 +3744,14 @@ const docTemplate = `{
                 },
                 "id": {
                     "description": "集合了课程信息的字符串，便于标识（课程ID）",
+                    "type": "string"
+                },
+                "is_official": {
+                    "description": "是否为官方课程",
+                    "type": "boolean"
+                },
+                "note": {
+                    "description": "备注",
                     "type": "string"
                 },
                 "semester": {
@@ -4680,6 +4941,52 @@ const docTemplate = `{
                 }
             }
         },
+        "library.Comment": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "description": "评论内容",
+                    "type": "string"
+                },
+                "created_at": {
+                    "description": "创建时间",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "评论ID",
+                    "type": "integer"
+                },
+                "rating": {
+                    "description": "评分（1-5）",
+                    "type": "integer"
+                },
+                "seat_id": {
+                    "description": "关联座位",
+                    "type": "string"
+                },
+                "user_id": {
+                    "description": "发表评论的用户",
+                    "type": "string"
+                }
+            }
+        },
+        "library.CreateCommentReq": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "rating": {
+                    "type": "integer"
+                },
+                "seat_id": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
         "library.CreditPoints": {
             "type": "object",
             "properties": {
@@ -4830,6 +5137,17 @@ const docTemplate = `{
                 }
             }
         },
+        "library.GetSeatRequest": {
+            "type": "object",
+            "properties": {
+                "room_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
         "library.GetSeatResponse": {
             "type": "object",
             "properties": {
@@ -4921,6 +5239,34 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "library.ReserveSeatRandomlyRequest": {
+            "type": "object",
+            "properties": {
+                "dev_id": {
+                    "type": "string"
+                },
+                "end": {
+                    "type": "string"
+                },
+                "room_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "start": {
+                    "type": "string"
+                }
+            }
+        },
+        "library.ReserveSeatRandomlyResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
                     "type": "string"
                 }
             }
