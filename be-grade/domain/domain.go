@@ -1,8 +1,12 @@
 package domain
 
+import "github.com/asynccnu/ccnubox-be/be-grade/repository/model"
+
 type Grade struct {
+	StudentId           string  `json:"studentid"`                     //学号
 	Xnm                 int64   `json:"xnm"`                           //学年
 	Xqm                 int64   `json:"xqm"`                           //学期
+	KcId                string  `json:"kcId"`                          //课程id
 	JxbId               string  `json:"jxb_id"`                        //教学班id
 	Kcmc                string  `json:"kcmc,omitempty"`                //课程名
 	Xf                  float32 `json:"xf,omitempty"`                  //学分
@@ -25,4 +29,35 @@ type TypeOfGradeScore struct {
 type GradeScore struct {
 	Kcmc string  `json:"kcmc,omitempty"`
 	Xf   float32 `json:"xf,omitempty"`
+}
+
+type NeedDetailGrade struct {
+	StudentID string
+	Grades    []model.Grade //感觉这么写有点问题但是懒得优化了
+}
+
+type GraduateGrade struct {
+	StudentID       string  `json:"studentID"`
+	JxbId           string  `json:"jxbId"`
+	Status          string  `json:"status"`
+	Year            string  `json:"year"`
+	Term            int64   `json:"term"`
+	Name            string  `json:"name"`
+	StudentCategory string  `json:"studentCategory"`
+	College         string  `json:"college"`
+	Major           string  `json:"major"`
+	Grade           int64   `json:"grade"`
+	ClassCode       string  `json:"classCode"`
+	ClassName       string  `json:"className"`
+	ClassNature     string  `json:"classNature"`
+	Credit          float32 `json:"credit"`
+	Point           float32 `json:"point"`
+	GradePoints     float32 `json:"gradePoints"`
+	IsAvailable     string  `json:"isAvailable"`
+	IsDegree        string  `json:"isDegree"`
+	SetCollege      string  `json:"setCollege"`
+	ClassMark       string  `json:"classMark"`
+	ClassCategory   string  `json:"classCategory"`
+	ClassID         string  `json:"classID"`
+	Teacher         string  `json:"teacher"`
 }
