@@ -134,47 +134,6 @@ func (c *GradeController) publishMSG(label string) {
 				c.l.Error("推送错误", logger.Error(err))
 			}
 		}
-
-		// 获取研究生成绩
-		graduateGrades, err := c.gradeService.GetGraduateUpdateScore(ctx, studentId, 0, 0, 0)
-		if err != nil {
-			c.l.Error("获取研究生成绩失败", logger.Error(err))
-			// 不直接 return，继续处理其他学生
-			continue
-		}
-
-		for _, g := range graduateGrades {
-			// 使用教学班ID映射学生ID
-			res, err := c.classlist.GetStuIdByJxbId(ctx, &classlistv1.GetStuIdByJxbIdRequest{JxbId: g.ClassID})
-			if err != nil {
-				c.l.Warn("获取教学班学生ID失败(研究生)", logger.Error(err))
-				continue
-			}
-
-			// 提升相关学生的优先级
-			_, err = c.counter.ChangeCounterLevels(ctx, &counterv1.ChangeCounterLevelsReq{
-				StudentIds: res.StuId,
-				IsReduce:   false,
-				Step:       int64(counterv1.CounterLevel_LEVEL_THERE),
-			})
-			if err != nil {
-				c.l.Error("更改优先级发生错误(研究生)", logger.Error(err))
-				continue
-			}
-
-			// 推送研究生成绩更新通知
-			_, err = c.feedClient.PublicFeedEvent(ctx, &feedv1.PublicFeedEventReq{
-				StudentId: studentId,
-				Event: &feedv1.FeedEvent{
-					Type:    "grade",
-					Title:   "成绩更新提醒",
-					Content: fmt.Sprintf("您的课程:%s分数更新了,请及时查看", g.ClassName),
-				},
-			})
-			if err != nil {
-				c.l.Error("推送错误(研究生)", logger.Error(err))
-			}
-		}
 	}
 
 	//更改已经完成的studentId等级到最低等级

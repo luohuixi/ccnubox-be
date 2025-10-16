@@ -77,44 +77,30 @@ func aggregateGrades(detailItems []GetDetailItem, KcxzItems []GetKcxzItem) []mod
 	return grades
 }
 
-func convertGraduateGrade(graduateGrade []GraduatePoints) []model.GraduateGrade {
-	var grades []model.GraduateGrade
+func convertGraduateGrade(graduateGrade []GraduatePoints) []model.Grade {
+	var grades []model.Grade
 	for _, p := range graduateGrade {
-		// 学期转换
-		var term int64
+		var xqm int64
 		switch p.Xqm {
 		case "3":
-			term = 1
+			xqm = 1
 		case "12":
-			term = 2
+			xqm = 2
 		case "16":
-			term = 3
+			xqm = 3
 		}
-
-		grades = append(grades, model.GraduateGrade{
-			JxbId:           p.JxbID,
-			Status:          p.Cjztmc,
-			Year:            p.Xnmmc,
-			Term:            term,
-			StudentID:       p.Xh,
-			Name:            p.Xm,
-			StudentCategory: p.Xslbmc,
-			College:         p.Jgmc,
-			Major:           p.Zymc,
-			Grade:           parseInt64(p.NjdmID),
-			ClassCode:       p.KchID,
-			ClassName:       p.Kcmc,
-			ClassNature:     p.Kcxzmc,
-			Credit:          parseFloat32(p.Xf),
-			Point:           parseFloat32(p.Cj),
-			GradePoints:     parseFloat32(p.Jd),
-			IsAvailable:     p.Cjsfzf,
-			IsDegree:        p.Sfxwkc,
-			SetCollege:      p.Kkbmmc,
-			ClassMark:       p.Kcbj,
-			ClassCategory:   p.Kclbmc,
-			ClassID:         p.JxbID,
-			Teacher:         p.Jsxm,
+		grades = append(grades, model.Grade{
+			Studentid: p.Xh,
+			JxbId:     p.JxbID,
+			Kcmc:      p.Kcmc,
+			Xnm:       parseInt64(p.Xnm),
+			Xqm:       xqm,
+			Xf:        parseFloat32(p.Xf),
+			Kcxzmc:    p.Kcxzmc,
+			Kclbmc:    p.Kclbmc,
+			Kcbj:      p.Kcbj,
+			Jd:        parseFloat32(p.Jd),
+			Cj:        parseFloat32(p.Cj),
 		})
 	}
 	return grades
@@ -287,33 +273,20 @@ func aggregateGradeScore(grades []model.Grade) []domain.TypeOfGradeScore {
 	return result
 }
 
-func modelGraduateConvDomain(grades []model.GraduateGrade) []domain.GraduateGrade {
-	res := make([]domain.GraduateGrade, 0, len(grades))
+func modelGraduateConvDomain(grades []model.Grade) []domain.Grade {
+	res := make([]domain.Grade, 0, len(grades))
 	for _, g := range grades {
-		res = append(res, domain.GraduateGrade{
-			StudentID:       g.StudentID,
-			JxbId:           g.JxbId,
-			Status:          g.Status,
-			Year:            g.Year,
-			Term:            g.Term,
-			Name:            g.Name,
-			StudentCategory: g.StudentCategory,
-			College:         g.College,
-			Major:           g.Major,
-			Grade:           g.Grade,
-			ClassCode:       g.ClassCode,
-			ClassName:       g.ClassName,
-			ClassNature:     g.ClassNature,
-			Credit:          g.Credit,
-			Point:           g.Point,
-			GradePoints:     g.GradePoints,
-			IsAvailable:     g.IsAvailable,
-			IsDegree:        g.IsDegree,
-			SetCollege:      g.SetCollege,
-			ClassMark:       g.ClassMark,
-			ClassCategory:   g.ClassCategory,
-			ClassID:         g.ClassID,
-			Teacher:         g.Teacher,
+		res = append(res, domain.Grade{
+			Xnm:    g.Xnm,
+			Xqm:    g.Xqm,
+			JxbId:  g.JxbId,
+			Kcmc:   g.Kcmc,
+			Xf:     g.Xf,
+			Cj:     g.Cj,
+			Kcxzmc: g.Kcxzmc,
+			Kclbmc: g.Kclbmc,
+			Kcbj:   g.Kcbj,
+			Jd:     g.Jd,
 		})
 	}
 	return res

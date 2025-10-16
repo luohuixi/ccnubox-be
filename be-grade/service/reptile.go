@@ -6,13 +6,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/asynccnu/ccnubox-be/be-grade/repository/model"
-	"golang.org/x/sync/errgroup"
 	"io"
 	"net/http"
 	"net/url"
 	"strconv"
 	"time"
+
+	"github.com/asynccnu/ccnubox-be/be-grade/repository/model"
+	"golang.org/x/sync/errgroup"
 )
 
 var (
@@ -73,14 +74,7 @@ func getDetail(ctx context.Context, cookie string, xnm int64, xqm int64, showCou
 		XnmStr = strconv.Itoa(int(xnm))
 	}
 
-	switch xqm {
-	case 1:
-		XqmStr = "3"
-	case 2:
-		XqmStr = "12"
-	case 3:
-		XqmStr = "16"
-	}
+	XqmStr = convertXqm(xqm)
 
 	if showCount >= 300 {
 		showCountStr = strconv.Itoa(int(showCount))
@@ -151,14 +145,7 @@ func getKcxz(ctx context.Context, cookie string, xnm int64, xqm int64, showCount
 		XnmStr = strconv.Itoa(int(xnm))
 	}
 
-	switch xqm {
-	case 1:
-		XqmStr = "3"
-	case 2:
-		XqmStr = "12"
-	case 3:
-		XqmStr = "16"
-	}
+	XqmStr = convertXqm(xqm)
 
 	if showCount >= 300 {
 		showCountStr = strconv.Itoa(int(showCount))
@@ -265,40 +252,20 @@ type GraduateResp struct {
 }
 
 type GraduatePoints struct {
-	Cj     string `json:"cj"`      // 成绩
-	Cjsfzf string `json:"cjsfzf"`  // 成绩是否作废
-	Cjztmc string `json:"cjztmc"`  // 成绩审核状态
-	Jd     string `json:"jd"`      // 绩点
-	Jgmc   string `json:"jgmc"`    // 学院
-	Jsxm   string `json:"jsxm"`    // 任课教师
-	JxbID  string `json:"jxb_id"`  // 教学班ID
-	Jxbmc  string `json:"jxbmc"`   // 教学班名称
-	Kcbj   string `json:"kcbj"`    // 课程标记(主修)
-	KchID  string `json:"kch_id"`  // 课程代码
-	Kclbmc string `json:"kclbmc"`  // 课程类别
-	Kcmc   string `json:"kcmc"`    // 课程名称
-	Kcxzmc string `json:"kcxzmc"`  // 课程性质(必修)
-	Key    string `json:"key"`     // 标记(教学班ID-学号)
-	Kkbmmc string `json:"kkbmmc"`  // 开课学院
-	Ksxz   string `json:"ksxz"`    // 成绩性质(正常考试)
-	NjdmID string `json:"njdm_id"` // 年级(2024)
-	Sfxwkc string `json:"sfxwkc"`  // 是否学位课程
-	Xb     string `json:"xb"`      // 性别
-	Xf     string `json:"xf"`      // 学分
-	Xh     string `json:"xh"`      // 学号
-	XhID   string `json:"xh_id"`   // 学号ID
-	Xm     string `json:"xm"`      // 姓名
-	Xnm    string `json:"xnm"`     // 学年
-	Xnmmc  string `json:"xnmmc"`   // 学年(2024-2025)
-	Xqm    string `json:"xqm"`     // 学期代号
-	Xqmmc  string `json:"xqmmc"`   // 学期
-	Xslbmc string `json:"xslbmc"`  // 学生类别
-	Year   string `json:"year"`    // 年份
-	ZyhID  string `json:"zyh_id"`  // 专业ID
-	Zymc   string `json:"zymc"`    // 专业名称
+	Xh     string `json:"xh"`     // 学号
+	JxbID  string `json:"jxb_id"` // 教学班ID
+	Kclbmc string `json:"kclbmc"` // 课程类别
+	Kcxzmc string `json:"kcxzmc"` // 课程性质(必修)
+	Kcbj   string `json:"kcbj"`   // 课程标记(主修)
+	Xnm    string `json:"xnm"`    // 学年
+	Xqm    string `json:"xqm"`    // 学期代号
+	Kcmc   string `json:"kcmc"`   // 课程名称
+	Xf     string `json:"xf"`     // 学分
+	Jd     string `json:"jd"`     // 绩点
+	Cj     string `json:"cj"`     // 成绩
 }
 
-func GetGraduateGrades(ctx context.Context, cookie string, xnm, xqm, showCount, cjzt int64) ([]model.GraduateGrade, error) {
+func GetGraduateGrades(ctx context.Context, cookie string, xnm, xqm, showCount int64) ([]model.Grade, error) {
 	// 请求URL
 	targetURL := "https://grd.ccnu.edu.cn/yjsxt/cjcx/cjcx_cxDgXscj.html?doType=query&gnmkdm=N305005"
 
@@ -318,18 +285,12 @@ func GetGraduateGrades(ctx context.Context, cookie string, xnm, xqm, showCount, 
 		showCountStr = strconv.Itoa(300)
 	}
 
-	var cjztS string
-	if cjzt <= 0 {
-		cjztS = ""
-	} else {
-		cjztS = strconv.FormatInt(cjzt, 10)
-	}
 	// 构建表单数据
 	formData := url.Values{
 		"xnm":                    {XnmStr}, // 不填的话默认获取所有
 		"xqm":                    {XqmStr}, // 不填的话默认获取所有
-		"cjzt":                   {cjztS},
-		"_search":                {"false"}, // 成绩状态,不填获取所有,待审核,审核中,审核通过,退回,审核不通过
+		"cjzt":                   {"3"},    // 成绩状态,只获取审核通过的
+		"_search":                {"false"},
 		"nd":                     {strconv.FormatInt(time.Now().UnixNano()/int64(time.Millisecond), 10)},
 		"queryModel.showCount":   {showCountStr}, // 重要查询参数
 		"queryModel.currentPage": {"1"},
