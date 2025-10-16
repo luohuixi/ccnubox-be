@@ -104,10 +104,12 @@ func (c *ccnuService) getUnderGradCookie(ctx context.Context, stuId, password st
 		ug = crawler.NewUnderGrad(crawler.NewCrawlerClient(c.timeout))
 	)
 
-	_, ok, err := c.loginUnderGrad(ctx, stuId, password)
+	client, ok, err := c.loginUnderGrad(ctx, stuId, password)
 	if err != nil || !ok {
 		return "", err
 	}
+
+	ug.Client = client
 
 	_, err = tool.Retry(func() (string, error) {
 		err := ug.LoginUnderGradSystem(ctx)

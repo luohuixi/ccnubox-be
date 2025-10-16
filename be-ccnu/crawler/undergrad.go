@@ -19,12 +19,12 @@ const (
 
 // 存放本科生院相关的爬虫
 type UnderGrad struct {
-	client *http.Client
+	Client *http.Client
 }
 
 func NewUnderGrad(client *http.Client) *UnderGrad {
 	return &UnderGrad{
-		client: client,
+		Client: client,
 	}
 }
 
@@ -37,7 +37,7 @@ func (c *UnderGrad) LoginUnderGradSystem(ctx context.Context) error {
 	}
 	request.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.109 Safari/537.36")
 
-	resp, err := c.client.Do(request)
+	resp, err := c.Client.Do(request)
 	if err != nil {
 		return err
 	}
@@ -53,7 +53,7 @@ func (c *UnderGrad) GetCookieFromUnderGradSystem() (string, error) {
 		return "", fmt.Errorf("解析 URL 出错: %v", err)
 	}
 
-	cookies := c.client.Jar.Cookies(parsedURL)
+	cookies := c.Client.Jar.Cookies(parsedURL)
 
 	var cookieStr strings.Builder
 	for i, cookie := range cookies {
