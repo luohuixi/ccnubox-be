@@ -2,6 +2,7 @@ package dao
 
 import (
 	"context"
+
 	"github.com/asynccnu/ccnubox-be/be-grade/repository/model"
 	"gorm.io/gorm"
 )
@@ -61,7 +62,7 @@ func (d *gradeDAO) BatchInsertOrUpdate(ctx context.Context, grades []model.Grade
 
 	// 查询已有记录
 	var existingGrades []model.Grade
-	if err := d.db.WithContext(ctx).
+	if err = d.db.WithContext(ctx).
 		Where("CONCAT(student_id, jxb_id) IN ?", ids).
 		Find(&existingGrades).Error; err != nil {
 		return nil, err
@@ -92,7 +93,7 @@ func (d *gradeDAO) BatchInsertOrUpdate(ctx context.Context, grades []model.Grade
 
 	// 插入新增记录
 	if len(toInsert) > 0 {
-		if err := d.db.WithContext(ctx).Create(&toInsert).Error; err != nil {
+		if err = d.db.WithContext(ctx).Create(&toInsert).Error; err != nil {
 			return nil, err
 		}
 	}
@@ -100,7 +101,7 @@ func (d *gradeDAO) BatchInsertOrUpdate(ctx context.Context, grades []model.Grade
 	// 批量更新已有但内容有变化的记录
 	if len(toUpdate) > 0 {
 		for _, g := range toUpdate {
-			if err := d.db.WithContext(ctx).Save(&g).Error; err != nil {
+			if err = d.db.WithContext(ctx).Save(&g).Error; err != nil {
 				return nil, err
 			}
 		}

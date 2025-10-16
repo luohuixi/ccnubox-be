@@ -1,10 +1,11 @@
 package service
 
 import (
-	"github.com/asynccnu/ccnubox-be/be-grade/domain"
-	"github.com/asynccnu/ccnubox-be/be-grade/repository/model"
 	"strconv"
 	"strings"
+
+	"github.com/asynccnu/ccnubox-be/be-grade/domain"
+	"github.com/asynccnu/ccnubox-be/be-grade/repository/model"
 )
 
 //辅助函数
@@ -76,6 +77,35 @@ func aggregateGrades(detailItems []GetDetailItem, KcxzItems []GetKcxzItem) []mod
 	return grades
 }
 
+func convertGraduateGrade(graduateGrade []GraduatePoints) []model.Grade {
+	var grades []model.Grade
+	for _, p := range graduateGrade {
+		var xqm int64
+		switch p.Xqm {
+		case "3":
+			xqm = 1
+		case "12":
+			xqm = 2
+		case "16":
+			xqm = 3
+		}
+		grades = append(grades, model.Grade{
+			Studentid: p.Xh,
+			JxbId:     p.JxbID,
+			Kcmc:      p.Kcmc,
+			Xnm:       parseInt64(p.Xnm),
+			Xqm:       xqm,
+			Xf:        parseFloat32(p.Xf),
+			Kcxzmc:    p.Kcxzmc,
+			Kclbmc:    p.Kclbmc,
+			Kcbj:      p.Kcbj,
+			Jd:        parseFloat32(p.Jd),
+			Cj:        parseFloat32(p.Cj),
+		})
+	}
+	return grades
+}
+
 // parseInt64 辅助函数，将字符串转换为 int64
 func parseInt64(value string) int64 {
 	if i, err := strconv.Atoi(value); err == nil {
@@ -84,7 +114,7 @@ func parseInt64(value string) int64 {
 	return 0
 }
 
-// parseInt64 辅助函数，将字符串转换为 int64
+// parseFloat32 辅助函数，将字符串转换为 float32
 func parseFloat32(value string) float32 {
 	if i, err := strconv.ParseFloat(value, 32); err == nil {
 		return float32(i)
@@ -241,4 +271,23 @@ func aggregateGradeScore(grades []model.Grade) []domain.TypeOfGradeScore {
 	}
 
 	return result
+}
+
+func modelGraduateConvDomain(grades []model.Grade) []domain.Grade {
+	res := make([]domain.Grade, 0, len(grades))
+	for _, g := range grades {
+		res = append(res, domain.Grade{
+			Xnm:    g.Xnm,
+			Xqm:    g.Xqm,
+			JxbId:  g.JxbId,
+			Kcmc:   g.Kcmc,
+			Xf:     g.Xf,
+			Cj:     g.Cj,
+			Kcxzmc: g.Kcxzmc,
+			Kclbmc: g.Kclbmc,
+			Kcbj:   g.Kcbj,
+			Jd:     g.Jd,
+		})
+	}
+	return res
 }

@@ -18,13 +18,14 @@ import (
 type ClassHandler struct {
 	ClassListClient    classlistv1.ClasserClient
 	ClassServiceClinet cs.ClassServiceClient
-	Administrators     map[string]struct{} //这里注入的是管理员权限验证配置
+	Administrators     map[string]struct{} // 这里注入的是管理员权限验证配置
 }
 
 func NewClassListHandler(
 	ClassListClient classlistv1.ClasserClient,
 	ClassServiceClinet cs.ClassServiceClient,
-	administrators map[string]struct{}) *ClassHandler {
+	administrators map[string]struct{},
+) *ClassHandler {
 	return &ClassHandler{
 		ClassListClient:    ClassListClient,
 		ClassServiceClinet: ClassServiceClinet,

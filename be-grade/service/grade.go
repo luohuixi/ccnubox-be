@@ -2,8 +2,10 @@ package service
 
 import (
 	"context"
-	"golang.org/x/sync/singleflight"
+	"errors"
 	"time"
+
+	"golang.org/x/sync/singleflight"
 
 	gradev1 "github.com/asynccnu/ccnubox-be/be-api/gen/proto/grade/v1"
 	userv1 "github.com/asynccnu/ccnubox-be/be-api/gen/proto/user/v1"
@@ -120,13 +122,20 @@ func (s *gradeService) fetchGradesFromRemote(ctx context.Context, studentId stri
 			return nil, err
 		}
 
-		grades, err := GetGrade(ctx, cookieResp.GetCookie(), 0, 0, 300)
-		if err == COOKIE_TIMEOUT {
+		var stu Student
+		if isUndergraduate(studentId) {
+			stu = &UndergraduateStudent{}
+		} else {
+			stu = &GraduateStudent{}
+		}
+
+		grades, err := stu.GetGrades(ctx, cookieResp.GetCookie(), 0, 0, 300)
+		if errors.Is(err, COOKIE_TIMEOUT) {
 			cookieResp, err = s.userClient.GetCookie(ctx, &userv1.GetCookieRequest{StudentId: studentId})
 			if err != nil {
 				return nil, err
 			}
-			return GetGrade(ctx, cookieResp.GetCookie(), 0, 0, 300)
+			return stu.GetGrades(ctx, cookieResp.GetCookie(), 0, 0, 300)
 		}
 		s.l.Info("获取成绩耗时", logger.String("耗时", time.Since(start).String()))
 
@@ -177,4 +186,27 @@ func (s *gradeService) fetchGradesFromRemoteAndUpdate(ctx context.Context, stude
 	}
 
 	return update, remote, nil
+}
+
+type Student interface {
+	GetGrades(ctx context.Context, cookie string, xnm, xqm, showCount int64) ([]model.Grade, error)
+}
+
+type UndergraduateStudent struct{}
+
+func (u *UndergraduateStudent) GetGrades(ctx context.Context, cookie string, xnm, xqm, showCount int64) ([]model.Grade, error) {
+	return GetGrade(ctx, cookie, xnm, xqm, showCount)
+}
+
+type GraduateStudent struct{}
+
+func (g *GraduateStudent) GetGrades(ctx context.Context, cookie string, xnm, xqm, showCount int64) ([]model.Grade, error) {
+	return GetGraduateGrades(ctx, cookie, xnm, xqm, showCount)
+}
+
+func isUndergraduate(stuID string) bool {
+	if len(stuID) < 5 {
+		return false
+	}
+	return stuID[4] == '2'
 }

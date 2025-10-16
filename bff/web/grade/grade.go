@@ -3,6 +3,9 @@ package grade
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
+
 	counterv1 "github.com/asynccnu/ccnubox-be/be-api/gen/proto/counter/v1"
 	gradev1 "github.com/asynccnu/ccnubox-be/be-api/gen/proto/grade/v1"
 	"github.com/asynccnu/ccnubox-be/bff/errs"
@@ -11,8 +14,6 @@ import (
 	"github.com/asynccnu/ccnubox-be/bff/web"
 	"github.com/asynccnu/ccnubox-be/bff/web/ijwt"
 	"github.com/gin-gonic/gin"
-	"strconv"
-	"strings"
 )
 
 type GradeHandler struct {
@@ -40,7 +41,6 @@ func (h *GradeHandler) RegisterRoutes(s *gin.RouterGroup, authMiddleware gin.Han
 	//这里有三类路由,分别是ginx.WrapClaimsAndReq()有参数且要验证
 	sg.POST("/getGradeByTerm", authMiddleware, ginx.WrapClaimsAndReq(h.GetGradeByTerm))
 	sg.GET("/getGradeScore", authMiddleware, ginx.WrapClaims(h.GetGradeScore))
-
 }
 
 // GetGradeByTerm 查询按学年和学期的成绩
@@ -72,7 +72,7 @@ func (h *GradeHandler) GetGradeByTerm(ctx *gin.Context, req GetGradeByTermReq, u
 			Xqm:                 grade.Xqm,
 			Kcmc:                grade.Kcmc,                // 课程名
 			Xf:                  grade.Xf,                  // 学分
-			Jd:                  grade.Jd,                  //绩点
+			Jd:                  grade.Jd,                  // 绩点
 			Cj:                  grade.Cj,                  // 总成绩
 			Kcxzmc:              grade.Kcxzmc,              // 课程性质名称 比如专业主干课程/通识必修课
 			Kclbmc:              grade.Kclbmc,              // 课程类别名称，比如专业课/公共课

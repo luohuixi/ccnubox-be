@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	pb "github.com/asynccnu/ccnubox-be/be-api/gen/proto/classlist/v1" //此处改成了be-api中的,方便其他服务调用.
@@ -19,13 +20,15 @@ type ClassListService struct {
 	clu       *biz.ClassUsecase
 	schoolday *conf.SchoolDay
 	logger    log.Logger
+	defaults  *conf.Defaults
 }
 
-func NewClasserService(clu *biz.ClassUsecase, day *conf.SchoolDay, logger log.Logger) *ClassListService {
+func NewClasserService(clu *biz.ClassUsecase, day *conf.SchoolDay, logger log.Logger, defaults *conf.Defaults) *ClassListService {
 	return &ClassListService{
 		clu:       clu,
 		logger:    logger,
 		schoolday: day,
+		defaults:  defaults,
 	}
 }
 
@@ -33,6 +36,21 @@ func (s *ClassListService) GetClass(ctx context.Context, req *pb.GetClassRequest
 	valLogger := log.With(s.logger,
 		"stu_id", req.GetStuId(), "year", req.GetYear(), "semester", req.GetSemester())
 	ctx = classLog.WithLogger(ctx, valLogger)
+	hlog := log.NewHelper(valLogger)
+
+	if s.defaults == nil {
+		hlog.Warn("default 参数未在配置文件中配置")
+	}
+
+	if req.GetYear() == "" {
+		req.Year = s.defaults.Year
+		hlog.Warn(fmt.Sprintf("获取 Year 参数为空，使用默认值 %s", req.Year))
+	}
+
+	if req.GetSemester() == "" {
+		req.Semester = s.defaults.Semester
+		hlog.Warn(fmt.Sprintf("获取 Semester 参数为空，使用默认值 %s", req.Semester))
+	}
 
 	if !tool.CheckSY(req.Semester, req.Year) {
 		return &pb.GetClassResponse{}, errcode.ErrParam
