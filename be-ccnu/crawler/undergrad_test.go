@@ -2,22 +2,21 @@ package crawler
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 )
 
 // 随便写的,比较随意
 func Test_GetCookie(t *testing.T) {
-	ug := NewUnderGrad(NewCrawlerClient(10 * time.Second))
+	p := NewPassport(NewCrawlerClient(10 * time.Second))
 	ctx := context.Background()
-	html, err := ug.GetParamsFromHtml(ctx)
+	_, err := p.LoginPassport(ctx, "", "")
 	if err != nil {
 		return
 	}
-	err = ug.LoginCCNUPassport(ctx, "2023215153", "Sjn3265926531", html)
-	if err != nil {
-		return
-	}
+
+	ug := NewUnderGrad(p.Client)
 	err = ug.LoginUnderGradSystem(ctx)
 	if err != nil {
 		return
@@ -26,5 +25,6 @@ func Test_GetCookie(t *testing.T) {
 	if err != nil {
 		return
 	}
+	fmt.Println(cookie)
 	t.Log(cookie)
 }
