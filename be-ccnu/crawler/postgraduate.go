@@ -8,6 +8,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"math/big"
@@ -66,7 +67,7 @@ func (c *PostGraduate) LoginPostgraduateSystem(ctx context.Context, username, pa
 	form.Set("csrftoken", "")
 	form.Set("yhm", username)
 	form.Set("mm", encPwd)
-	form.Set("hidMm", encPwd)
+	//form.Set("hidMm", encPwd)
 
 	req, err := http.NewRequestWithContext(ctx, "POST", loginPostgraduateURL, bytes.NewBufferString(form.Encode()))
 	if err != nil {
@@ -94,6 +95,57 @@ func (c *PostGraduate) LoginPostgraduateSystem(ctx context.Context, username, pa
 	}
 
 	return nil
+}
+
+func (c *PostGraduate) GetCookie(ctx context.Context, stuId, password string, pubKey *rsa.PublicKey) (string, error) {
+	encPwd, err := encryptPasswordJSStyle(password, pubKey)
+	if err != nil {
+		return "", err
+	}
+
+	form := url.Values{}
+	form.Set("csrftoken", "")
+	form.Set("yhm", stuId)
+	form.Set("mm", encPwd)
+
+	req, err := http.NewRequestWithContext(ctx, "POST", loginPostgraduateURL, bytes.NewBufferString(form.Encode()))
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("User-Agent", "Mozilla/5.0")
+	req.Header.Set("Referer", postgraduateURL+"/yjsxt/")
+	req.Header.Set("Origin", postgraduateURL)
+	req.Header.Set("Host", "grd.ccnu.edu.cn")
+
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return "", errors.New(resp.Status)
+	}
+
+	var JSESSIONID, route string
+
+	rootURL, _ := url.Parse("https://grd.ccnu.edu.cn/yjsxt")
+
+	for _, cookie := range c.client.Jar.Cookies(rootURL) {
+		if cookie.Name == "JSESSIONID" {
+			JSESSIONID = cookie.Value
+		}
+		if cookie.Name == "route" {
+			route = cookie.Value
+		}
+	}
+
+	if len(JSESSIONID) == 0 || len(route) == 0 {
+		return "", errors.New("cookie not found")
+	}
+
+	return fmt.Sprintf("JSESSIONID=%s;route=%s", JSESSIONID, route), nil
 }
 
 type rsaPublicKeyResponse struct {

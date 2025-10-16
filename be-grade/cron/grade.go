@@ -3,6 +3,8 @@ package cron
 import (
 	"context"
 	"fmt"
+	"time"
+
 	classlistv1 "github.com/asynccnu/ccnubox-be/be-api/gen/proto/classlist/v1"
 	counterv1 "github.com/asynccnu/ccnubox-be/be-api/gen/proto/counter/v1"
 	feedv1 "github.com/asynccnu/ccnubox-be/be-api/gen/proto/feed/v1"
@@ -10,7 +12,6 @@ import (
 	"github.com/asynccnu/ccnubox-be/be-grade/pkg/logger"
 	"github.com/asynccnu/ccnubox-be/be-grade/service"
 	"github.com/spf13/viper"
-	"time"
 )
 
 type GradeController struct {
@@ -93,14 +94,14 @@ func (c *GradeController) publishMSG(label string) {
 	}
 
 	for _, studentId := range resp.StudentIds {
-		//获取成绩
+		//获取本科生成绩
 		grades, err := c.gradeService.GetUpdateScore(ctx, studentId)
 		if err != nil {
 			c.l.Error("获取成绩失败", logger.Error(err))
 			return
 		}
 
-		//逐个推送
+		//逐个推送(本科生)
 		for _, grade := range grades {
 			//获取学生id
 			res, err := c.classlist.GetStuIdByJxbId(ctx, &classlistv1.GetStuIdByJxbIdRequest{JxbId: grade.JxbId})
@@ -108,11 +109,11 @@ func (c *GradeController) publishMSG(label string) {
 				return
 			}
 
-			//更改等级到最高级别7
+			//更改等级到最高级别
 			_, err = c.counter.ChangeCounterLevels(ctx, &counterv1.ChangeCounterLevelsReq{
 				StudentIds: res.StuId,
 				IsReduce:   false,
-				Step:       7,
+				Step:       int64(counterv1.CounterLevel_LEVEL_THERE),
 			})
 
 			if err != nil {

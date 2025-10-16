@@ -2,6 +2,8 @@ package main
 
 import (
 	"flag"
+	"os"
+
 	"github.com/asynccnu/ccnubox-be/be-class/internal/metrics"
 	"github.com/asynccnu/ccnubox-be/be-class/internal/timedTask"
 	"github.com/go-kratos/kratos/contrib/registry/etcd/v2"
@@ -9,7 +11,6 @@ import (
 	"github.com/go-kratos/kratos/v2/middleware/tracing"
 	"github.com/go-kratos/kratos/v2/transport/http"
 	"github.com/prometheus/client_golang/prometheus"
-	"os"
 
 	"github.com/asynccnu/ccnubox-be/be-class/internal/conf"
 
@@ -101,4 +102,5 @@ func main() {
 	if err := APP.app.Run(); err != nil {
 		panic(err)
 	}
+
 }

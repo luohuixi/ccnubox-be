@@ -10,6 +10,7 @@ import (
 
 func main() {
 	initViper()
+
 	app := InitApp()
 	app.Start()
 }

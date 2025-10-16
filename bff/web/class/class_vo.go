@@ -1,8 +1,8 @@
 package class
 
 type GetClassListRequest struct {
-	Year     string `form:"year" binding:"required"` //学年,格式为"2024"代表"2024-2025学年"`
-	Semester string `form:"semester" binding:"required"`
+	Year     string `form:"year"` // binding:"required" //学年,格式为"2024"代表"2024-2025学年"`
+	Semester string `form:"semester"`// binding:"required" // 为添加默认值处理的妥协做法
 	Refresh  *bool  `form:"refresh" binding:"required"`
 }
 
@@ -18,6 +18,8 @@ type ClassInfo struct {
 	Weeks        []int   `json:"weeks" binding:"required"`         //哪些周
 	Semester     string  `json:"semester" binding:"required"`      //学期
 	Year         string  `json:"year" binding:"required"`          //学年
+	Note         string  `json:"note" binding:"required"`          // 备注
+	IsOfficial   bool    `json:"is_official" binding:"required"`   // 是否为官方课程
 }
 
 type AddClassRequest struct {
@@ -113,4 +115,17 @@ type GetSchoolDayReq struct{}
 type GetSchoolDayResp struct {
 	HolidayTime int64 `json:"holiday_time" binding:"required"`
 	SchoolTime  int64 `json:"school_time" binding:"required"`
+}
+
+type UpdateClassNoteReq struct {
+	Semester string `json:"semester" binding:"required"` //学期
+	Year     string `json:"year" binding:"required"`     //学年
+	ClassId  string `json:"classId" binding:"required"`  //课程ID
+	Note     string `json:"note" binding:"required"`     //备注
+}
+
+type DeleteClassNoteReq struct {
+	Semester string `json:"semester" binding:"required"` //学期
+	Year     string `json:"year" binding:"required"`     //学年
+	ClassId  string `json:"classId" binding:"required"`  //课程ID
 }

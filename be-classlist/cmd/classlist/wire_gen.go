@@ -17,7 +17,7 @@ import (
 	"github.com/asynccnu/ccnubox-be/be-classlist/internal/service"
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/log"
-	"os"
+	"io"
 )
 
 import (
@@ -27,21 +27,21 @@ import (
 // Injectors from wire.go:
 
 // wireApp init kratos application.
-func wireApp(confServer *conf.Server, confData *conf.Data, confRegistry *conf.Registry, schoolDay *conf.SchoolDay, file *os.File, logger log.Logger) (*kratos.App, func(), error) {
-	db := data.NewDB(confData, file, logger)
+func wireApp(confServer *conf.Server, confData *conf.Data, confRegistry *conf.Registry, schoolDay *conf.SchoolDay, defaults *conf.Defaults, writer io.Writer, logger log.Logger) (*kratos.App, func(), error) {
+	db := data.NewDB(confData, writer, logger)
 	dataData, cleanup, err := data.NewData(confData, db, logger)
 	if err != nil {
 		return nil, nil, err
 	}
-	classInfoDBRepo := data.NewClassInfoDBRepo(dataData, logger)
+	classInfoDBRepo := data.NewClassInfoDBRepo(dataData)
 	redisClient := data.NewRedisDB(confData, logger)
-	classInfoCacheRepo := data.NewClassInfoCacheRepo(redisClient, confServer, logger)
+	classInfoCacheRepo := data.NewClassInfoCacheRepo(redisClient, confServer)
 	classInfoRepo := data.NewClassInfoRepo(classInfoDBRepo, classInfoCacheRepo)
-	studentAndCourseDBRepo := data.NewStudentAndCourseDBRepo(dataData, logger)
-	studentAndCourseCacheRepo := data.NewStudentAndCourseCacheRepo(redisClient, confServer, logger)
+	studentAndCourseDBRepo := data.NewStudentAndCourseDBRepo(dataData)
+	studentAndCourseCacheRepo := data.NewStudentAndCourseCacheRepo(redisClient, confServer)
 	studentAndCourseRepo := data.NewStudentAndCourseRepo(studentAndCourseDBRepo, studentAndCourseCacheRepo)
-	classRepo := data.NewClassRepo(classInfoRepo, dataData, studentAndCourseRepo, logger)
-	crawler2 := crawler.NewClassCrawler2(logger)
+	classRepo := data.NewClassRepo(classInfoRepo, dataData, studentAndCourseRepo)
+	crawlerCrawler := crawler.NewClassCrawler()
 	jxbDBRepo := data.NewJxbDBRepo(dataData, logger)
 	etcdRegistry := registry.NewRegistrarServer(confRegistry, logger)
 	userServiceClient, err := client.NewClient(etcdRegistry, confRegistry, logger)
@@ -59,8 +59,8 @@ func wireApp(confServer *conf.Server, confData *conf.Data, confRegistry *conf.Re
 		return nil, nil, err
 	}
 	refreshLogRepo := data.NewRefreshLogRepo(db, confServer)
-	classUsecase, cleanup3 := biz.NewClassUsecase(classRepo, crawler2, jxbDBRepo, ccnuService, delayKafka, refreshLogRepo, confServer, logger)
-	classListService := service.NewClasserService(classUsecase, schoolDay, logger)
+	classUsecase, cleanup3 := biz.NewClassUsecase(classRepo, crawlerCrawler, jxbDBRepo, ccnuService, delayKafka, refreshLogRepo, confServer)
+	classListService := service.NewClasserService(classUsecase, schoolDay, logger, defaults)
 	grpcServer := server.NewGRPCServer(confServer, classListService, logger)
 	app := newApp(logger, grpcServer, etcdRegistry)
 	return app, func() {

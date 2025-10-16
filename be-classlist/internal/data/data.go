@@ -12,8 +12,8 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	logger2 "gorm.io/gorm/logger"
+	"io"
 	logger3 "log"
-	"os"
 	"time"
 )
 
@@ -59,7 +59,7 @@ func NewData(c *conf.Data, mysqlDB *gorm.DB, logger log.Logger) (*Data, func(), 
 }
 
 // NewDB 连接mysql数据库
-func NewDB(c *conf.Data, logfile *os.File, logger log.Logger) *gorm.DB {
+func NewDB(c *conf.Data, logfile io.Writer, logger log.Logger) *gorm.DB {
 
 	var logLevel map[string]logger2.LogLevel
 	logLevel = map[string]logger2.LogLevel{

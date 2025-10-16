@@ -84,10 +84,10 @@ func (m *LoginMiddleware) extractUserClaimsFromAuthorizationHeader(ctx *gin.Cont
 
 	// token有效
 	// User-Agent
-	if uc.UserAgent != ctx.GetHeader("User-Agent") {
-		// 大概率是攻击者才会进入这个分支
-		return ijwt.UserClaims{}, errors.New("User-Agent验证：不安全")
-	}
+	//if uc.UserAgent != ctx.GetHeader("User-Agent") {
+	//	// 大概率是攻击者才会进入这个分支
+	//	return ijwt.UserClaims{}, errors.New("User-Agent验证：不安全")
+	//}
 
 	ok, err := m.CheckSession(ctx, uc.Ssid)
 	if err != nil || ok {

@@ -2,6 +2,8 @@ package class
 
 import (
 	"errors"
+	"time"
+
 	cs "github.com/asynccnu/ccnubox-be/be-api/gen/proto/classService/v1"
 	classlistv1 "github.com/asynccnu/ccnubox-be/be-api/gen/proto/classlist/v1"
 	"github.com/asynccnu/ccnubox-be/bff/errs"
@@ -10,19 +12,19 @@ import (
 	"github.com/asynccnu/ccnubox-be/bff/web/ijwt"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/copier"
-	"time"
 )
 
 type ClassHandler struct {
 	ClassListClient    classlistv1.ClasserClient
 	ClassServiceClinet cs.ClassServiceClient
-	Administrators     map[string]struct{} //这里注入的是管理员权限验证配置
+	Administrators     map[string]struct{} // 这里注入的是管理员权限验证配置
 }
 
 func NewClassListHandler(
 	ClassListClient classlistv1.ClasserClient,
 	ClassServiceClinet cs.ClassServiceClient,
-	administrators map[string]struct{}) *ClassHandler {
+	administrators map[string]struct{},
+) *ClassHandler {
 	return &ClassHandler{
 		ClassListClient:    ClassListClient,
 		ClassServiceClinet: ClassServiceClinet,
@@ -40,6 +42,8 @@ func (c *ClassHandler) RegisterRoutes(s *gin.RouterGroup, authMiddleware gin.Han
 	sg.PUT("/recover", authMiddleware, ginx.WrapClaimsAndReq(c.RecoverClass))
 	sg.GET("/search", authMiddleware, ginx.WrapReq(c.SearchClass))
 	sg.GET("/day/get", ginx.Wrap(c.GetSchoolDay))
+	sg.POST("/note/insert", authMiddleware, ginx.WrapClaimsAndReq(c.InsertClassNote))
+	sg.POST("/note/delete", authMiddleware, ginx.WrapClaimsAndReq(c.DeleteClassNote))
 }
 
 // GetClassList 获取课表
@@ -81,6 +85,8 @@ func (c *ClassHandler) GetClassList(ctx *gin.Context, req GetClassListRequest, u
 			Weeks:        convertWeekFromIntToArray(class.Info.Weeks),
 			Semester:     class.Info.Semester,
 			Year:         class.Info.Year,
+			Note:         class.Info.Note,
+			IsOfficial:   class.Info.IsOfficial,
 		})
 	}
 
@@ -114,7 +120,7 @@ func (c *ClassHandler) AddClass(ctx *gin.Context, req AddClassRequest, uc ijwt.U
 		Name:     req.Name,
 		DurClass: req.DurClass,
 		Where:    req.Where,
-		Teacher:  req.Where,
+		Teacher:  req.Teacher,
 		Weeks:    weeks,
 		Semester: req.Semester,
 		Year:     req.Year,
@@ -179,7 +185,7 @@ func (c *ClassHandler) UpdateClass(ctx *gin.Context, req UpdateClassRequest, uc 
 		Name:     req.Name,
 		DurClass: req.DurClass,
 		Where:    req.Where,
-		Teacher:  req.Where,
+		Teacher:  req.Teacher,
 		Weeks:    weeks,
 		Semester: req.Semester,
 		Year:     req.Year,
@@ -339,6 +345,57 @@ func (c *ClassHandler) GetSchoolDay(ctx *gin.Context) (web.Response, error) {
 			HolidayTime: holiday.Unix(),
 			SchoolTime:  school.Unix(),
 		},
+	}, nil
+}
+
+// InsertClassNote 插入课程备注
+// @Summary 插入课程备注
+// @Description 根据课程 ID 更新课程备注
+// @Tags class
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "Bearer Token"
+// @Param request body UpdateClassNoteReq true "更新课程备注请求"
+// @Success 200 {object} web.Response "成功插入课程备注"
+// @Router /class/note/insert [post]
+func (c *ClassHandler) InsertClassNote(ctx *gin.Context, req UpdateClassNoteReq, uc ijwt.UserClaims) (web.Response, error) {
+	resp, err := c.ClassListClient.UpdateClassNote(ctx, &classlistv1.UpdateClassNoteReq{
+		StuId:    uc.StudentId,
+		Year:     req.Year,
+		Semester: req.Semester,
+		ClassId:  req.ClassId,
+		Note:     req.Note,
+	})
+	if err != nil {
+		return web.Response{}, errs.UPDATE_CLASS_ERROR(err)
+	}
+	return web.Response{
+		Msg: resp.Msg,
+	}, nil
+}
+
+// InsertClassNote 删除课程备注
+// @Summary 删除课程备注
+// @Description 根据课程 ID 删除课程备注
+// @Tags class
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "Bearer Token"
+// @Param request body DeleteClassNoteReq true "删除课程备注请求"
+// @Success 200 {object} web.Response "成功删除课程备注"
+// @Router /class/note/delete [post]
+func (c *ClassHandler) DeleteClassNote(ctx *gin.Context, req DeleteClassNoteReq, uc ijwt.UserClaims) (web.Response, error) {
+	resp, err := c.ClassListClient.DeleteClassNote(ctx, &classlistv1.DeleteClassNoteReq{
+		StuId:    uc.StudentId,
+		Year:     req.Year,
+		Semester: req.Semester,
+		ClassId:  req.ClassId,
+	})
+	if err != nil {
+		return web.Response{}, errs.UPDATE_CLASS_ERROR(err)
+	}
+	return web.Response{
+		Msg: resp.Msg,
 	}, nil
 }
 

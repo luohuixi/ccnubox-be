@@ -26,6 +26,10 @@ service Classer {
     rpc GetStuIdByJxbId(GetStuIdByJxbIdRequest) returns (GetStuIdByJxbIdResponse);
     //获取相关日期
     rpc GetSchoolDay(GetSchoolDayReq) returns (GetSchoolDayResp) {};
+    //添加课程备注
+    rpc UpdateClassNote(UpdateClassNoteReq) returns (UpdateClassNoteResp);
+    //删除课程备注
+    rpc DeleteClassNote(DeleteClassNoteReq) returns (DeleteClassNoteResp);
 }
 
 message GetClassRequest {
@@ -194,6 +198,10 @@ message  ClassInfo {
     string year=11;
     //课程唯一标识id
     string id=12;
+    // 备注
+    string note=13;
+    // 是否为官方课程
+    bool is_official = 14;
 }
 
 message Class {
@@ -206,4 +214,36 @@ message  GetSchoolDayReq {}
 message GetSchoolDayResp {
     string holidayTime = 1; //形式:"2025-07-05"
     string schoolTime = 2;  //形式:"2025-02-17"
+}
+
+message UpdateClassNoteReq {
+      //学号
+    string stuId=1;
+    //学年  "2024" 代表"2024-2025学年"
+    string year=2;
+    //学期 "1"代表第一学期，"2"代表第二学期，"3"代表第三学期
+    string semester=3;
+    // 课程的ID（唯一标识）
+    string classId=4;
+    //课程备注
+    string note=5;
+}
+
+message UpdateClassNoteResp{
+    string msg=1;
+}
+
+message DeleteClassNoteReq {
+      //学号
+    string stuId=1;
+    //学年  "2024" 代表"2024-2025学年"
+    string year=2;
+    //学期 "1"代表第一学期，"2"代表第二学期，"3"代表第三学期
+    string semester=3;
+    // 课程的ID（唯一标识）
+    string classId=4;
+}
+
+message DeleteClassNoteResp{
+    string msg=1;
 }

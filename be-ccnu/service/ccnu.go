@@ -27,9 +27,65 @@ var (
 
 func (c *ccnuService) GetXKCookie(ctx context.Context, studentId string, password string) (string, error) {
 
-	//初始化client
+	if len(studentId) > 4 && (studentId[4] == '1' || studentId[4] == '0') {
+		// 研究生
+		return c.getGradCookie(ctx, studentId, password)
+	} else if len(studentId) > 4 && studentId[4] == '2' {
+		//本科生
+		return c.getUnderGradCookie(ctx, studentId, password)
+	} else {
+		return "", Invalid_SidOrPwd_ERROR(errors.New("账号密码错误"))
+	}
+}
+
+func (c *ccnuService) LoginCCNU(ctx context.Context, studentId string, password string) (bool, error) {
+	if len(studentId) > 4 && (studentId[4] == '1' || studentId[4] == '0') {
+		// 研究生
+		pg := crawler.NewPostGraduate(crawler.NewCrawlerClient(c.timeout))
+		return c.loginGrad(ctx, pg, studentId, password)
+	} else if len(studentId) > 4 && studentId[4] == '2' {
+		//本科生
+		ug := crawler.NewUnderGrad(crawler.NewCrawlerClient(c.timeout))
+		return c.loginUnderGrad(ctx, ug, studentId, password)
+	} else {
+		return false, Invalid_SidOrPwd_ERROR(errors.New("账号密码错误"))
+	}
+
+}
+
+func (c *ccnuService) loginGrad(ctx context.Context, pg *crawler.PostGraduate, studentId string, password string) (bool, error) {
 	var (
-		ug                  = crawler.NewUnderGrad(crawler.NewCrawlerClient(c.timeout))
+		isInCorrectPASSWORD = false //用于判断是否是账号密码错误
+	)
+	pubkey, err := tool.Retry(func() (*rsa.PublicKey, error) {
+		return pg.FetchPublicKey(ctx)
+	})
+	if err != nil {
+		return false, err
+	}
+
+	_, err = tool.Retry(func() (string, error) {
+		err := pg.LoginPostgraduateSystem(ctx, studentId, password, pubkey)
+		if errors.Is(err, crawler.INCorrectPASSWORD) {
+			// 标识账号密码错误,强制结束
+			isInCorrectPASSWORD = true
+			return "", nil
+		}
+		return "", err
+	})
+	//如果密码有误
+	if isInCorrectPASSWORD {
+		return false, Invalid_SidOrPwd_ERROR(errors.New("账号密码错误"))
+	}
+	//如果存在错误
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+func (c *ccnuService) loginUnderGrad(ctx context.Context, ug *crawler.UnderGrad, studentId string, password string) (bool, error) {
+	var (
 		isInCorrectPASSWORD = false //用于判断是否是账号密码错误
 	)
 
@@ -37,7 +93,7 @@ func (c *ccnuService) GetXKCookie(ctx context.Context, studentId string, passwor
 		return ug.GetParamsFromHtml(ctx)
 	})
 	if err != nil {
-		return "", err
+		return false, err
 	}
 
 	//此处比较特殊由于账号密码错误是必然无效的请求,应当直接返回
@@ -52,10 +108,23 @@ func (c *ccnuService) GetXKCookie(ctx context.Context, studentId string, passwor
 	})
 	//如果密码有误
 	if isInCorrectPASSWORD {
-		return "", Invalid_SidOrPwd_ERROR(errors.New("账号密码错误"))
+		return false, Invalid_SidOrPwd_ERROR(errors.New("账号密码错误"))
 	}
 	//如果存在错误
 	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+func (c *ccnuService) getUnderGradCookie(ctx context.Context, stuId, password string) (string, error) {
+	//初始化client
+	var (
+		ug = crawler.NewUnderGrad(crawler.NewCrawlerClient(c.timeout))
+	)
+
+	ok, err := c.loginUnderGrad(ctx, ug, stuId, password)
+	if err != nil || !ok {
 		return "", err
 	}
 
@@ -78,77 +147,13 @@ func (c *ccnuService) GetXKCookie(ctx context.Context, studentId string, passwor
 	return cookie, nil
 }
 
-func (c *ccnuService) LoginCCNU(ctx context.Context, studentId string, password string) (bool, error) {
-	// TODO 抽象成函数
-	if len(studentId) > 4 && studentId[4] == '1' {
-		//研究生
-		var (
-			pg                  = crawler.NewPostGraduate(crawler.NewCrawlerClient(c.timeout))
-			isInCorrectPASSWORD = false //用于判断是否是账号密码错误
-
-		)
-		pubkey, err := tool.Retry(func() (*rsa.PublicKey, error) {
-			return pg.FetchPublicKey(ctx)
-		})
-		if err != nil {
-			return false, err
-		}
-
-		_, err = tool.Retry(func() (string, error) {
-			err := pg.LoginPostgraduateSystem(ctx, studentId, password, pubkey)
-			if errors.Is(err, crawler.INCorrectPASSWORD) {
-				// 标识账号密码错误,强制结束
-				isInCorrectPASSWORD = true
-				return "", nil
-			}
-			return "", err
-		})
-		//如果密码有误
-		if isInCorrectPASSWORD {
-			return false, Invalid_SidOrPwd_ERROR(errors.New("账号密码错误"))
-		}
-		//如果存在错误
-		if err != nil {
-			return false, err
-		}
-		return true, nil
-
-	} else if len(studentId) > 4 && studentId[4] == '2' {
-		//本科生
-		var (
-			ug                  = crawler.NewUnderGrad(crawler.NewCrawlerClient(c.timeout))
-			isInCorrectPASSWORD = false //用于判断是否是账号密码错误
-		)
-
-		params, err := tool.Retry(func() (*crawler.AccountRequestParams, error) {
-			return ug.GetParamsFromHtml(ctx)
-		})
-		if err != nil {
-			return false, err
-		}
-
-		//此处比较特殊由于账号密码错误是必然无效的请求,应当直接返回
-		_, err = tool.Retry(func() (string, error) {
-			err := ug.LoginCCNUPassport(ctx, studentId, password, params)
-			if errors.Is(err, crawler.INCorrectPASSWORD) {
-				// 标识账号密码错误,强制结束
-				isInCorrectPASSWORD = true
-				return "", nil
-			}
-			return "", err
-		})
-		//如果密码有误
-		if isInCorrectPASSWORD {
-			return false, Invalid_SidOrPwd_ERROR(errors.New("账号密码错误"))
-		}
-		//如果存在错误
-		if err != nil {
-			return false, err
-		}
-		return true, nil
-
-	} else {
-		return false, Invalid_SidOrPwd_ERROR(errors.New("账号密码错误"))
+func (c *ccnuService) getGradCookie(ctx context.Context, stuId, password string) (string, error) {
+	pg := crawler.NewPostGraduate(crawler.NewCrawlerClient(c.timeout))
+	pubkey, err := tool.Retry(func() (*rsa.PublicKey, error) {
+		return pg.FetchPublicKey(ctx)
+	})
+	if err != nil {
+		return "", err
 	}
-
+	return pg.GetCookie(ctx, stuId, password, pubkey)
 }
