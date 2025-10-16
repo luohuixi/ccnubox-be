@@ -135,19 +135,10 @@ func (s StudentAndCourseDBRepo) GetCourseNote(ctx context.Context, stuID, year, 
 	return note
 }
 
-//func (s StudentAndCourseDBRepo) UpdateCourseNoteToDB(ctx context.Context, stuID, classID, year, semester, note string) error {
-//	db := s.data.DB(ctx).Table(do.StudentCourseTableName).WithContext(ctx)
-//
-//	err := db.Where("stu_id = ? and year = ? and semester = ? and cla_id = ?", stuID, year, semester, classID).Update("note", note).Error
-//	if err != nil {
-//		return errcode.ErrClassUpdate
-//	}
-//	return nil
-
 func (s StudentAndCourseDBRepo) UpdateCourseNote(ctx context.Context, stuID, year, semester, classID, note string) error {
-	db := s.data.DB(ctx).Table(do.CourseNoteTableName).WithContext(ctx)
+	db := s.data.DB(ctx).Table(do.StudentCourseTableName).WithContext(ctx)
 
-	cn := &do.CourseNote{StuID: stuID, Year: year, Semester: semester, ClaID: classID, Note: note}
+	cn := &do.StudentCourse{StuID: stuID, Year: year, Semester: semester, ClaID: classID, Note: note}
 
 	err := db.Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "stu_id"}, {Name: "year"}, {Name: "semester"}, {Name: "cla_id"}},

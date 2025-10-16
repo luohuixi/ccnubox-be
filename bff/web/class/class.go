@@ -2,7 +2,6 @@ package class
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
 	cs "github.com/asynccnu/ccnubox-be/be-api/gen/proto/classService/v1"
@@ -367,7 +366,6 @@ func (c *ClassHandler) InsertClassNote(ctx *gin.Context, req UpdateClassNoteReq,
 		ClassId:  req.ClassId,
 		Note:     req.Note,
 	})
-	fmt.Println("result:", resp)
 	if err != nil {
 		return web.Response{}, errs.UPDATE_CLASS_ERROR(err)
 	}
