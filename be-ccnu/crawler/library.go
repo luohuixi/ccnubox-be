@@ -9,8 +9,7 @@ import (
 )
 
 const (
-	CASURL_LIBRARY = loginCCNUPassPortURL + "?service=http://kjyy.ccnu.edu.cn/loginall.aspx?page="
-	PG_URL_LIBRARY = "http://kjyy.ccnu.edu.cn/"
+	PG_URL_LIBRARY = "http://kjyy.ccnu.edu.cn/ClientWeb/default.aspx"
 )
 
 type Library struct {
@@ -23,9 +22,9 @@ func NewLibrary(client *http.Client) *Library {
 	}
 }
 
-// 1.LoginLibrary 图书馆系统登录系统
+// 1.LoginLibrary 使用登录通行证的client访问图书馆页面为该client设置cookie
 func (c *Library) LoginLibrary(ctx context.Context) error {
-	request, err := http.NewRequestWithContext(ctx, "POST", CASURL_LIBRARY, nil)
+	request, err := http.NewRequestWithContext(ctx, "GET", PG_URL_LIBRARY, nil)
 	if err != nil {
 		return err
 	}

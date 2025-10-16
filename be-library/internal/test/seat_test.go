@@ -27,6 +27,7 @@ func init() {
 // 全局 repo
 var repo *data.SeatRepo
 var bizz biz.LibraryBiz
+var libraryCrawler crawler.Crawler
 
 // TestMain 在所有测试前初始化依赖
 func TestMain(m *testing.M) {
@@ -92,9 +93,9 @@ func TestSaveRoomSeatsInRedis(t *testing.T) {
 
 func TestGetSeat(t *testing.T) {
 	ctx := context.Background()
-	roomID := "101699179"
+	stuID := ""
 
-	seats, err := repo.GetSeatInfos(ctx, roomID, biz.RoomIDs)
+	seats, err := repo.GetSeatInfos(ctx, stuID, biz.RoomIDs)
 	if err != nil {
 		panic(err)
 	}
@@ -116,10 +117,10 @@ func TestFindFirstAvailbleSeat(t *testing.T) {
 
 func TestReserveSeatRandomly(t *testing.T) {
 	id := ""
-	start := "2025-09-02 20:00"
-	end := "2025-09-02 21:00"
+	start := "2025-10-16 20:00"
+	end := "2025-10-16 21:00"
 	ctx := context.Background()
-	msg, err := bizz.ReserveSeatRandomly(ctx, id, start, end)
+	msg, err := bizz.ReserveSeatRandomly(ctx, id, start, end, biz.RoomIDs)
 	if err != nil {
 		panic(err)
 	}

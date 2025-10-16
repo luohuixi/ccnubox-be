@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 
 	ccnuv1 "github.com/asynccnu/ccnubox-be/be-api/gen/proto/ccnu/v1"
@@ -289,20 +288,17 @@ func (s *userService) GetLibraryCookie(ctx context.Context, studentId string) (s
 }
 
 func (s *userService) getNewLibraryCookie(ctx context.Context, studentId string) (string, error) {
-	fmt.Println("执行1", studentId)
 	// 尝试从数据库获取
 	user, err := s.dao.FindByStudentId(ctx, studentId)
 	if err != nil {
 		return "", USER_NOT_FOUND_ERROR(err)
 	}
-	fmt.Println("执行2", user)
 
 	// 解密
 	decryptPassword, err := s.cryptoClient.Decrypt(user.Password)
 	if err != nil {
 		return "", DECRYPT_ERROR(err)
 	}
-	fmt.Println("执行3", decryptPassword)
 
 	// 调用 be-ccnu
 	resp, err := tool.Retry(func() (*ccnuv1.GetLibraryCookieResponse, error) {
@@ -311,7 +307,6 @@ func (s *userService) getNewLibraryCookie(ctx context.Context, studentId string)
 			Password:  decryptPassword,
 		})
 	})
-	fmt.Println("执行4", resp)
 
 	if err != nil {
 		return "", CCNU_GETCOOKIE_ERROR(err)

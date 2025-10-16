@@ -62,6 +62,8 @@ func (c *Crawler) getClient(ctx context.Context, stuID string) (*client.CookieCl
 			return nil, err
 		}
 
+		// fmt.Println("这里是cookie", cookie)
+
 		return c.cookiePool.GetClient(cookie)
 	})
 }
@@ -198,6 +200,11 @@ func (c *Crawler) getSeatInfos(ctx context.Context, client *client.CookieClient,
 	})
 
 	return result, nil
+}
+
+// test
+func (c *Crawler) GetLibraryCookie(stuid string) (string, error) {
+	return c.ccnu.GetLibraryCookie(context.Background(), stuid)
 }
 
 // ReserveSeat 预约座位

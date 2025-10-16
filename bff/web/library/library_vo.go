@@ -1,5 +1,9 @@
 package library
 
+type GetSeatRequest struct {
+	RoomIDs []string `json:"room_ids"`
+}
+
 type GetSeatResponse struct {
 	Rooms []Room `json:"rooms"`
 }
@@ -139,16 +143,16 @@ type CancelReserveRequest struct {
 }
 
 type ReserveSeatRandomlyRequest struct {
-	DevID string `json:"dev_id"`
-	Start string `json:"start"`
-	End   string `json:"end"`
+	RoomIDs []string `json:"room_ids"`
+	DevID   string   `json:"dev_id"`
+	Start   string   `json:"start"`
+	End     string   `json:"end"`
 }
 
 type ReserveSeatRandomlyResponse struct {
 	Message string `json:"message"`
 }
 
-// 评论相关
 type Comment struct {
 	ID        int    `json:"id"`         // 评论ID
 	SeatID    string `json:"seat_id"`    // 关联座位

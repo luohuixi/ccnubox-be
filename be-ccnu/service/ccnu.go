@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rsa"
 	"errors"
+	"net/http"
 
 	ccnuv1 "github.com/asynccnu/ccnubox-be/be-api/gen/proto/ccnu/v1"
 	"github.com/asynccnu/ccnubox-be/be-ccnu/crawler"
@@ -46,7 +47,8 @@ func (c *ccnuService) LoginCCNU(ctx context.Context, studentId string, password 
 		return c.loginGrad(ctx, pg, studentId, password)
 	} else if len(studentId) > 4 && studentId[4] == '2' {
 		//本科生
-		return c.loginUnderGrad(ctx, studentId, password)
+		_, ok, err := c.loginUnderGrad(ctx, studentId, password)
+		return ok, err
 	} else {
 		return false, Invalid_SidOrPwd_ERROR(errors.New("账号密码错误"))
 	}
@@ -84,16 +86,16 @@ func (c *ccnuService) loginGrad(ctx context.Context, pg *crawler.PostGraduate, s
 	return true, nil
 }
 
-func (c *ccnuService) loginUnderGrad(ctx context.Context, studentId string, password string) (bool, error) {
+func (c *ccnuService) loginUnderGrad(ctx context.Context, studentId string, password string) (*http.Client, bool, error) {
 	var (
 		ps = crawler.NewPassport(crawler.NewCrawlerClient(c.timeout))
 	)
 
 	flag, err := ps.LoginPassport(ctx, studentId, password)
 	if errors.Is(err, crawler.INCorrectPASSWORD) {
-		return flag, Invalid_SidOrPwd_ERROR(err)
+		return nil, flag, Invalid_SidOrPwd_ERROR(err)
 	}
-	return flag, err
+	return ps.Client, flag, err
 }
 
 func (c *ccnuService) getUnderGradCookie(ctx context.Context, stuId, password string) (string, error) {
@@ -102,7 +104,7 @@ func (c *ccnuService) getUnderGradCookie(ctx context.Context, stuId, password st
 		ug = crawler.NewUnderGrad(crawler.NewCrawlerClient(c.timeout))
 	)
 
-	ok, err := c.loginUnderGrad(ctx, stuId, password)
+	_, ok, err := c.loginUnderGrad(ctx, stuId, password)
 	if err != nil || !ok {
 		return "", err
 	}
@@ -140,16 +142,15 @@ func (c *ccnuService) getGradCookie(ctx context.Context, stuId, password string)
 func (c *ccnuService) GetLibraryCookie(ctx context.Context, studentId, password string) (string, error) {
 	// 初始化Client
 	var (
-		l  = crawler.NewLibrary(crawler.NewCrawlerClient(c.timeout))
-		ps = crawler.NewPassport(crawler.NewCrawlerClient(c.timeout))
+		l = crawler.NewLibrary(crawler.NewCrawlerClient(c.timeout))
 	)
 
-	ok, err := c.loginUnderGrad(ctx, studentId, password)
+	client, ok, err := c.loginUnderGrad(ctx, studentId, password)
 	if err != nil || !ok {
 		return "", err
 	}
 
-	l.Client = ps.Client
+	l.Client = client
 
 	err = l.LoginLibrary(ctx)
 	if err != nil {
