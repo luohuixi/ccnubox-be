@@ -33,8 +33,9 @@ type ClassRepo interface {
 	CheckSCIdsExist(ctx context.Context, stuID, year, semester, classID string) bool
 	GetAllSchoolClassInfos(ctx context.Context, year, semester string, cursor time.Time) []*ClassInfo
 	GetAddedClasses(ctx context.Context, stuID, year, semester string) ([]*ClassInfo, error)
-	IsClassOfficial(ctx context.Context,stuID,year,semester,classID string) bool
-	UpdateClassNote(ctx context.Context,stuID,year,semester,classID,note string)error
+	IsClassOfficial(ctx context.Context, stuID, year, semester, classID string) bool
+	GetClassNote(ctx context.Context, stuID, year, semester, classID string) string
+	UpdateClassNote(ctx context.Context, stuID, year, semester, classID, note string) error
 }
 
 type JxbRepo interface {

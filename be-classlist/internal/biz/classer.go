@@ -99,6 +99,7 @@ func (cluc *ClassUsecase) GetClasses(ctx context.Context, stuID, year, semester 
 
 	waitCrawTime := cluc.waitCrawTime
 	forceNoRefresh := false //强制不刷新
+	getLocal := false       //是否从本地获取到数据
 
 Local: //从本地获取数据
 
@@ -107,6 +108,7 @@ Local: //从本地获取数据
 	if err == nil {
 		if len(localClassInfo) > 0 {
 			classInfos = localClassInfo
+			getLocal = true
 		} else {
 			err = errors.New("failed to find data in the database")
 		}
@@ -125,7 +127,6 @@ Local: //从本地获取数据
 	}
 
 	if refresh || err != nil {
-
 		refreshLog, searchRefreshErr := cluc.refreshLogRepo.SearchRefreshLog(ctx, stuID, year, semester)
 		//如果没有报错,说明有记录
 		if searchRefreshErr == nil {
@@ -196,15 +197,46 @@ Local: //从本地获取数据
 				return
 			}
 
+			// 标记爬虫返回的课程为官方课程
+			for _, ci := range crawClassInfos_ {
+				ci.IsOfficial = true
+			}
+
+			if getLocal && len(crawClassInfos_) > 0 {
+				// 构建本地课程 ID -> Note 的映射，避免 O(n^2) 比较
+				noteMap := make(map[string]string, len(classInfos))
+				for _, lc := range classInfos {
+					if lc != nil && lc.ID != "" {
+						noteMap[lc.ID] = lc.Note
+					}
+				}
+
+				// 将本地备注合并到爬虫结果中
+				for _, ci := range crawClassInfos_ {
+					if ci == nil {
+						continue
+					}
+					if note, ok := noteMap[ci.ID]; ok {
+						ci.Note = note
+					}
+				}
+
+				// 将本地备注合并到学生课程信息中
+				for _, sc := range crawScs {
+					if sc == nil {
+						continue
+					}
+					if note, ok := noteMap[sc.ClaID]; ok {
+						sc.Note = note
+					}
+				}
+			}
+
 			// 确保在赋值前获取锁
 			crawLock.Lock()
 
 			// 将数据赋值到闭包外
 			crawClassInfos = crawClassInfos_
-			// 标记爬虫返回的课程为官方课程
-			for _, ci := range crawClassInfos {
-				ci.IsOfficial = true
-			}
 
 			// 释放锁
 			crawLock.Unlock()
@@ -304,6 +336,7 @@ func (cluc *ClassUsecase) GetRecycledClassInfos(ctx context.Context, stuID, year
 		if err != nil {
 			continue
 		}
+		info.Note = cluc.GetClassNote(ctx, stuID, year, semester, info.ID)
 		classInfos = append(classInfos, info)
 	}
 	return classInfos, nil
@@ -444,6 +477,10 @@ func (cluc *ClassUsecase) getCourseFromCrawler(ctx context.Context, stuID string
 
 func (cluc *ClassUsecase) IsClassOfficial(ctx context.Context, stuID, year, semester, classID string) bool {
 	return cluc.classRepo.IsClassOfficial(ctx, stuID, year, semester, classID)
+}
+
+func (cluc *ClassUsecase) GetClassNote(ctx context.Context, stuID, year, semester, classID string) string {
+	return cluc.classRepo.GetClassNote(ctx, stuID, year, semester, classID)
 }
 
 func extractJxb(infos []*ClassInfo) []string {

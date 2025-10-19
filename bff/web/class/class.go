@@ -374,7 +374,7 @@ func (c *ClassHandler) InsertClassNote(ctx *gin.Context, req UpdateClassNoteReq,
 	}, nil
 }
 
-// InsertClassNote 删除课程备注
+// DeleteClassNote 删除课程备注
 // @Summary 删除课程备注
 // @Description 根据课程 ID 删除课程备注
 // @Tags class
