@@ -51,7 +51,7 @@ func (c *Passport) LoginPassport(ctx context.Context, stuId string, password str
 	})
 	//如果密码有误
 	if isInCorrectPASSWORD {
-		return false, errors.New("账号密码错误")
+		return false, INCorrectPASSWORD
 	}
 	//如果存在错误
 	if err != nil {
