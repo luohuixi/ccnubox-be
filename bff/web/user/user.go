@@ -43,7 +43,7 @@ func (h *UserHandler) RegisterRoutes(s *gin.RouterGroup, authMiddleware gin.Hand
 func (h *UserHandler) LoginByCCNU(ctx *gin.Context, req LoginByCCNUReq) (web.Response, error) {
 
 	// 检测是否学生证账号密码正确,如果通行证失败的话会去查本地,如果本地也失败就会丢出系统异常错误,否则是账号密码不正确
-	_, err := h.userSvc.CheckUser(ctx, &userv1.CheckUserReq{
+	resp, err := h.userSvc.CheckUser(ctx, &userv1.CheckUserReq{
 		StudentId: req.StudentId,
 		Password:  req.Password,
 	})
@@ -54,6 +54,11 @@ func (h *UserHandler) LoginByCCNU(ctx *gin.Context, req LoginByCCNUReq) (web.Res
 		return web.Response{}, errs.USER_SID_Or_PASSPORD_ERROR(err)
 	default:
 		return web.Response{}, errs.LOGIN_BY_CCNU_ERROR(err)
+	}
+
+	// 兜底的判断
+	if !resp.Success {
+		return web.Response{}, errs.USER_SID_Or_PASSPORD_ERROR(err)
 	}
 
 	// FindOrCreate

@@ -118,10 +118,18 @@ func (s *userService) Check(ctx context.Context, studentId string, password stri
 	s.l.Warn("尝试从ccnu登录失败!", logger.Error(err))
 
 	//尝试查找用户
+	password, err = s.cryptoClient.Encrypt(password)
+	if err != nil {
+		return false, ENCRYPT_ERROR(err)
+	}
+
 	user, err := s.dao.FindByStudentId(ctx, studentId)
 	switch err {
 	case nil:
-		return user.Password == password, nil
+		if user.Password == password {
+			return true, nil
+		}
+		return false, InCorrectPassword(errors.New("与保存的密码不匹配"))
 	default:
 		return false, DEFAULT_DAO_ERROR(err)
 	}
