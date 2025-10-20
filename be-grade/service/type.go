@@ -1,6 +1,7 @@
 package service
 
 import (
+	"math"
 	"strconv"
 	"strings"
 
@@ -212,13 +213,58 @@ func calcJd(score float32) float32 {
 		return 0
 	}
 	// 每下降5分绩点下降0.5
-	diff := int((95 - score) / 5)
+	diff := int(math.Ceil(float64((95 - score) / 5)))
 	return 4.5 - float32(diff)*0.5
 }
 
 type FetchGrades struct {
 	update []model.Grade
 	final  []model.Grade
+}
+
+func ConvertGraduateGrade(graduateGrade []crawler.GraduatePoints) []model.Grade {
+	var grades []model.Grade
+	for _, p := range graduateGrade {
+		var xqm int64
+		switch p.Xqm {
+		case "3":
+			xqm = 1
+		case "12":
+			xqm = 2
+		case "16":
+			xqm = 3
+		}
+		grades = append(grades, model.Grade{
+			StudentId: p.Xh,
+			JxbId:     p.JxbID,
+			Kcmc:      p.Kcmc,
+			Xnm:       parseInt64(p.Xnm),
+			Xqm:       xqm,
+			Xf:        parseFloat32(p.Xf),
+			Kcxzmc:    p.Kcxzmc,
+			Kclbmc:    p.Kclbmc,
+			Kcbj:      p.Kcbj,
+			Jd:        parseFloat32(p.Jd),
+			Cj:        parseFloat32(p.Cj),
+		})
+	}
+	return grades
+}
+
+// parseInt64 辅助函数，将字符串转换为 int64
+func parseInt64(value string) int64 {
+	if i, err := strconv.Atoi(value); err == nil {
+		return int64(i)
+	}
+	return 0
+}
+
+// parseFloat32 辅助函数，将字符串转换为 float32
+func parseFloat32(value string) float32 {
+	if i, err := strconv.ParseFloat(value, 32); err == nil {
+		return float32(i)
+	}
+	return 0
 }
 
 func modelGraduateConvDomain(grades []model.Grade) []domain.Grade {

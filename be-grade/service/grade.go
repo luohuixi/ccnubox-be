@@ -148,7 +148,7 @@ func (s *gradeService) UpdateDetailScore(ctx context.Context, need domain.NeedDe
 	grades := need.Grades
 	for i, grade := range grades {
 		detail, err := ug.GetDetail(ctx, grade.StudentId, grade.JxbId, grade.KcId, grade.Cj)
-		if err == crawler.COOKIE_TIMEOUT {
+		if errors.Is(err, crawler.COOKIE_TIMEOUT) {
 			ug, err = s.newUGWithCookie(ctx, need.StudentID)
 			if err != nil {
 				return err
@@ -182,49 +182,49 @@ func (s *gradeService) fetchGradesWithSingleFlight(ctx context.Context, studentI
 		ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 		defer cancel()
 
-        start := time.Now()
-        // 按学号选择对应爬虫
-        var stu Student
-        if isUndergraduate(studentId) {
-            ug, err := s.newUGWithCookie(ctx, studentId)
-            if err != nil {
-                return nil, fmt.Errorf("创建带cookie的本科爬虫失败:%w", err)
-            }
-            stu = &UndergraduateStudent{ug: ug}
-        } else {
-            gc, err := crawler.NewGraduate(crawler.NewCrawlerClientWithCookieJar(30*time.Second, nil))
-            if err != nil {
-                return nil, fmt.Errorf("创建研究生爬虫实例失败:%w", err)
-            }
-            stu = &GraduateStudent{gc: gc}
-        }
+		start := time.Now()
+		// 按学号选择对应爬虫
+		var stu Student
+		if isUndergraduate(studentId) {
+			ug, err := s.newUGWithCookie(ctx, studentId)
+			if err != nil {
+				return nil, fmt.Errorf("创建带cookie的本科爬虫失败:%w", err)
+			}
+			stu = &UndergraduateStudent{ug: ug}
+		} else {
+			gc, err := crawler.NewGraduate(crawler.NewCrawlerClientWithCookieJar(30*time.Second, nil))
+			if err != nil {
+				return nil, fmt.Errorf("创建研究生爬虫实例失败:%w", err)
+			}
+			stu = &GraduateStudent{gc: gc}
+		}
 
-        cookieResp, err := s.userClient.GetCookie(ctx, &userv1.GetCookieRequest{StudentId: studentId})
-        if err != nil {
-            return nil, fmt.Errorf("获取 cookie 失败:%w", err)
-        }
+		cookieResp, err := s.userClient.GetCookie(ctx, &userv1.GetCookieRequest{StudentId: studentId})
+		if err != nil {
+			return nil, fmt.Errorf("获取 cookie 失败:%w", err)
+		}
 
-        remote, err := stu.GetGrades(ctx, cookieResp.Cookie, 0, 0, 300)
-        if errors.Is(err, crawler.COOKIE_TIMEOUT) {
-            if _, ok := stu.(*UndergraduateStudent); ok {
-                ug, err := s.newUGWithCookie(ctx, studentId)
-                if err != nil {
-                    return nil, fmt.Errorf("创建带cookie的本科爬虫失败:%w", err)
-                }
-                stu = &UndergraduateStudent{ug: ug}
-            }
-            cookieResp, err = s.userClient.GetCookie(ctx, &userv1.GetCookieRequest{StudentId: studentId})
-            if err != nil {
-                return nil, fmt.Errorf("获取 cookie 失败:%w", err)
-            }
-            remote, err = stu.GetGrades(ctx, cookieResp.Cookie, 0, 0, 300)
-            if err != nil {
-                return nil, err
-            }
-        }
+		remote, err := stu.GetGrades(ctx, cookieResp.Cookie, 0, 0, 300)
+		if errors.Is(err, crawler.COOKIE_TIMEOUT) {
+			if _, ok := stu.(*UndergraduateStudent); ok {
+				ug, err := s.newUGWithCookie(ctx, studentId)
+				if err != nil {
+					return nil, fmt.Errorf("创建带cookie的本科爬虫失败:%w", err)
+				}
+				stu = &UndergraduateStudent{ug: ug}
+			}
+			cookieResp, err = s.userClient.GetCookie(ctx, &userv1.GetCookieRequest{StudentId: studentId})
+			if err != nil {
+				return nil, fmt.Errorf("获取 cookie 失败:%w", err)
+			}
+			remote, err = stu.GetGrades(ctx, cookieResp.Cookie, 0, 0, 300)
+			if err != nil {
+				return nil, err
+			}
+		}
 
 		s.l.Info("获取成绩耗时", logger.String("耗时", time.Since(start).String()))
-        grades := remote
+		grades := remote
 		update, err := s.gradeDAO.BatchInsertOrUpdate(ctx, grades, false)
 		if err != nil {
 			return nil, err
@@ -291,33 +291,33 @@ func (s *gradeService) newUGWithCookie(ctx context.Context, studentId string) (*
 }
 
 type Student interface {
-    GetGrades(ctx context.Context, cookie string, xnm, xqm, showCount int64) ([]model.Grade, error)
+	GetGrades(ctx context.Context, cookie string, xnm, xqm, showCount int64) ([]model.Grade, error)
 }
 
-type UndergraduateStudent struct{
-    ug *crawler.UnderGrad
+type UndergraduateStudent struct {
+	ug *crawler.UnderGrad
 }
 
 func (u *UndergraduateStudent) GetGrades(ctx context.Context, cookie string, xnm, xqm, showCount int64) ([]model.Grade, error) {
-    grade, err := u.ug.GetGrade(ctx, xnm, xqm, int(showCount))
-    if err != nil {
-        return []model.Grade{}, err
-    }
+	grade, err := u.ug.GetGrade(ctx, xnm, xqm, int(showCount))
+	if err != nil {
+		return []model.Grade{}, err
+	}
 
-    return crawler.ConvertUndergraduate(grade), nil
+	return aggregateGrade(grade), nil
 }
 
-type GraduateStudent struct{
-    gc *crawler.Graduate
+type GraduateStudent struct {
+	gc *crawler.Graduate
 }
 
 func (g *GraduateStudent) GetGrades(ctx context.Context, cookie string, xnm, xqm, showCount int64) ([]model.Grade, error) {
-    grade, err := g.gc.GetGraduateGrades(ctx, cookie, xnm, xqm, showCount)
-    if err != nil {
-        return []model.Grade{}, err
-    }
+	grade, err := g.gc.GetGraduateGrades(ctx, cookie, xnm, xqm, showCount)
+	if err != nil {
+		return []model.Grade{}, err
+	}
 
-    return crawler.ConvertGraduateGrade(grade), nil
+	return ConvertGraduateGrade(grade), nil
 }
 
 func isUndergraduate(stuID string) bool {

@@ -3,6 +3,7 @@ package events
 import (
 	"context"
 	"fmt"
+
 	"github.com/IBM/sarama"
 	"github.com/asynccnu/ccnubox-be/be-grade/domain"
 	"github.com/asynccnu/ccnubox-be/be-grade/events/consumer"
@@ -40,12 +41,12 @@ func (f *GradeDetailEventConsumerHandler) Start() error {
 
 	// 启动一个 Goroutine 异步消费消息
 	go func() {
-		er := f.cg.Consume(context.Background(), []string{topic.GradeDetailEvent}, saramax.NewHandler(f.l, f.Consume))
-		if er != nil {
+		err := f.cg.Consume(context.Background(), []string{topic.GradeDetailEvent}, saramax.NewHandler(f.l, f.Consume))
+		if err != nil {
 			// 如果消费循环中出现错误，记录错误日志
-			f.l.Error("退出了消费循环异常", logger.Error(er))
+			f.l.Error("退出了消费循环异常", logger.Error(err))
 			//feed消息消费出现问题属于重大问题,选择直接panic
-			panic(er)
+			panic(err)
 		}
 	}()
 	return nil
