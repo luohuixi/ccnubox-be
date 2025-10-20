@@ -63,6 +63,7 @@ func InitApp() *App {
 		middleware.NewCorsMiddleware,
 		middleware.NewLoginMiddleWare,
 		middleware.NewPrometheusMiddleware,
+		middleware.NewBasicAuthMiddleware,
 		//注册api
 		ioc.InitGinServer,
 		NewApp,
