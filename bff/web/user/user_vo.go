@@ -36,8 +36,3 @@ type UserPublicProfileVo struct {
 	Avatar   string `json:"avatar" binding:"required"`
 	Nickname string `json:"nickname" binding:"required"`
 }
-
-type DeleteAccountResp struct {
-	RecoverKey string `json:"recover_key"`
-	ExpireAt   int64  `json:"expire_at"`
-}

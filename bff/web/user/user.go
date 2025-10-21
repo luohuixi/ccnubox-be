@@ -3,8 +3,6 @@ package user
 import (
 	"errors"
 	"fmt"
-	"time"
-
 	userv1 "github.com/asynccnu/ccnubox-be/be-api/gen/proto/user/v1"
 	"github.com/asynccnu/ccnubox-be/bff/errs"
 	"github.com/asynccnu/ccnubox-be/bff/pkg/ginx"
@@ -166,9 +164,5 @@ func (h *UserHandler) DeleteAccount(ctx *gin.Context, req DeleteAccountReq, cla 
 
 	return web.Response{
 		Msg: "Success",
-		Data: DeleteAccountResp{
-			RecoverKey: "hgiodhigoajgo%fdhisjf",
-			ExpireAt:   time.Now().Add(7 * 24 * time.Hour).Unix(),
-		},
 	}, nil
 }
