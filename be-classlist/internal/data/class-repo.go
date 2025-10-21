@@ -4,8 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/asynccnu/ccnubox-be/be-classlist/internal/classLog"
 	"time"
+
+	"github.com/asynccnu/ccnubox-be/be-classlist/internal/classLog"
 
 	"github.com/asynccnu/ccnubox-be/be-classlist/internal/biz"
 	"github.com/asynccnu/ccnubox-be/be-classlist/internal/data/do"
@@ -304,7 +305,7 @@ func (cla ClassRepo) SaveClass(ctx context.Context, stuID, year, semester string
 
 	err = cla.TxCtrl.InTx(ctx, func(ctx context.Context) error {
 		//删除对应的所有关系[只删除非手动添加的]
-		err := cla.Sac.DB.DeleteStudentAndCourseByTimeFromDB(ctx, stuID, year, semester)
+		err = cla.Sac.DB.DeleteStudentAndCourseByTimeFromDB(ctx, stuID, year, semester)
 		if err != nil {
 			return err
 		}
@@ -363,6 +364,10 @@ func (cla ClassRepo) IsClassOfficial(ctx context.Context, stuID, year, semester,
 	return !isManuallyAddedCourse
 }
 
+func (cla ClassRepo) GetClassNote(ctx context.Context, stuID, year, semester, classID string) string {
+	note := cla.Sac.DB.GetCourseNote(ctx, stuID, year, semester, classID)
+	return note
+}
 
 // UpdateClassNote 插入课程备注
 func (cla ClassRepo) UpdateClassNote(ctx context.Context, stuID, year, semester, classID, note string) error {
@@ -373,7 +378,7 @@ func (cla ClassRepo) UpdateClassNote(ctx context.Context, stuID, year, semester,
 	}
 
 	errTX := cla.TxCtrl.InTx(ctx, func(ctx context.Context) error {
-		err := cla.Sac.DB.UpdateCourseNoteToDB(ctx, stuID, classID, year, semester, note)
+		err := cla.Sac.DB.UpdateCourseNote(ctx, stuID, year, semester, classID, note)
 		if err != nil {
 			return errcode.ErrClassUpdate
 		}

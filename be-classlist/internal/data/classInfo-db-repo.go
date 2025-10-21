@@ -4,8 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/asynccnu/ccnubox-be/be-classlist/internal/classLog"
 	"time"
+
+	"github.com/asynccnu/ccnubox-be/be-classlist/internal/classLog"
 
 	"github.com/asynccnu/ccnubox-be/be-classlist/internal/data/do"
 	"github.com/asynccnu/ccnubox-be/be-classlist/internal/errcode"
@@ -76,7 +77,8 @@ func (c ClassInfoDBRepo) GetClassInfos(ctx context.Context, stuId, xnm, xqm stri
 	var (
 		cla = make([]*do.ClassInfo, 0)
 	)
-	err := db.Table(do.ClassInfoTableName).Select(fmt.Sprintf("%s.*", do.ClassInfoTableName)).
+
+	err := db.Table(do.ClassInfoTableName).Select(fmt.Sprintf("%s.*,%s.note", do.ClassInfoTableName, do.StudentCourseTableName)).
 		Joins(fmt.Sprintf(
 			`LEFT JOIN %s ON %s.id = %s.cla_id`, do.StudentCourseTableName, do.ClassInfoTableName, do.StudentCourseTableName,
 		)).

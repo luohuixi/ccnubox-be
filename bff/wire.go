@@ -35,6 +35,7 @@ func InitApp() *App {
 		ioc.InitClassList,
 		ioc.InitClassService,
 		ioc.InitFreeClassroomClient,
+		ioc.InitLibrary,
 
 		//http服务
 		ioc.InitPutPolicy,
@@ -55,12 +56,14 @@ func InitApp() *App {
 		ioc.InitInfoSumHandler,
 		ioc.InitCardHandler,
 		ioc.InitMetricsHandel,
+		ioc.InitLibraryHandler,
 
 		//中间件
 		middleware.NewLoggerMiddleware,
 		middleware.NewCorsMiddleware,
 		middleware.NewLoginMiddleWare,
 		middleware.NewPrometheusMiddleware,
+		middleware.NewBasicAuthMiddleware,
 		//注册api
 		ioc.InitGinServer,
 		NewApp,

@@ -37,13 +37,15 @@ grpc:
     elecprice:
       endpoint: "discovery:///elecprice"
     classlist:
-      endpoint: "discovery:///MuXi_ClassList"
+      endpoint: "discovery:///be-classlit"
     classService:
       endpoint: "discovery:///classService"
     feedbackHelp:
       endpoint: "discovery:///feedback_help"
     grade:
       endpoint: "discovery:///grade"
+    library:
+      endpoint: "discovery:///library"
     infoSum:
       endpoint: "discovery:///info_sum"
     counter:
@@ -63,7 +65,7 @@ oss:
 
 # 日志配置
 log:
-  path: "./logs/app.log"  # 日志文件路径
+  path: "/logs/app.log"  # 日志文件路径
   maxSize: 100           # 单个日志文件的最大大小（MB）
   maxBackups: 7          # 保留旧日志文件的最大数量
   maxAge: 30             # 日志文件保留天数
@@ -84,3 +86,7 @@ prometheus:
   durationTime:
     name: "http_request_duration_seconds"  # 请求时长直方图名称
     help: "Histogram of response times for HTTP requests" # 指标说明
+
+basicAuth:
+  username: "prometheus_user"
+  password: "prometheus_password"
