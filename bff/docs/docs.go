@@ -2383,58 +2383,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/grade/getGraduateGrade": {
-            "post": {
-                "description": "根据学年号和学期号获取用户的成绩",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "grade"
-                ],
-                "summary": "查询研究生成绩",
-                "parameters": [
-                    {
-                        "description": "获取学年和学期的成绩请求参数",
-                        "name": "data",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/grade.UpdateGraduateGradesReq"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "成功返回学年和学期的成绩信息",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/web.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/grade.UpdateGraduateGradesResp"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "500": {
-                        "description": "系统异常，获取失败",
-                        "schema": {
-                            "$ref": "#/definitions/web.Response"
-                        }
-                    }
-                }
-            }
-        },
         "/library/cancel_reserve": {
             "post": {
                 "description": "取消预约",
@@ -2594,7 +2542,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "integer",
-                        "description": "座位或评论关联 ID",
+                        "description": "座位 ID (devID)",
                         "name": "id",
                         "in": "query",
                         "required": true
@@ -3286,6 +3234,45 @@ const docTemplate = `{
                                     }
                                 }
                             ]
+                        }
+                    }
+                }
+            }
+        },
+        "/users/deactivate": {
+            "delete": {
+                "security": [
+                    {
+                        "Bearer Auth": []
+                    }
+                ],
+                "description": "用户输入密码验明身份后注销",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "注销账户",
+                "parameters": [
+                    {
+                        "description": "注销账户请求体",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/user.DeleteAccountReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "$ref": "#/definitions/web.Response"
                         }
                     }
                 }
@@ -4738,83 +4725,6 @@ const docTemplate = `{
                 }
             }
         },
-        "grade.GraduateGrade": {
-            "type": "object",
-            "properties": {
-                "classCategory": {
-                    "type": "string"
-                },
-                "classCode": {
-                    "type": "string"
-                },
-                "classID": {
-                    "type": "string"
-                },
-                "classMark": {
-                    "type": "string"
-                },
-                "className": {
-                    "type": "string"
-                },
-                "classNature": {
-                    "type": "string"
-                },
-                "college": {
-                    "type": "string"
-                },
-                "credit": {
-                    "type": "number"
-                },
-                "grade": {
-                    "type": "integer"
-                },
-                "gradePoints": {
-                    "type": "number"
-                },
-                "isAvailable": {
-                    "type": "string"
-                },
-                "isDegree": {
-                    "type": "string"
-                },
-                "jxbId": {
-                    "type": "string"
-                },
-                "major": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "point": {
-                    "type": "number"
-                },
-                "setCollege": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "studentCategory": {
-                    "type": "string"
-                },
-                "studentID": {
-                    "type": "string"
-                },
-                "studentNum": {
-                    "type": "string"
-                },
-                "teacher": {
-                    "type": "string"
-                },
-                "term": {
-                    "type": "integer"
-                },
-                "year": {
-                    "type": "string"
-                }
-            }
-        },
         "grade.TypeOfGradeScore": {
             "type": "object",
             "required": [
@@ -4831,34 +4741,6 @@ const docTemplate = `{
                 "kcxzmc": {
                     "description": "课程性质名称",
                     "type": "string"
-                }
-            }
-        },
-        "grade.UpdateGraduateGradesReq": {
-            "type": "object",
-            "properties": {
-                "cjzt": {
-                    "description": "成绩状态(0-全部；不填也可)",
-                    "type": "integer"
-                },
-                "xnm": {
-                    "description": "学年，可选",
-                    "type": "integer"
-                },
-                "xqm": {
-                    "description": "学期(1/2/3)，可选",
-                    "type": "integer"
-                }
-            }
-        },
-        "grade.UpdateGraduateGradesResp": {
-            "type": "object",
-            "properties": {
-                "grades": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/grade.GraduateGrade"
-                    }
                 }
             }
         },
@@ -5432,6 +5314,17 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "domain_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "user.DeleteAccountReq": {
+            "type": "object",
+            "required": [
+                "password"
+            ],
+            "properties": {
+                "password": {
                     "type": "string"
                 }
             }
