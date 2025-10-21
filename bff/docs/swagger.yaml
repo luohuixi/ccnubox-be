@@ -3356,7 +3356,7 @@ paths:
       tags:
       - tube
   /users/deactivate:
-    delete:
+    post:
       consumes:
       - application/json
       description: 用户输入密码验明身份后注销

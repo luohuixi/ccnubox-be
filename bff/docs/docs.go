@@ -3240,7 +3240,7 @@ const docTemplate = `{
             }
         },
         "/users/deactivate": {
-            "delete": {
+            "post": {
                 "security": [
                     {
                         "Bearer Auth": []
