@@ -168,7 +168,7 @@ func aggregateGradeScore(grades []model.Grade) []domain.TypeOfGradeScore {
 	return result
 }
 
-func aggregateGrade(grades []crawler.Grade) []model.Grade {
+func aggregateGrade(grades []crawler.Grade, details map[string]crawler.Score) []model.Grade {
 	var result = make([]model.Grade, len(grades))
 	for i, grade := range grades {
 		// 解析学年和学期
@@ -182,6 +182,8 @@ func aggregateGrade(grades []crawler.Grade) []model.Grade {
 
 		// 计算绩点
 		jd := calcJd(grade.ZCJ)
+		key := grade.XS0101ID + grade.JX0404ID
+		detail := details[key]
 
 		result[i] = model.Grade{
 			StudentId:           grade.XS0101ID,
@@ -194,10 +196,10 @@ func aggregateGrade(grades []crawler.Grade) []model.Grade {
 			Kclbmc:              grade.KCSX,
 			Kcbj:                "是否辅修字段暂时缺失",
 			Jd:                  jd,
-			RegularGradePercent: RegularGradePercentMSG,
-			RegularGrade:        0,
-			FinalGradePercent:   FinalGradePercentMAG,
-			FinalGrade:          0,
+			RegularGradePercent: detail.Cjxm3bl,
+			RegularGrade:        detail.Cjxm3,
+			FinalGradePercent:   detail.Cjxm1bl,
+			FinalGrade:          detail.Cjxm1,
 			Cj:                  grade.ZCJ,
 		}
 	}

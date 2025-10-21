@@ -160,10 +160,10 @@ func (s *gradeService) UpdateDetailScore(ctx context.Context, need domain.NeedDe
 			s.l.Warn(fmt.Sprintf("获取详细分数失败! 学号:%s,教学班id:%s,课程id:%s,总分:%f", grade.StudentId, grade.JxbId, grade.KcId, grade.Cj), logger.Error(err))
 			continue
 		}
-		grade.RegularGradePercent = detail.Cjxm1bl
-		grade.RegularGrade = detail.Cjxm1
-		grade.FinalGradePercent = detail.Cjxm3bl
-		grade.FinalGrade = detail.Cjxm3
+		grade.RegularGradePercent = detail.Cjxm3bl
+		grade.RegularGrade = detail.Cjxm3
+		grade.FinalGradePercent = detail.Cjxm1bl
+		grade.FinalGrade = detail.Cjxm1
 		grades[i] = grade
 	}
 
@@ -269,7 +269,6 @@ func (s *gradeService) fetchGradesWithSingleFlight(ctx context.Context, studentI
 	}
 
 	return fetchGrades, err
-
 }
 
 func (s *gradeService) newUGWithCookie(ctx context.Context, studentId string) (*crawler.UnderGrad, error) {
@@ -304,7 +303,17 @@ func (u *UndergraduateStudent) GetGrades(ctx context.Context, cookie string, xnm
 		return []model.Grade{}, err
 	}
 
-	return aggregateGrade(grade), nil
+	details := make(map[string]crawler.Score)
+	for _, g := range grade {
+		detail, err := u.ug.GetDetail(ctx, g.XS0101ID, g.JX0404ID, g.KCH, g.ZCJ)
+		if err != nil {
+			return []model.Grade{}, err
+		}
+		key := g.XS0101ID + g.JX0404ID
+		details[key] = detail
+	}
+
+	return aggregateGrade(grade, details), nil
 }
 
 type GraduateStudent struct {
