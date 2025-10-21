@@ -1,6 +1,8 @@
 package user
 
 import (
+	"errors"
+	"fmt"
 	userv1 "github.com/asynccnu/ccnubox-be/be-api/gen/proto/user/v1"
 	"github.com/asynccnu/ccnubox-be/bff/errs"
 	"github.com/asynccnu/ccnubox-be/bff/pkg/ginx"
@@ -29,6 +31,7 @@ func (h *UserHandler) RegisterRoutes(s *gin.RouterGroup, authMiddleware gin.Hand
 	ug.POST("/login_ccnu", ginx.WrapReq(h.LoginByCCNU))
 	ug.POST("/logout", authMiddleware, ginx.Wrap(h.Logout))
 	ug.GET("/refresh_token", ginx.Wrap(h.RefreshToken))
+	ug.POST("/deactivate", authMiddleware, ginx.WrapClaimsAndReq(h.DeleteAccount))
 }
 
 // LoginByCCNU
@@ -131,6 +134,34 @@ func (h *UserHandler) RefreshToken(ctx *gin.Context) (web.Response, error) {
 	if err != nil {
 		return web.Response{}, errs.JWT_SYSTEM_ERROR(err)
 	}
+	return web.Response{
+		Msg: "Success",
+	}, nil
+}
+
+// DeleteAccount
+// @Summary 注销账户
+// @Description 用户输入密码验明身份后注销
+// @Tags user
+// @Accept json
+// @Produce json
+// @Security Bearer Auth
+// @Param request body DeleteAccountReq true "注销账户请求体"
+// @Success 200 {object} web.Response "Success"
+// @Router /users/deactivate [post]
+func (h *UserHandler) DeleteAccount(ctx *gin.Context, req DeleteAccountReq, cla ijwt.UserClaims) (web.Response, error) {
+	// todo:这里目前只是伪逻辑，具体的身份验证、软删除、恢复码、恢复码等需要后续实现
+	// todo: 通过数据库比较输入和用户真正密码,目前仅是判断是否为空
+	if cla.Password == "" {
+		fmt.Println(req.Password, "---", cla.Password)
+		return web.Response{}, errs.USER_SID_Or_PASSPORD_ERROR(errors.New("password do not match"))
+	}
+
+	err := h.ClearToken(ctx)
+	if err != nil {
+		return web.Response{}, errs.JWT_SYSTEM_ERROR(err)
+	}
+
 	return web.Response{
 		Msg: "Success",
 	}, nil
