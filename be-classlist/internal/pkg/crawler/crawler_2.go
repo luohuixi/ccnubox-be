@@ -4,16 +4,18 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/PuerkitoBio/goquery"
-	"github.com/asynccnu/ccnubox-be/be-classlist/internal/biz"
-	"github.com/asynccnu/ccnubox-be/be-classlist/internal/classLog"
-	"github.com/asynccnu/ccnubox-be/be-classlist/internal/pkg/tool"
 	"io"
 	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/PuerkitoBio/goquery"
+	"github.com/asynccnu/ccnubox-be/be-classlist/internal/biz"
+	"github.com/asynccnu/ccnubox-be/be-classlist/internal/classLog"
+	"github.com/asynccnu/ccnubox-be/be-classlist/internal/errcode"
+	"github.com/asynccnu/ccnubox-be/be-classlist/internal/pkg/tool"
 )
 
 type Crawler2 struct {
@@ -87,7 +89,41 @@ func (c *Crawler2) GetClassInfosForUndergraduate(ctx context.Context, stuID, yea
 }
 
 func (c *Crawler2) GetClassInfoForGraduateStudent(ctx context.Context, stuID, year, semester, cookie string) ([]*biz.ClassInfo, []*biz.StudentCourse, error) {
-	return c.GetClassInfosForUndergraduate(ctx, stuID, year, semester, cookie)
+	logh := classLog.GetLogHelperFromCtx(ctx)
+	xnm, xqm := year, semester
+
+	param := fmt.Sprintf("xnm=%s&xqm=%s", xnm, semesterMap[xqm])
+	var data = strings.NewReader(param)
+
+	req, err := http.NewRequestWithContext(ctx, "POST", "https://grd.ccnu.edu.cn/yjsxt/kbcx/xskbcx_cxXsKb.html?gnmkdm=N2151", data)
+	if err != nil {
+		logh.Errorf("http.NewRequestWithContext err=%v", err)
+		return nil, nil, errcode.ErrCrawler
+	}
+	req.Header = http.Header{
+		"Cookie":       []string{cookie},
+		"Content-Type": []string{"application/x-www-form-urlencoded;charset=UTF-8"},
+		"User-Agent":   []string{"Mozilla/5.0"}, // 精简UA
+	}
+	resp, err := c.client.Do(req)
+	if err != nil {
+		logh.Errorf("client.Do err=%v", err)
+		return nil, nil, errcode.ErrCrawler
+	}
+	defer resp.Body.Close()
+
+	// 读取 Body 到字节数组
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		logh.Errorf("failed to read response body: %v", err)
+		return nil, nil, err
+	}
+	infos, Scs, err := extractUndergraduateData(bodyBytes, stuID, xnm, xqm)
+	if err != nil {
+		logh.Errorf("extractUndergraduateData err=%v", err)
+		return nil, nil, errcode.ErrCrawler
+	}
+	return infos, Scs, nil
 }
 
 func (c *Crawler2) getys(year, semester string) string {
