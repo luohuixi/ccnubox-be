@@ -101,7 +101,10 @@ func (d *gradeDAO) BatchInsertOrUpdate(ctx context.Context, grades []model.Grade
 	// 批量更新已有但内容有变化的记录
 	if len(toUpdate) > 0 {
 		for _, g := range toUpdate {
-			if err = d.db.WithContext(ctx).Save(&g).Error; err != nil {
+			if err = d.db.WithContext(ctx).
+				Model(&model.Grade{}).
+				Where("student_id = ? AND jxb_id = ?", g.StudentId, g.JxbId).
+				Updates(&g).Error; err != nil {
 				return nil, err
 			}
 		}
