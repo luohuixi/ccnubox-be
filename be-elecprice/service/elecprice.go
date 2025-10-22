@@ -209,7 +209,7 @@ func (s *elecpriceService) GetRoomInfo(ctx context.Context, archiID string, floo
 	if err != nil {
 		return nil, INTERNET_ERROR(err)
 	}
-
+	res = filter(res)
 	return res, nil
 }
 
