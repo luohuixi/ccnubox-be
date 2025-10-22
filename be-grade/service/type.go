@@ -184,6 +184,13 @@ func aggregateGrade(grades []crawler.Grade, details map[string]crawler.Score) []
 		jd := calcJd(grade.ZCJ)
 		key := grade.XS0101ID + grade.JX0404ID
 		detail := details[key]
+		if detail.Cjxm1bl == "" && detail.Cjxm3bl == "" && detail.Cjxm1 == 0 && detail.Cjxm3 == 0 {
+			detail.Cjxm1bl = FinalGradePercentMAG
+			detail.Cjxm3bl = RegularGradePercentMSG
+			detail.Cjxm1 = 0
+			detail.Cjxm3 = 0
+			details[key] = detail
+		}
 
 		result[i] = model.Grade{
 			StudentId:           grade.XS0101ID,
