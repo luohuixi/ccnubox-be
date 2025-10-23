@@ -13,7 +13,7 @@ const (
 	//新的网址
 	CASURL = loginCCNUPassPortURL + "?service=https://bkzhjw.ccnu.edu.cn/jsxsd/framework/xsMainV.htmlx"
 	pgUrl  = "https://bkzhjw.ccnu.edu.cn/jsxsd/"
-	//CASURL = loginCCNUPassPortURL + "?service=http://xk.ccnu.edu.cn/jwglxt"
+	//CASURL = loginCCNUPassPortURL + "?service=http%3A%2F%2Fxk.ccnu.edu.cn%2Fsso%2Fpziotlogin"
 	//pgUrl  = "http://xk.ccnu.edu.cn/jwglxt"
 )
 
