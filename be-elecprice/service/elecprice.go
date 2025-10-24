@@ -191,6 +191,9 @@ func (s *elecpriceService) GetArchitecture(ctx context.Context, area string) (do
 			if err != nil {
 				return domain.ResultArchitectureInfo{}, INTERNET_ERROR(err)
 			}
+
+			handleDirtyArch(ctx, &result, area)
+
 			return result, nil
 
 		}

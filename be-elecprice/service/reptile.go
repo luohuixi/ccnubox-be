@@ -2,11 +2,14 @@ package service
 
 import (
 	"context"
+	"encoding/xml"
 	"errors"
 	"fmt"
+	"github.com/asynccnu/ccnubox-be/be-elecprice/domain"
 	"io"
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -130,4 +133,67 @@ func isBlackListed(name string) bool {
 		}
 	}
 	return false
+}
+
+// handleDirtyArch 处理一下学校拉的屎, 楼层显示不对, 宿舍楼栋不匹配
+func handleDirtyArch(ctx context.Context, res *domain.ResultArchitectureInfo, name string) {
+	switch name {
+	case YuanBaoShan:
+		removeDong23(res)
+	case EastRegion:
+		addDong23(ctx, res)
+	case SouthEast:
+		adjustFloor(res)
+	}
+}
+
+func removeDong23(res *domain.ResultArchitectureInfo) {
+	i := 0
+	list := res.ArchitectureInfoList.ArchitectureInfo
+	for _, arch := range list {
+		if !strings.Contains(arch.ArchitectureName, Dong23) {
+			list[i] = arch
+			i++
+		}
+	}
+	res.ArchitectureInfoList.ArchitectureInfo = list[:i]
+}
+
+func addDong23(ctx context.Context, res *domain.ResultArchitectureInfo) {
+	body, err := sendRequest(ctx, fmt.Sprintf("https://jnb.ccnu.edu.cn/ICBS/PurchaseWebService.asmx/getArchitectureInfo?Area_ID=%s", ConstantMap[YuanBaoShan]))
+	if err != nil {
+		return
+	}
+	var result domain.ResultArchitectureInfo
+
+	if err = xml.Unmarshal([]byte(body), &result); err != nil {
+		return
+	}
+
+	if d23 := extractDong23(&result.ArchitectureInfoList); d23 != nil {
+		res.ArchitectureInfoList.ArchitectureInfo = append(res.ArchitectureInfoList.ArchitectureInfo, *d23)
+	}
+}
+
+func extractDong23(list *domain.ArchitectureInfoList) *domain.Architecture {
+	for i := range list.ArchitectureInfo {
+		arch := &list.ArchitectureInfo[i]
+		if strings.Contains(arch.ArchitectureName, Dong23) {
+			return arch
+		}
+	}
+	return nil
+}
+
+func adjustFloor(res *domain.ResultArchitectureInfo) {
+	list := res.ArchitectureInfoList.ArchitectureInfo
+	for i := range list {
+		if strings.Contains(list[i].ArchitectureName, Dong18) {
+			num, err := strconv.Atoi(list[i].ArchitectureStorys)
+			if err != nil {
+				return
+			}
+			list[i].ArchitectureStorys = strconv.Itoa(num + 1)
+		}
+	}
 }
