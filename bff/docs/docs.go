@@ -3001,7 +3001,7 @@ const docTemplate = `{
             }
         },
         "/library/search_user": {
-            "get": {
+            "post": {
                 "description": "传入学生学号获取对应的学生ID",
                 "consumes": [
                     "application/json"

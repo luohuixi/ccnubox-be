@@ -8,8 +8,6 @@ package main
 
 import (
 	"github.com/asynccnu/ccnubox-be/be-grade/cron"
-	"github.com/asynccnu/ccnubox-be/be-grade/events"
-	"github.com/asynccnu/ccnubox-be/be-grade/events/producer"
 	"github.com/asynccnu/ccnubox-be/be-grade/grpc"
 	"github.com/asynccnu/ccnubox-be/be-grade/ioc"
 	"github.com/asynccnu/ccnubox-be/be-grade/repository/dao"
@@ -19,23 +17,19 @@ import (
 // Injectors from wire.go:
 
 func InitApp() App {
-	client := ioc.InitKafka()
-	producerProducer := producer.NewSaramaProducer(client)
 	logger := ioc.InitLogger()
 	db := ioc.InitDB(logger)
 	gradeDAO := dao.NewGradeDAO(db)
-	clientv3Client := ioc.InitEtcdClient()
-	userServiceClient := ioc.InitUserClient(clientv3Client)
-	gradeService := service.NewGradeService(producerProducer, gradeDAO, logger, userServiceClient)
+	client := ioc.InitEtcdClient()
+	userServiceClient := ioc.InitUserClient(client)
+	gradeService := service.NewGradeService(gradeDAO, logger, userServiceClient)
 	gradeServiceServer := grpc.NewGradeGrpcService(gradeService)
-	server := ioc.InitGRPCxKratosServer(gradeServiceServer, clientv3Client, logger)
-	counterServiceClient := ioc.InitCounterClient(clientv3Client)
-	feedServiceClient := ioc.InitFeedClient(clientv3Client)
-	classerClient := ioc.InitClasslistClient(clientv3Client)
+	server := ioc.InitGRPCxKratosServer(gradeServiceServer, client, logger)
+	counterServiceClient := ioc.InitCounterClient(client)
+	feedServiceClient := ioc.InitFeedClient(client)
+	classerClient := ioc.InitClasslistClient(client)
 	gradeController := cron.NewGradeController(logger, counterServiceClient, userServiceClient, feedServiceClient, classerClient, gradeService)
 	v := cron.NewCron(gradeController)
-	gradeDetailEventConsumerHandler := events.NewGradeDetailEventConsumerHandler(client, logger, gradeService)
-	v2 := ioc.InitConsumers(gradeDetailEventConsumerHandler)
-	app := NewApp(server, v, v2)
+	app := NewApp(server, v)
 	return app
 }

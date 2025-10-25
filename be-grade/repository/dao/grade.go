@@ -11,7 +11,7 @@ import (
 type GradeDAO interface {
 	FirstOrCreate(ctx context.Context, grade *model.Grade) error
 	FindGrades(ctx context.Context, studentId string, Xnm int64, Xqm int64) ([]model.Grade, error)
-	BatchInsertOrUpdate(ctx context.Context, grades []model.Grade, ifDetail bool) (updateGrade []model.Grade, err error)
+	BatchInsertOrUpdate(ctx context.Context, grades []model.Grade) (updateGrade []model.Grade, err error)
 }
 
 type gradeDAO struct {
@@ -25,7 +25,7 @@ func NewGradeDAO(db *gorm.DB) GradeDAO {
 
 // FirstOrCreate 会自动查找是否存在记录,如果不存在则会存储
 func (d *gradeDAO) FirstOrCreate(ctx context.Context, grade *model.Grade) error {
-	return d.db.WithContext(ctx).Where("student_id = ? AND jxb_id = ?", grade.StudentId, grade.JxbId).FirstOrCreate(grade).Error
+	return d.db.WithContext(ctx).Where("student_id = ? AND jxb_id = ?", grade.Studentid, grade.JxbId).FirstOrCreate(grade).Error
 }
 
 // FindAllGradesByStudentId 搜索成绩,xnm(学年名),xqm(学期名)条件为可选
@@ -52,12 +52,12 @@ func (d *gradeDAO) FindGrades(ctx context.Context, studentId string, Xnm int64, 
 	return grades, nil
 }
 
-func (d *gradeDAO) BatchInsertOrUpdate(ctx context.Context, grades []model.Grade, ifDetail bool) (affectedGrades []model.Grade, err error) {
+func (d *gradeDAO) BatchInsertOrUpdate(ctx context.Context, grades []model.Grade) (affectedGrades []model.Grade, err error) {
 
 	// 构造联合键：student_id + jxb_id
 	ids := make([]string, len(grades))
 	for i, grade := range grades {
-		ids[i] = grade.StudentId + grade.JxbId
+		ids[i] = grade.Studentid + grade.JxbId
 	}
 
 	// 查询已有记录
@@ -71,7 +71,7 @@ func (d *gradeDAO) BatchInsertOrUpdate(ctx context.Context, grades []model.Grade
 	// 建立现有记录的Map方便比对
 	existingMap := make(map[string]model.Grade)
 	for _, grade := range existingGrades {
-		key := grade.StudentId + grade.JxbId
+		key := grade.Studentid + grade.JxbId
 		existingMap[key] = grade
 	}
 
@@ -79,13 +79,13 @@ func (d *gradeDAO) BatchInsertOrUpdate(ctx context.Context, grades []model.Grade
 	var toUpdate []model.Grade
 
 	for _, grade := range grades {
-		key := grade.StudentId + grade.JxbId
+		key := grade.Studentid + grade.JxbId
 
 		if existing, exists := existingMap[key]; !exists {
 			toInsert = append(toInsert, grade)
 		} else {
 			// 你可以根据实际字段进行更精细的字段比较
-			if !isGradeEqual(existing, grade, ifDetail) {
+			if !isGradeEqual(existing, grade) {
 				toUpdate = append(toUpdate, grade)
 			}
 		}
@@ -101,10 +101,7 @@ func (d *gradeDAO) BatchInsertOrUpdate(ctx context.Context, grades []model.Grade
 	// 批量更新已有但内容有变化的记录
 	if len(toUpdate) > 0 {
 		for _, g := range toUpdate {
-			if err = d.db.WithContext(ctx).
-				Model(&model.Grade{}).
-				Where("student_id = ? AND jxb_id = ?", g.StudentId, g.JxbId).
-				Updates(&g).Error; err != nil {
+			if err = d.db.WithContext(ctx).Save(&g).Error; err != nil {
 				return nil, err
 			}
 		}
@@ -115,22 +112,7 @@ func (d *gradeDAO) BatchInsertOrUpdate(ctx context.Context, grades []model.Grade
 	return affectedGrades, nil
 }
 
-func isGradeEqual(a, b model.Grade, ifDetail bool) bool {
-	if ifDetail {
-		return a.Kcmc == b.Kcmc &&
-			a.Xnm == b.Xnm &&
-			a.Xqm == b.Xqm &&
-			a.Xf == b.Xf &&
-			a.Kcxzmc == b.Kcxzmc &&
-			a.Kclbmc == b.Kclbmc &&
-			a.Kcbj == b.Kcbj &&
-			a.Jd == b.Jd &&
-			a.Cj == b.Cj &&
-			a.RegularGradePercent == b.RegularGradePercent &&
-			a.RegularGrade == b.RegularGrade &&
-			a.FinalGradePercent == b.FinalGradePercent &&
-			a.FinalGrade == b.FinalGrade
-	}
+func isGradeEqual(a, b model.Grade) bool {
 	return a.Kcmc == b.Kcmc &&
 		a.Xnm == b.Xnm &&
 		a.Xqm == b.Xqm &&
@@ -139,11 +121,9 @@ func isGradeEqual(a, b model.Grade, ifDetail bool) bool {
 		a.Kclbmc == b.Kclbmc &&
 		a.Kcbj == b.Kcbj &&
 		a.Jd == b.Jd &&
+		a.RegularGradePercent == b.RegularGradePercent &&
+		a.RegularGrade == b.RegularGrade &&
+		a.FinalGradePercent == b.FinalGradePercent &&
+		a.FinalGrade == b.FinalGrade &&
 		a.Cj == b.Cj
-
-	// 这里去除了对平时分的校验,因为成本太高了,但是事实上也可能会有变化,目前暂时不打算处理
-	//a.RegularGradePercent == b.RegularGradePercent &&
-	//a.RegularGrade == b.RegularGrade &&
-	//a.FinalGradePercent == b.FinalGradePercent &&
-	//a.FinalGrade == b.FinalGrade &&
 }
