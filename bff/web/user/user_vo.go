@@ -11,6 +11,11 @@ type UserEditReq struct {
 	UsingTitle string `json:"using_title" binding:"required"`
 }
 
+// DeleteAccountReq 注销账户前的身份验证信息
+type DeleteAccountReq struct {
+	Password string `json:"password" binding:"required"`
+}
+
 // UserProfileVo 自己的信息
 type UserProfileVo struct {
 	Id                   int64           `json:"id" binding:"required"`

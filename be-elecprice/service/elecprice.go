@@ -191,6 +191,9 @@ func (s *elecpriceService) GetArchitecture(ctx context.Context, area string) (do
 			if err != nil {
 				return domain.ResultArchitectureInfo{}, INTERNET_ERROR(err)
 			}
+
+			handleDirtyArch(ctx, &result, area)
+
 			return result, nil
 
 		}
@@ -209,7 +212,7 @@ func (s *elecpriceService) GetRoomInfo(ctx context.Context, archiID string, floo
 	if err != nil {
 		return nil, INTERNET_ERROR(err)
 	}
-
+	res = filter(res)
 	return res, nil
 }
 

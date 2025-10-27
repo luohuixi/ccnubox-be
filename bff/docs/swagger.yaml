@@ -1293,6 +1293,13 @@ definitions:
       domain_name:
         type: string
     type: object
+  user.DeleteAccountReq:
+    properties:
+      password:
+        type: string
+    required:
+    - password
+    type: object
   user.LoginByCCNUReq:
     properties:
       password:
@@ -3417,6 +3424,30 @@ paths:
       summary: 获取图床访问令牌
       tags:
       - tube
+  /users/deactivate:
+    post:
+      consumes:
+      - application/json
+      description: 用户输入密码验明身份后注销
+      parameters:
+      - description: 注销账户请求体
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/user.DeleteAccountReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/web.Response'
+      security:
+      - Bearer Auth: []
+      summary: 注销账户
+      tags:
+      - user
   /users/login_ccnu:
     post:
       consumes:

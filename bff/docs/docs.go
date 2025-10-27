@@ -3311,6 +3311,45 @@ const docTemplate = `{
                 }
             }
         },
+        "/users/deactivate": {
+            "post": {
+                "security": [
+                    {
+                        "Bearer Auth": []
+                    }
+                ],
+                "description": "用户输入密码验明身份后注销",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "注销账户",
+                "parameters": [
+                    {
+                        "description": "注销账户请求体",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/user.DeleteAccountReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "$ref": "#/definitions/web.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/users/login_ccnu": {
             "post": {
                 "description": "通过学号和密码进行登录认证",
@@ -5385,6 +5424,17 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "domain_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "user.DeleteAccountReq": {
+            "type": "object",
+            "required": [
+                "password"
+            ],
+            "properties": {
+                "password": {
                     "type": "string"
                 }
             }
