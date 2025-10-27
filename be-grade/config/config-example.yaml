@@ -1,8 +1,6 @@
 mysql:
   dsn: "root:12345678@tcp(localhost:13306)/ccnubox?charset=utf8mb4&parseTime=True&loc=Local"
 
-
-
 etcd:
   endpoints:
     - "localhost:2379"

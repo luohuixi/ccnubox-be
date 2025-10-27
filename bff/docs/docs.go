@@ -2383,9 +2383,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/grade/getGraduateGrade": {
+        "/grade/getRankByTerm": {
             "post": {
-                "description": "根据学年号和学期号获取用户的成绩",
+                "description": "根据学年号和学期号获取用户的学分绩排名以及分数和统计的科目，全为0则查总排名",
                 "consumes": [
                     "application/json"
                 ],
@@ -2395,21 +2395,21 @@ const docTemplate = `{
                 "tags": [
                     "grade"
                 ],
-                "summary": "查询研究生成绩",
+                "summary": "查询学分绩排名",
                 "parameters": [
                     {
-                        "description": "获取学年和学期的成绩请求参数",
+                        "description": "获取学年和学期的学分绩排名请求参数",
                         "name": "data",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/grade.UpdateGraduateGradesReq"
+                            "$ref": "#/definitions/grade.GetRankByTermReq"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功返回学年和学期的成绩信息",
+                        "description": "成功返回学年和学期的排名信息",
                         "schema": {
                             "allOf": [
                                 {
@@ -2419,7 +2419,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/grade.UpdateGraduateGradesResp"
+                                            "$ref": "#/definitions/grade.GetRankByTermResp"
                                         }
                                     }
                                 }
@@ -2428,6 +2428,26 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "系统异常，获取失败",
+                        "schema": {
+                            "$ref": "#/definitions/web.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/grade/loadRank": {
+            "get": {
+                "description": "当用户点开app时前端发现从未预加载过，调用该接口预加载总排名，每个用户只需调用一次即可",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "grade"
+                ],
+                "summary": "预加载总排名",
+                "responses": {
+                    "200": {
+                        "description": "返回信息",
                         "schema": {
                             "$ref": "#/definitions/web.Response"
                         }
@@ -2594,7 +2614,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "integer",
-                        "description": "座位或评论关联 ID",
+                        "description": "座位 ID (devID)",
                         "name": "id",
                         "in": "query",
                         "required": true
@@ -4649,6 +4669,44 @@ const docTemplate = `{
                 }
             }
         },
+        "grade.GetRankByTermReq": {
+            "type": "object",
+            "properties": {
+                "refresh": {
+                    "type": "boolean"
+                },
+                "xnm_begin": {
+                    "description": "学年学期四个字段为空则获取总成绩",
+                    "type": "integer"
+                },
+                "xnm_end": {
+                    "type": "integer"
+                },
+                "xqm_begin": {
+                    "type": "integer"
+                },
+                "xqm_end": {
+                    "type": "integer"
+                }
+            }
+        },
+        "grade.GetRankByTermResp": {
+            "type": "object",
+            "properties": {
+                "include": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "rank": {
+                    "type": "string"
+                },
+                "score": {
+                    "type": "string"
+                }
+            }
+        },
         "grade.Grade": {
             "type": "object",
             "required": [
@@ -4738,83 +4796,6 @@ const docTemplate = `{
                 }
             }
         },
-        "grade.GraduateGrade": {
-            "type": "object",
-            "properties": {
-                "classCategory": {
-                    "type": "string"
-                },
-                "classCode": {
-                    "type": "string"
-                },
-                "classID": {
-                    "type": "string"
-                },
-                "classMark": {
-                    "type": "string"
-                },
-                "className": {
-                    "type": "string"
-                },
-                "classNature": {
-                    "type": "string"
-                },
-                "college": {
-                    "type": "string"
-                },
-                "credit": {
-                    "type": "number"
-                },
-                "grade": {
-                    "type": "integer"
-                },
-                "gradePoints": {
-                    "type": "number"
-                },
-                "isAvailable": {
-                    "type": "string"
-                },
-                "isDegree": {
-                    "type": "string"
-                },
-                "jxbId": {
-                    "type": "string"
-                },
-                "major": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "point": {
-                    "type": "number"
-                },
-                "setCollege": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "studentCategory": {
-                    "type": "string"
-                },
-                "studentID": {
-                    "type": "string"
-                },
-                "studentNum": {
-                    "type": "string"
-                },
-                "teacher": {
-                    "type": "string"
-                },
-                "term": {
-                    "type": "integer"
-                },
-                "year": {
-                    "type": "string"
-                }
-            }
-        },
         "grade.TypeOfGradeScore": {
             "type": "object",
             "required": [
@@ -4831,34 +4812,6 @@ const docTemplate = `{
                 "kcxzmc": {
                     "description": "课程性质名称",
                     "type": "string"
-                }
-            }
-        },
-        "grade.UpdateGraduateGradesReq": {
-            "type": "object",
-            "properties": {
-                "cjzt": {
-                    "description": "成绩状态(0-全部；不填也可)",
-                    "type": "integer"
-                },
-                "xnm": {
-                    "description": "学年，可选",
-                    "type": "integer"
-                },
-                "xqm": {
-                    "description": "学期(1/2/3)，可选",
-                    "type": "integer"
-                }
-            }
-        },
-        "grade.UpdateGraduateGradesResp": {
-            "type": "object",
-            "properties": {
-                "grades": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/grade.GraduateGrade"
-                    }
                 }
             }
         },

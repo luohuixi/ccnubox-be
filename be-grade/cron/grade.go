@@ -20,6 +20,7 @@ type GradeController struct {
 	feedClient   feedv1.FeedServiceClient
 	classlist    classlistv1.ClasserClient
 	gradeService service.GradeService
+	rankService  service.RankService
 	stopChan     chan struct{}
 	cfg          gradeControllerConfig
 	l            logger.Logger
@@ -38,6 +39,7 @@ func NewGradeController(
 	feedClient feedv1.FeedServiceClient,
 	classlist classlistv1.ClasserClient,
 	gradeService service.GradeService,
+	rankService service.RankService,
 ) *GradeController {
 	var cfg gradeControllerConfig
 	if err := viper.UnmarshalKey("gradeController", &cfg); err != nil {
@@ -47,6 +49,7 @@ func NewGradeController(
 	return &GradeController{
 		counter:      counter,
 		gradeService: gradeService,
+		rankService:  rankService,
 		feedClient:   feedClient,
 		classlist:    classlist,
 		userClient:   userClient,
@@ -57,6 +60,9 @@ func NewGradeController(
 }
 
 func (c *GradeController) StartCronTask() {
+	// 开启rank的定时任务，具体看rank.go
+	c.StartRankCronTask()
+
 	go func() {
 		lowTicker := time.NewTicker(time.Duration(c.cfg.Low) * time.Minute)
 		middleTicker := time.NewTicker(time.Duration(c.cfg.Middle) * time.Minute)

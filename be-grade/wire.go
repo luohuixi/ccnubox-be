@@ -16,7 +16,9 @@ func InitApp() App {
 	wire.Build(
 		grpc.NewGradeGrpcService,
 		service.NewGradeService,
+		service.NewRankService,
 		dao.NewGradeDAO,
+		dao.NewRankDAO,
 		// 第三方
 		ioc.InitEtcdClient,
 		ioc.InitDB,
