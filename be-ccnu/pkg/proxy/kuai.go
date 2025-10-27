@@ -13,7 +13,7 @@ func NewProxyHTTPClient() *http.Client {
 	var cfg struct {
 		UserName string `json:"username"`
 		Password string `json:"password"`
-		ProxyURL string `json:"proxy_str"`
+		Proxy    string `json:"proxy"`
 	}
 	err := viper.UnmarshalKey("kuai", &cfg)
 	if err != nil {
@@ -25,7 +25,7 @@ func NewProxyHTTPClient() *http.Client {
 		Password: cfg.Password,
 	}
 
-	proxy_str := cfg.ProxyURL
+	proxy_str := cfg.Proxy
 
 	// 设置代理
 	dialer, err := proxy.SOCKS5("tcp", proxy_str, &auth, proxy.Direct)
