@@ -133,8 +133,8 @@ func (s *userService) Check(ctx context.Context, studentId string, password stri
 	default:
 		return false, DEFAULT_DAO_ERROR(err)
 	}
-
 }
+
 func (s *userService) GetCookie(ctx context.Context, studentId string) (string, error) {
 	key := studentId
 	result, err, _ := s.sfGroup.Do(key, func() (interface{}, error) {
