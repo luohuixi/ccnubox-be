@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/asynccnu/ccnubox-be/be-elecprice/domain"
+	"github.com/asynccnu/ccnubox-be/be-elecprice/pkg/proxy"
 	"io"
 	"net/http"
 	"regexp"
@@ -15,8 +16,8 @@ import (
 
 // 通用 HTTP 请求函数
 func sendRequest(ctx context.Context, url string) (string, error) {
-	client := &http.Client{}
-	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	client := proxy.NewProxyHTTPClient()
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return "", fmt.Errorf("创建请求失败: %w", err)
 	}
