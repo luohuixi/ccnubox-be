@@ -14,6 +14,7 @@ type Handler interface {
 	JWTKey() []byte
 	RCJWTKey() []byte
 	EncKey() []byte
+	DecryptPasswordFromClaims(uc *UserClaims) (string, error)
 }
 
 type ClaimParams struct {

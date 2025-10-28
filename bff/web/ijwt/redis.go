@@ -225,3 +225,11 @@ func (r *RedisJWTHandler) decryptString(b64 string) (string, error) {
 	}
 	return string(pt), nil
 }
+
+// DecryptPasswordFromClaims 对外：根据 UserClaims 解密出明文 password（供后续业务使用，先留一个钩子）
+func (r *RedisJWTHandler) DecryptPasswordFromClaims(uc *UserClaims) (string, error) {
+	if uc == nil || uc.Password == "" {
+		return "", nil
+	}
+	return r.decryptString(uc.Password)
+}
