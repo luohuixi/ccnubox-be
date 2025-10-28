@@ -34,6 +34,7 @@ import (
 	"github.com/asynccnu/ccnubox-be/bff/web/library"
 	"github.com/asynccnu/ccnubox-be/bff/web/metrics"
 	"github.com/asynccnu/ccnubox-be/bff/web/static"
+	"github.com/asynccnu/ccnubox-be/bff/web/swag"
 	"github.com/asynccnu/ccnubox-be/bff/web/tube"
 	"github.com/asynccnu/ccnubox-be/bff/web/user"
 	"github.com/asynccnu/ccnubox-be/bff/web/website"
@@ -227,4 +228,8 @@ func InitTubeHandler(putPolicy storage.PutPolicy, mac *qbox.Mac) *tube.TubeHandl
 
 func InitMetricsHandel(l logger.Logger) *metrics.MetricsHandler {
 	return metrics.NewMetricsHandler(l)
+}
+
+func InitSwagHandler(client libraryv1.LibraryClient) *swag.SwagHandler {
+	return swag.NewSwagHandler()
 }

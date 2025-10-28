@@ -16,6 +16,7 @@ import (
 	"github.com/asynccnu/ccnubox-be/bff/web/metrics"
 	"github.com/asynccnu/ccnubox-be/bff/web/middleware"
 	"github.com/asynccnu/ccnubox-be/bff/web/static"
+	"github.com/asynccnu/ccnubox-be/bff/web/swag"
 	"github.com/asynccnu/ccnubox-be/bff/web/tube"
 	"github.com/asynccnu/ccnubox-be/bff/web/user"
 	"github.com/asynccnu/ccnubox-be/bff/web/website"
@@ -45,6 +46,7 @@ func InitGinServer(
 	card *card.CardHandler,
 	metrics *metrics.MetricsHandler,
 	library *library.LibraryHandler,
+	swag *swag.SwagHandler,
 ) *gin.Engine {
 	//初始化一个gin引擎
 	engine := gin.Default()
@@ -82,6 +84,8 @@ func InitGinServer(
 	metrics.RegisterRoutes(api, basicAuthMiddleware.MiddlewareFunc(), authMiddleware)
 	classroom.RegisterRoutes(api, authMiddleware)
 	library.RegisterRoutes(api, authMiddleware)
+	swag.RegisterRoutes(api, basicAuthMiddleware.MiddlewareFunc())
+
 	//返回路由
 	return engine
 }
