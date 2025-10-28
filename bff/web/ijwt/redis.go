@@ -19,8 +19,6 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-const UC_CTX = "ginx_user"
-
 // RedisJWTHandler 实现了处理 JWT 的接口，并使用 Redis 进行支持
 type RedisJWTHandler struct {
 	cmd           redis.Cmdable     // Redis 命令接口，用于与 Redis 进行交互
