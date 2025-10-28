@@ -19,6 +19,8 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+const UC_CTX = "ginx_user"
+
 // RedisJWTHandler 实现了处理 JWT 的接口，并使用 Redis 进行支持
 type RedisJWTHandler struct {
 	cmd           redis.Cmdable     // Redis 命令接口，用于与 Redis 进行交互
@@ -54,6 +56,12 @@ func (r *RedisJWTHandler) ClearToken(ctx *gin.Context) error {
 		return err
 	}
 
+	realPassword, err := r.decryptString(uc.Password)
+	if err != nil {
+		return err
+	}
+	uc.Password = realPassword
+
 	return r.cmd.Set(ctx, fmt.Sprintf("ccnubox:users:ssid:%s", uc.Ssid), "", r.rcExpiration).Err()
 }
 
@@ -72,13 +80,17 @@ func (r *RedisJWTHandler) ExtractToken(ctx *gin.Context) string {
 
 // SetLoginToken 设置用户的刷新令牌和 JWT
 func (r *RedisJWTHandler) SetLoginToken(ctx *gin.Context, studentId string, password string) error {
+	enPassword, err := r.encryptString(password)
+	if err != nil {
+		return err
+	}
 	cp := ClaimParams{
 		StudentId: studentId,
-		Password:  password,
+		Password:  enPassword,
 		Ssid:      uuid.New().String(),
 		UserAgent: ctx.GetHeader("User-Agent"),
 	}
-	err := r.setRefreshToken(ctx, cp)
+	err = r.setRefreshToken(ctx, cp)
 	if err != nil {
 		return err
 	}
@@ -132,13 +144,14 @@ func (r *RedisJWTHandler) CheckSession(ctx *gin.Context, ssid string) (bool, err
 }
 
 // NewRedisJWTHandler 创建并返回一个新的 RedisJWTHandler 实例
-func NewRedisJWTHandler(cmd redis.Cmdable, jwtKey string, rcJWTKey string) Handler {
+func NewRedisJWTHandler(cmd redis.Cmdable, jwtKey string, rcJWTKey string, encKey string) Handler {
 	return &RedisJWTHandler{
 		cmd:           cmd,                     //redis实体
 		signingMethod: jwt.SigningMethodHS256,  //签名的加密方式
 		rcExpiration:  time.Hour * 24 * 30 * 6, //设置为六个月之后过期
 		jwtKey:        []byte(jwtKey),
 		rcJWTKey:      []byte(rcJWTKey),
+		encKey:        []byte(encKey),
 	}
 }
 
@@ -160,7 +173,7 @@ type RefreshClaims struct {
 	UserAgent string // 用户代理信息
 }
 
-// 辅助：用 sha256 派生 32 字节 key（确保任何长度的输入都能得到 AES-256 密钥）
+// 辅助：用 sha256 派生 32 字节 key
 func deriveKey(key []byte) []byte {
 	h := sha256.Sum256(key)
 	return h[:]
@@ -211,12 +224,4 @@ func (r *RedisJWTHandler) decryptString(b64 string) (string, error) {
 		return "", err
 	}
 	return string(pt), nil
-}
-
-// DecryptPasswordFromClaims 对外：根据 UserClaims 解密出明文 password（供后续业务使用）
-func (r *RedisJWTHandler) DecryptPasswordFromClaims(uc *UserClaims) (string, error) {
-	if uc == nil || uc.Password == "" {
-		return "", nil
-	}
-	return r.decryptString(uc.Password)
 }
