@@ -4,9 +4,9 @@ OPENAPI_FILE := $(DOCS_DIR)/openapi3.yaml
 
 .PHONY: swag
 swag:
-	@echo === иЗЁи Swagger нд╣╣жп ===
+	@echo === Г■÷Ф┬░ Swagger Ф√┤Ф║ёД╦╜ ===
 	@swag init
-	@echo === Swagger нд╣╣ряиЗЁи: $(SWAGGER_FILE) ===
-	@echo === в╙╩╩н╙ OpenAPI3... ===
+	@echo === Swagger Ф√┤Ф║ёЕ╥╡Г■÷Ф┬░: $(SWAGGER_FILE) ===
+	@echo === Х╫╛Ф█╒Д╦╨ OpenAPI3... ===
 	@swagger2openapi $(SWAGGER_FILE) -o $(OPENAPI_FILE) --patch
-	@echo === OpenAPI 3 нд╣╣ряиЗЁи: $(OPENAPI_FILE) ==="
+	@echo === OpenAPI 3 Ф√┤Ф║ёЕ╥╡Г■÷Ф┬░: $(OPENAPI_FILE) ===
