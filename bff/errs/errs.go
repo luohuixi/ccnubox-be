@@ -378,4 +378,7 @@ var (
 	OPEN_SWAG_ERROR = func(err error) error {
 		return errorx.New(http.StatusInternalServerError, INTERNAL_SERVER_ERROR_CODE, "打开swagger失败", "swag", err)
 	}
+	MAKE_SWAG_ERROR = func(err error) error {
+		return errorx.New(http.StatusInternalServerError, INTERNAL_SERVER_ERROR_CODE, "生成swagger失败", "swag", err)
+	}
 )
