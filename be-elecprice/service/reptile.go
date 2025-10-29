@@ -16,7 +16,7 @@ import (
 
 // 通用 HTTP 请求函数
 func sendRequest(ctx context.Context, url string) (string, error) {
-	client := proxy.NewProxyHTTPClient()
+	client := proxy.NewShenLongHTTPClient()
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return "", fmt.Errorf("创建请求失败: %w", err)
