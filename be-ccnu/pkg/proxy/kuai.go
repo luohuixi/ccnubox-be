@@ -8,7 +8,7 @@ import (
 	"os"
 )
 
-func NewProxyHTTPClient() *http.Client {
+func NewKuaiHTTPClient() *http.Client {
 	// 用户名密码认证(私密代理/独享代理)
 	var cfg struct {
 		UserName string `json:"username"`
