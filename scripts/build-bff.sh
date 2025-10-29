@@ -5,7 +5,7 @@ trap 'echo "Script interrupted."; exit 1' SIGINT
 
 imageRepo=$1
 
-speciald="be-bff"
+speciald="bff"
 
 echo -e "🔧🔧🔧 Building and pushing image for $speciald 🔧🔧🔧 \n"
 
