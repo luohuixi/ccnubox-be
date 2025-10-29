@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"log"
+
 	pb "github.com/asynccnu/ccnubox-be/be-api/gen/proto/classService/v1"
 	"github.com/asynccnu/ccnubox-be/be-class/internal/errcode"
 )
@@ -27,6 +29,7 @@ func NewFreeClassroomSvc(searcher FreeClassroomSearcher) *FreeClassroomSvc {
 }
 
 func (s *FreeClassroomSvc) QueryFreeClassroom(ctx context.Context, req *pb.QueryFreeClassroomReq) (*pb.QueryFreeClassroomResp, error) {
+	log.Println("QueryFreeClassroom", req)
 	intSections := make([]int, len(req.Sections))
 	for i, section := range req.Sections {
 		intSections[i] = int(section)
