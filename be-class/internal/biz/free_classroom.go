@@ -289,11 +289,10 @@ func (f *FreeClassroomBiz) queryAvailableClassroomFromLocal(ctx context.Context,
 
 // 返回每一节课的空闲教室
 func (f *FreeClassroomBiz) crawFreeClassroom(ctx context.Context, year, semester, stuID string, week, day int, sections []int, wherePrefix string) (map[int][]string, error) {
-	//cookie, err := f.cookieCli.GetCookie(ctx, stuID)
-	//if err != nil {
-	//	return nil, err
-	//}
-	cookie := "JSESSIONID=BE6A9B238F613B24184D50AB335B8B6A"
+	cookie, err := f.cookieCli.GetCookie(ctx, stuID)
+	if err != nil {
+		return nil, err
+	}
 
 	var freeClassroomMp = make(map[int][]string, len(sections))
 
@@ -399,7 +398,6 @@ func (f *FreeClassroomBiz) SetFreeClassRoomFromCache(key string, value []string,
 }
 
 func (f *FreeClassroomBiz) GetFreeClassRoomFromCache(key string) []string {
-	log.Println("begin GetFreeClassRoomFromCache")
 	ctx, cancel := context.WithTimeout(context.Background(), TimeForCache)
 	defer cancel()
 
@@ -416,7 +414,6 @@ func (f *FreeClassroomBiz) GetFreeClassRoomFromCache(key string) []string {
 		return nil
 	}
 
-	log.Println("value:", value)
 	return value
 }
 
