@@ -14,7 +14,7 @@ var (
 
 func NewCrawlerClient(t time.Duration) *http.Client {
 	j, _ := cookiejar.New(&cookiejar.Options{})
-	client := proxy.NewProxyHTTPClient()
+	client := proxy.NewShenLongHTTPClient()
 	client.Jar = j
 	client.Timeout = t
 	return client
