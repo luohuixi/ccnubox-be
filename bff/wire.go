@@ -57,6 +57,7 @@ func InitApp() *App {
 		ioc.InitCardHandler,
 		ioc.InitMetricsHandel,
 		ioc.InitLibraryHandler,
+		ioc.InitSwagHandler,
 
 		//中间件
 		middleware.NewLoggerMiddleware,
