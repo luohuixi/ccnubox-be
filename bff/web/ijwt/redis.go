@@ -54,12 +54,6 @@ func (r *RedisJWTHandler) ClearToken(ctx *gin.Context) error {
 		return err
 	}
 
-	realPassword, err := r.decryptString(uc.Password)
-	if err != nil {
-		return err
-	}
-	uc.Password = realPassword
-
 	return r.cmd.Set(ctx, fmt.Sprintf("ccnubox:users:ssid:%s", uc.Ssid), "", r.rcExpiration).Err()
 }
 
