@@ -1,6 +1,6 @@
 module github.com/asynccnu/ccnubox-be/be-counter
 
-go 1.23.7
+go 1.24.0
 
 replace github.com/asynccnu/ccnubox-be/be-api => ../be-api
 

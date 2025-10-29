@@ -1,11 +1,12 @@
 module github.com/asynccnu/ccnubox-be/be-calendar
 
-go 1.23.0
+go 1.24.0
 
-toolchain go1.23.6
+toolchain go1.24.4
 
 require (
 	github.com/PuerkitoBio/goquery v1.10.2
+	github.com/asynccnu/ccnubox-be/be-api v0.0.0-20251028152349-764b4868c185
 	github.com/dubbogo/net v0.0.4
 	github.com/go-kratos/kratos/contrib/registry/etcd/v2 v2.0.0-20250403070952-9580f086e326
 	github.com/go-kratos/kratos/v2 v2.8.4
@@ -59,7 +60,7 @@ require (
 	golang.org/x/text v0.23.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250106144421-5f5ef82da422 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250115164207-1a7da9e5054f // indirect
-	google.golang.org/protobuf v1.36.4 // indirect
+	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	modernc.org/fileutil v1.0.0 // indirect
 )
