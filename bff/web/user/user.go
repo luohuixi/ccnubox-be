@@ -3,6 +3,7 @@ package user
 import (
 	"errors"
 	"fmt"
+
 	userv1 "github.com/asynccnu/ccnubox-be/be-api/gen/proto/user/v1"
 	"github.com/asynccnu/ccnubox-be/bff/errs"
 	"github.com/asynccnu/ccnubox-be/bff/pkg/ginx"
@@ -29,7 +30,7 @@ func NewUserHandler(hdl ijwt.Handler, userSvc userv1.UserServiceClient) *UserHan
 func (h *UserHandler) RegisterRoutes(s *gin.RouterGroup, authMiddleware gin.HandlerFunc) {
 	ug := s.Group("/users")
 	ug.POST("/login_ccnu", ginx.WrapReq(h.LoginByCCNU))
-	ug.POST("/logout", authMiddleware, ginx.Wrap(h.Logout))
+	ug.GET("/logout", authMiddleware, ginx.Wrap(h.Logout))
 	ug.GET("/refresh_token", ginx.Wrap(h.RefreshToken))
 	ug.POST("/deactivate", authMiddleware, ginx.WrapClaimsAndReq(h.DeleteAccount))
 }
@@ -87,7 +88,7 @@ func (h *UserHandler) LoginByCCNU(ctx *gin.Context, req LoginByCCNUReq) (web.Res
 // @Accept json
 // @Produce json
 // @Success 200 {object} web.Response "Success"
-// @Router /users/logout [post]
+// @Router /users/logout [get]
 func (h *UserHandler) Logout(ctx *gin.Context) (web.Response, error) {
 	err := h.ClearToken(ctx)
 	if err != nil {
