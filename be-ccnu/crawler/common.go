@@ -14,6 +14,7 @@ var (
 
 func NewCrawlerClient(t time.Duration) *http.Client {
 	j, _ := cookiejar.New(&cookiejar.Options{})
+	// 未配置代理时使用默认client
 	client := proxy.NewShenLongHTTPClient()
 	client.Jar = j
 	client.Timeout = t
