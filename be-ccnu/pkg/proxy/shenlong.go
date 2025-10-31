@@ -2,15 +2,16 @@ package proxy
 
 import (
 	"fmt"
-	"github.com/go-kratos/kratos/v2/log"
-	"github.com/robfig/cron/v3"
-	"github.com/spf13/viper"
 	"io"
 	"net/http"
 	"net/url"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/go-kratos/kratos/v2/log"
+	"github.com/robfig/cron/v3"
+	"github.com/spf13/viper"
 )
 
 type ShenLongProxy struct {
@@ -37,6 +38,11 @@ func InitShenLongProxy() {
 		panic(err)
 	}
 
+	if config.Api == "" {
+		log.Warnf("use DefualtClient due to the empty of proxy setting (time:%s)", time.Now())
+		return
+	}
+
 	shenLongProxy = &ShenLongProxy{
 		Api:          config.Api,
 		PollInterval: config.Interval,
@@ -56,6 +62,12 @@ func NewShenLongHTTPClient() *http.Client {
 		once.Do(InitShenLongProxy)
 	}
 
+	// 未配置代理时使用默认client
+	if shenLongProxy == nil || shenLongProxy.Api == "" {
+		log.Warnf("use DefualtClient due to the empty of proxy setting")
+		return NewHTTPClient()
+	}
+
 	// 获取代理addr
 	shenLongProxy.mu.RLock()
 	proxyAddr := shenLongProxy.Addr
@@ -63,7 +75,7 @@ func NewShenLongHTTPClient() *http.Client {
 
 	proxy, err := url.Parse(proxyAddr)
 	if err != nil {
-		return http.DefaultClient
+		return NewHTTPClient()
 	}
 
 	netTransport := &http.Transport{
@@ -114,4 +126,13 @@ func (s *ShenLongProxy) fetchIp() {
 func wrapRes(res string) string {
 	// 会返回\t\n, 提供方那边去不了
 	return fmt.Sprintf("http://%s", strings.TrimSpace(res))
+}
+
+func NewHTTPClient() *http.Client {
+	client := &http.Client{Transport: nil,
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return nil
+		},
+	}
+	return client
 }

@@ -15,6 +15,10 @@ func aggregateGrades(detailItems []GetDetailItem, KcxzItems []GetKcxzItem) []mod
 	gradeMap := make(map[string]*model.Grade)
 	//初始化gradeMap
 	for _, item := range KcxzItems {
+		// 屏蔽缓考成绩输出
+		if item.Cj == "缓考" {
+			continue
+		}
 		// 以 JxbId 作为唯一 key 进行聚合
 		key := item.JxbID
 		// 如果当前 JxbId 不在 map 中，初始化 Grade 结构体
