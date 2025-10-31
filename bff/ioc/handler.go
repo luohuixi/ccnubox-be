@@ -230,6 +230,6 @@ func InitMetricsHandel(l logger.Logger) *metrics.MetricsHandler {
 	return metrics.NewMetricsHandler(l)
 }
 
-func InitSwagHandler(client libraryv1.LibraryClient) *swag.SwagHandler {
+func InitSwagHandler() *swag.SwagHandler {
 	return swag.NewSwagHandler()
 }
