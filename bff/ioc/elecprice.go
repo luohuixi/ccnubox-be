@@ -7,6 +7,7 @@ import (
 	"github.com/go-kratos/kratos/v2/transport/grpc"
 	"github.com/spf13/viper"
 	clientv3 "go.etcd.io/etcd/client/v3"
+	"time"
 )
 
 func InitElecpriceClient(ecli *clientv3.Client) elecpricev1.ElecpriceServiceClient {
@@ -26,6 +27,7 @@ func InitElecpriceClient(ecli *clientv3.Client) elecpricev1.ElecpriceServiceClie
 	cc, err := grpc.DialInsecure(context.Background(),
 		grpc.WithEndpoint(cfg.Endpoint),
 		grpc.WithDiscovery(r),
+		grpc.WithTimeout(30*time.Second),
 	)
 	if err != nil {
 		panic(err)

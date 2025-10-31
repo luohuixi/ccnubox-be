@@ -98,6 +98,7 @@ func (s *ShenLongProxy) fetchIp() {
 		// 如果不能正常获取ip会是{code: xx, msg: xx}的json
 		if !strings.Contains(string(body), "code") {
 
+			log.Debug("fetch ip success, now: ", time.Now())
 			s.mu.Lock()
 			s.Addr = wrapRes(string(body))
 			s.mu.Unlock()
@@ -108,7 +109,6 @@ func (s *ShenLongProxy) fetchIp() {
 		time.Sleep(time.Second * 2)
 	}
 
-	log.Warn("fetch ip fail")
 }
 
 func wrapRes(res string) string {
