@@ -8,7 +8,7 @@ import (
 )
 
 // ProviderSet is biz providers.
-var ProviderSet = wire.NewSet(NewClassSerivceUserCase, NewFreeClassroomBiz)
+var ProviderSet = wire.NewSet(NewClassServiceUserCase, NewFreeClassroomBiz)
 
 type Cache interface {
 	Get(ctx context.Context, key string) (string, error)
