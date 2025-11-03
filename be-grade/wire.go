@@ -28,6 +28,8 @@ func InitApp() App {
 		ioc.InitCounterClient,
 		ioc.InitFeedClient,
 		ioc.InitClasslistClient,
+		ioc.InitRedis,
+		ioc.InitRedisLock,
 		cron.NewGradeController,
 		cron.NewCron,
 		NewApp,

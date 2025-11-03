@@ -11,6 +11,7 @@ import (
 	userv1 "github.com/asynccnu/ccnubox-be/be-api/gen/proto/user/v1"
 	"github.com/asynccnu/ccnubox-be/be-grade/pkg/logger"
 	"github.com/asynccnu/ccnubox-be/be-grade/service"
+	"github.com/go-redsync/redsync/v4"
 	"github.com/spf13/viper"
 )
 
@@ -24,6 +25,7 @@ type GradeController struct {
 	stopChan     chan struct{}
 	cfg          gradeControllerConfig
 	l            logger.Logger
+	muRedis      *redsync.Redsync
 }
 
 type gradeControllerConfig struct {
@@ -40,6 +42,7 @@ func NewGradeController(
 	classlist classlistv1.ClasserClient,
 	gradeService service.GradeService,
 	rankService service.RankService,
+	muRedis *redsync.Redsync,
 ) *GradeController {
 	var cfg gradeControllerConfig
 	if err := viper.UnmarshalKey("gradeController", &cfg); err != nil {
@@ -56,6 +59,7 @@ func NewGradeController(
 		stopChan:     make(chan struct{}),
 		cfg:          cfg,
 		l:            l,
+		muRedis:      muRedis,
 	}
 }
 
@@ -90,6 +94,15 @@ func (c *GradeController) StartCronTask() {
 }
 
 func (c *GradeController) publishMSG(label string) {
+	lock := c.muRedis.NewMutex("推送成绩: "+label, redsync.WithTries(1))
+
+	err := lock.Lock()
+	if err != nil {
+		// 防止不是竞争锁失败，而是别的问题导致的出错
+		c.l.Warn("获取分布式锁失败", logger.Error(err))
+		return
+	}
+	defer lock.Unlock()
 
 	ctx := context.Background()
 

@@ -2,41 +2,72 @@ package cron
 
 import (
 	"context"
-	"fmt"
 	"sort"
 	"time"
 
 	"github.com/asynccnu/ccnubox-be/be-grade/pkg/logger"
 	"github.com/asynccnu/ccnubox-be/be-grade/repository/dao"
+	"github.com/asynccnu/ccnubox-be/be-grade/repository/model"
+	"github.com/go-redsync/redsync/v4"
 	cronv3 "github.com/robfig/cron/v3"
 )
 
 const (
 	Limit         = 10 //默认每次更新十条
-	WaitForNext   = 30 //重试等待30s
 	WaitForFinish = 90 //等待每一组完成一分半
-	Save          = 0  //保留毕业学生数据多少年
+	Save          = 2  //保留毕业学生数据多少年
 	LessUse       = 6  //6个月没被查询的数据会清除
-	MaxTries      = 3  //重试次数
 )
 
 func (c *GradeController) StartRankCronTask() {
 	// 更新和删除任务不能一起执行，不然可能删了又创建
 	cron := cronv3.New()
 
-	// 1-3月和7-9月执行一次
-	spec1 := "0 0 1 1,2,3,7,8,9 *"
+	// 2-3月和8-9月执行一次
+	spec1 := "0 0 1 2,3,8,9 *"
 	_, err := cron.AddFunc(spec1, func() {
+		lock := c.muRedis.NewMutex("AutoUpdateRank", redsync.WithTries(1))
+
+		err := lock.Lock()
+		if err != nil {
+			// 防止不是竞争锁失败，而是别的问题导致的出错
+			c.l.Warn("获取分布式锁失败", logger.Error(err))
+			return
+		}
+		defer lock.Unlock()
+
 		c.AutoUpdateRank()
 	})
+
 	// 每年10月1号执行一次
 	spec2 := "0 0 1 10 *"
 	_, err = cron.AddFunc(spec2, func() {
+		lock := c.muRedis.NewMutex("CleanGraduateStudentRank", redsync.WithTries(1))
+
+		err := lock.Lock()
+		if err != nil {
+			// 防止不是竞争锁失败，而是别的问题导致的出错
+			c.l.Warn("获取分布式锁失败", logger.Error(err))
+			return
+		}
+		defer lock.Unlock()
+
 		c.CleanGraduateStudentRank()
 	})
+
 	// 每年6，12月执行一次
 	spec3 := "0 0 1 6,12 *"
 	_, err = cron.AddFunc(spec3, func() {
+		lock := c.muRedis.NewMutex("CleanLessUseRank", redsync.WithTries(1))
+
+		err := lock.Lock()
+		if err != nil {
+			// 防止不是竞争锁失败，而是别的问题导致的出错
+			c.l.Warn("获取分布式锁失败", logger.Error(err))
+			return
+		}
+		defer lock.Unlock()
+
 		c.CleanLessUseRank()
 	})
 
@@ -50,16 +81,15 @@ func (c *GradeController) StartRankCronTask() {
 // 自动更新学分绩排名
 func (c *GradeController) AutoUpdateRank() {
 	lastId := int64(0)
-	try := 0
 
-	for try < MaxTries {
-		data, err := c.rankService.GetRankWhichShouldUpdate(context.Background(), Limit, lastId)
+	for {
+		data, err := Retry(func() ([]model.Rank, error) {
+			return c.rankService.GetRankWhichShouldUpdate(context.Background(), Limit, lastId)
+		})
+
 		if err != nil {
-			try++
-			msg := fmt.Sprintf("自动更新的学分绩排名失败 %v 次", try)
-			c.l.Error(msg, logger.Error(err))
-			time.Sleep(WaitForNext * time.Second)
-			continue
+			c.l.Error("多次重试自动更新学分绩排名失败", logger.Error(err))
+			break
 		}
 
 		if len(data) == 0 {
@@ -93,32 +123,24 @@ func (c *GradeController) AutoUpdateRank() {
 
 // 定期清除毕业学生的排名数据
 func (c *GradeController) CleanGraduateStudentRank() {
-	try := 0
-	for try < MaxTries {
+	_, err := Retry(func() (struct{}, error) {
 		err := c.rankService.DeleteGraduateStudentRank(context.Background(), Save)
-		if err != nil {
-			try++
-			msg := fmt.Sprintf("自动删除毕业学生学分绩排名数据失败 %v 次", try)
-			c.l.Error(msg, logger.Error(err))
-			time.Sleep(WaitForNext * time.Second)
-			continue
-		}
-		break
+		return struct{}{}, err
+	})
+
+	if err != nil {
+		c.l.Error("多次重试清除毕业学生的排名数据失败", logger.Error(err))
 	}
 }
 
 // 定期清除距离上次查询已经很久的数据
 func (c *GradeController) CleanLessUseRank() {
-	try := 0
-	for try < MaxTries {
+	_, err := Retry(func() (struct{}, error) {
 		err := c.rankService.DeleteLessUseRank(context.Background(), LessUse)
-		if err != nil {
-			try++
-			msg := fmt.Sprintf("自动删除长时间未查询学分绩排名数据失败 %v 次", try)
-			c.l.Error(msg, logger.Error(err))
-			time.Sleep(WaitForNext * time.Second)
-			continue
-		}
-		break
+		return struct{}{}, err
+	})
+
+	if err != nil {
+		c.l.Error("多次重试清除距离上次查询已经很久的学分绩排名数据失败", logger.Error(err))
 	}
 }

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -18,8 +17,9 @@ import (
 )
 
 const (
-	TimeForCache = 1 * time.Minute    //缓存的超时时间
-	Expire       = 7 * 24 * time.Hour //缓存数据的时长, 会不会太久了？
+	TimeForCache = 1 * time.Minute //缓存的超时时间
+	TimeForNext  = 1 * time.Minute
+	Expire       = 7 * 24 * time.Hour //缓存数据的时长
 )
 
 type FreeClassRoomData interface {
@@ -306,58 +306,63 @@ func (f *FreeClassroomBiz) crawFreeClassroom(ctx context.Context, year, semester
 	if wherePrefix[0] == 'n' {
 		campus = 2
 	}
+	preYear := strings.Split(year, "-")[0]
+
+	// 先从缓存拿数据
+	freeClassroomCache := f.GetFreeClassRoomFromCache(preYear, week, mp[semester], campus, day, sections, wherePrefix)
+	if freeClassroomCache != nil {
+		return freeClassroomCache, nil
+	}
 
 	for _, section := range sections {
-		preYear := strings.Split(year, "-")[0]
-		// 先从缓存获取数据
-		key := fmt.Sprintf("ccnubox:free_classroom:%d:%s:%s:%s:%d:%d:%d",
-			campus, preYear, mp[semester], wherePrefix, week, day, section)
-		cache := f.GetFreeClassRoomFromCache(key)
-		if cache != nil {
-			freeClassroomMp[section] = cache
-			continue
+		classrooms, err := f.sendReqFindFreeClassRoom(campus, preYear, mp[semester], wherePrefix, week, day, section, cookie)
+		if err != nil {
+			return nil, err
 		}
 
-		var data = strings.NewReader(fmt.Sprintf(`fwzt=cx&xqh_id=%d&xnm=%s&xqm=%s&cdlb_id=&cdejlb_id=&qszws=&jszws=&cdmc=%s&lh=&jyfs=0&cdjylx=&sfbhkc=&zcd=%d&xqj=%d&jcd=%d&_search=false&nd=%d&queryModel.showCount=1000&queryModel.currentPage=1&queryModel.sortName=cdbh+&queryModel.sortOrder=asc&time=1`,
-			campus, preYear, mp[semester], wherePrefix, 1<<(week-1), day, 1<<(section-1), time.Now().UnixMilli()))
-		req, err := http.NewRequest("POST", "https://xk.ccnu.edu.cn/jwglxt/cdjy/cdjy_cxKxcdlb.html?doType=query&gnmkdm=N2155", data)
-		if err != nil {
-			clog.LogPrinter.Errorf("failed to create request: %v", err)
-			return nil, err
-		}
-		req.Header = http.Header{
-			"Cookie":       []string{cookie},
-			"Content-Type": []string{"application/x-www-form-urlencoded;charset=UTF-8"},
-			"User-Agent":   []string{"Mozilla/5.0"}, // 精简UA
-		}
-		resp, err := f.httpCli.Do(req)
-		if err != nil {
-			clog.LogPrinter.Errorf("failed to send request: %v", err)
-			return nil, err
-		}
-		// 读取 Body 到字节数组
-		bodyBytes, err := io.ReadAll(resp.Body)
-		if err != nil {
-			clog.LogPrinter.Warnf("failed to read response body: %v", err)
-			//记得关闭body
-			resp.Body.Close()
-			continue
-		}
-		classrooms, err := extractCdIDsWithFastjson(bodyBytes, wherePrefix)
-		if err != nil {
-			clog.LogPrinter.Errorf("failed to parse response body: %v", err)
-			continue
-		}
-		log.Println("classrooms:", classrooms)
 		freeClassroomMp[section] = classrooms
-
-		// 异步更新缓存数据
-		go f.SetFreeClassRoomFromCache(key, classrooms, Expire)
-
-		//关闭body
-		resp.Body.Close()
 	}
+
+	// 加载查询周所有空教室
+	go f.LoadOneWeekFreeClassRoom(preYear, week, mp[semester], stuID, cookie)
+
 	return freeClassroomMp, nil
+}
+
+func (f *FreeClassroomBiz) sendReqFindFreeClassRoom(campus int, preYear, semester, wherePrefix string, week, day, section int, cookie string) ([]string, error) {
+	var data = strings.NewReader(fmt.Sprintf(`fwzt=cx&xqh_id=%d&xnm=%s&xqm=%s&cdlb_id=&cdejlb_id=&qszws=&jszws=&cdmc=%s&lh=&jyfs=0&cdjylx=&sfbhkc=&zcd=%d&xqj=%d&jcd=%d&_search=false&nd=%d&queryModel.showCount=1000&queryModel.currentPage=1&queryModel.sortName=cdbh+&queryModel.sortOrder=asc&time=1`,
+		campus, preYear, semester, wherePrefix, 1<<(week-1), day, 1<<(section-1), time.Now().UnixMilli()))
+	req, err := http.NewRequest("POST", "https://xk.ccnu.edu.cn/jwglxt/cdjy/cdjy_cxKxcdlb.html?doType=query&gnmkdm=N2155", data)
+	if err != nil {
+		clog.LogPrinter.Errorf("failed to create request: %v", err)
+		return nil, err
+	}
+	req.Header = http.Header{
+		"Cookie":       []string{cookie},
+		"Content-Type": []string{"application/x-www-form-urlencoded;charset=UTF-8"},
+		"User-Agent":   []string{"Mozilla/5.0"}, // 精简UA
+	}
+	resp, err := f.httpCli.Do(req)
+	if err != nil {
+		clog.LogPrinter.Errorf("failed to send request: %v", err)
+		return nil, err
+	}
+	// 读取 Body 到字节数组
+	bodyBytes, err := io.ReadAll(resp.Body)
+	defer resp.Body.Close()
+
+	if err != nil {
+		clog.LogPrinter.Warnf("failed to read response body: %v", err)
+		return nil, nil
+	}
+
+	classrooms, err := extractCdIDsWithFastjson(bodyBytes, wherePrefix)
+	if err != nil {
+		clog.LogPrinter.Errorf("failed to parse response body: %v", err)
+		return nil, nil
+	}
+
+	return classrooms, nil
 }
 
 func extractCdIDsWithFastjson(rawJSON []byte, prefix string) ([]string, error) {
@@ -373,7 +378,8 @@ func extractCdIDsWithFastjson(rawJSON []byte, prefix string) ([]string, error) {
 	}
 	var cdIDs []string
 	for _, item := range items.GetArray() {
-		cdID := item.GetStringBytes("cd_id")
+		// 不可以用cd_id,部分数据(南湖)会是乱码不是教室号，改用cdbh
+		cdID := item.GetStringBytes("cdbh")
 		if cdID != nil && strings.HasPrefix(string(cdID), prefix) {
 			cdIDs = append(cdIDs, string(cdID))
 		}
@@ -381,40 +387,109 @@ func extractCdIDsWithFastjson(rawJSON []byte, prefix string) ([]string, error) {
 	return cdIDs, nil
 }
 
-func (f *FreeClassroomBiz) SetFreeClassRoomFromCache(key string, value []string, expire time.Duration) {
+func (f *FreeClassroomBiz) GetFreeClassRoomFromCache(year string, week int, semester string, campus, day int, section []int, wherePrefix string) map[int][]string {
+	key := fmt.Sprintf("ccnubox_freeclassroom:%s-%s-%d", year, semester, week)
 	ctx, cancel := context.WithTimeout(context.Background(), TimeForCache)
 	defer cancel()
 
-	data, err := json.Marshal(value)
+	member, err := f.cache.SMembers(ctx, key)
 	if err != nil {
-		clog.LogPrinter.Warnf("failed to marshal value for free_classroom: %v", err)
-		return
+		clog.LogPrinter.Errorf("failed to get value for free_classroom: %v", err)
+		return nil
 	}
 
-	err = f.cache.Set(ctx, key, string(data), expire)
+	if len(member) == 0 {
+		return nil
+	}
+
+	// 筛选数据
+	var freeClassroomMp = make(map[int][]string, len(section))
+	for _, s := range section {
+		head := fmt.Sprintf("%d-%d-%d", campus, day, s)
+		for _, m := range member {
+			if strings.HasPrefix(m, head) {
+				part := strings.Split(m, ":")
+				if len(part) >= 2 {
+					var freeClassroom, data []string
+					err := json.Unmarshal([]byte(part[1]), &freeClassroom)
+					if err != nil {
+						clog.LogPrinter.Errorf("failed to parse free_classroom: %v", err)
+						break
+					}
+					for _, c := range freeClassroom {
+						if strings.Contains(c, wherePrefix) {
+							data = append(data, c)
+						}
+					}
+					freeClassroomMp[s] = freeClassroom
+				}
+				break
+			}
+		}
+	}
+
+	return freeClassroomMp
+}
+
+// 加载缓存当前周所有的空教室
+func (f *FreeClassroomBiz) LoadOneWeekFreeClassRoom(year string, week int, semester, stuID, cookie string) {
+	key := fmt.Sprintf("ccnubox_freeclassroom:%s-%s-%d", year, semester, week)
+	// 加分布式锁防止重复执行，两倍执行时长的锁保险
+	mu := f.lockBuilder.BuildWithExpire("ccnubox_freeClassroom_lock", 3*time.Hour)
+	err := mu.Lock()
+	if err != nil {
+		return
+	}
+	defer mu.Unlock()
+
+	var members []interface{}
+	campus := 2
+	day := 7
+	section := 12
+	for c := 1; c <= campus; c++ {
+		for d := 1; d <= day; d++ {
+			// 定期换一下cookie防过期
+			ctx, cancel := context.WithTimeout(context.Background(), TimeForCache)
+			cookie2, err := f.cookieCli.GetCookie(ctx, stuID)
+			if err != nil {
+				clog.LogPrinter.Warnf("failed to get cookie: %v", err)
+			} else {
+				cookie = cookie2
+			}
+
+			for s := 1; s <= section; s++ {
+				classrooms, err := f.sendReqFindFreeClassRoom(c, year, semester, "", week, d, s, cookie)
+				if err != nil {
+					clog.LogPrinter.Warnf("failed to send request for free_classroom: %v", err)
+					continue
+				}
+
+				data, err := json.Marshal(classrooms)
+				if err != nil {
+					clog.LogPrinter.Warnf("failed to marshal value for free_classroom: %v", err)
+					continue
+				}
+				value := fmt.Sprintf("%d-%d-%d:%s", c, d, s, string(data))
+				members = append(members, value)
+			}
+
+			cancel()
+			time.Sleep(TimeForNext)
+		}
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), TimeForCache)
+	defer cancel()
+
+	err = f.cache.SAdd(ctx, key, members...)
 	if err != nil {
 		clog.LogPrinter.Warnf("failed to set value for free_classroom: %v", err)
 	}
-}
 
-func (f *FreeClassroomBiz) GetFreeClassRoomFromCache(key string) []string {
-	ctx, cancel := context.WithTimeout(context.Background(), TimeForCache)
-	defer cancel()
-
-	data, err := f.cache.Get(ctx, key)
+	err = f.cache.SExpire(ctx, key, Expire)
 	if err != nil {
-		clog.LogPrinter.Warnf("failed to get value for free_classroom: %v", err)
-		return nil
+		clog.LogPrinter.Errorf("failed to set cache expire: %v", err)
 	}
-
-	var value []string
-	err = json.Unmarshal([]byte(data), &value)
-	if err != nil {
-		clog.LogPrinter.Warnf("failed to unmarshal value for free_classroom: %v", err)
-		return nil
-	}
-
-	return value
 }
 
 //type JSONData struct {

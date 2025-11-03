@@ -2373,7 +2373,7 @@
             }
         },
         "/grade/getRankByTerm": {
-            "post": {
+            "get": {
                 "description": "根据学年号和学期号获取用户的学分绩排名以及分数和统计的科目，全为0则查总排名",
                 "consumes": [
                     "application/json"

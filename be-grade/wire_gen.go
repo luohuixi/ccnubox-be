@@ -30,7 +30,9 @@ func InitApp() App {
 	counterServiceClient := ioc.InitCounterClient(client)
 	feedServiceClient := ioc.InitFeedClient(client)
 	classerClient := ioc.InitClasslistClient(client)
-	gradeController := cron.NewGradeController(logger, counterServiceClient, userServiceClient, feedServiceClient, classerClient, gradeService, rankService)
+	redisClient := ioc.InitRedis()
+	redsync := ioc.InitRedisLock(redisClient)
+	gradeController := cron.NewGradeController(logger, counterServiceClient, userServiceClient, feedServiceClient, classerClient, gradeService, rankService, redsync)
 	v := cron.NewCron(gradeController)
 	app := NewApp(server, v)
 	return app

@@ -26,7 +26,7 @@ const (
 // @Param data body GetRankByTermReq  true "获取学年和学期的学分绩排名请求参数"
 // @Success 200 {object} web.Response{data=GetRankByTermResp} "成功返回学年和学期的排名信息"
 // @Failure 500 {object} web.Response "系统异常，获取失败"
-// @Router /grade/getRankByTerm [post]
+// @Router /grade/getRankByTerm [get]
 func (h *GradeHandler) GetRankByTerm(ctx *gin.Context, req GetRankByTermReq, uc ijwt.UserClaims) (web.Response, error) {
 	// 为0则查全学期总排名
 	if req.XnmBegin == 0 {
