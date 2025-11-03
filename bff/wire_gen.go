@@ -60,7 +60,8 @@ func InitApp() *App {
 	metricsHandler := ioc.InitMetricsHandel(logger)
 	libraryClient := ioc.InitLibrary(client)
 	libraryHandler := ioc.InitLibraryHandler(libraryClient)
-	engine := ioc.InitGinServer(loggerMiddleware, loginMiddleware, corsMiddleware, basicAuthMiddleware, prometheusMiddleware, classRoomHandler, tubeHandler, userHandler, staticHandler, bannerHandler, departmentHandler, websiteHandler, calendarHandler, feedHandler, elecPriceHandler, gradeHandler, classHandler, feedbackHelpHandler, infoSumHandler, cardHandler, metricsHandler, libraryHandler)
+	swagHandler := ioc.InitSwagHandler()
+	engine := ioc.InitGinServer(loggerMiddleware, loginMiddleware, corsMiddleware, basicAuthMiddleware, prometheusMiddleware, classRoomHandler, tubeHandler, userHandler, staticHandler, bannerHandler, departmentHandler, websiteHandler, calendarHandler, feedHandler, elecPriceHandler, gradeHandler, classHandler, feedbackHelpHandler, infoSumHandler, cardHandler, metricsHandler, libraryHandler, swagHandler)
 	app := NewApp(engine)
 	return app
 }

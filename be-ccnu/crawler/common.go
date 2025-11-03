@@ -2,6 +2,7 @@ package crawler
 
 import (
 	"errors"
+	"github.com/asynccnu/ccnubox-be/be-ccnu/pkg/proxy"
 	"net/http"
 	"net/http/cookiejar"
 	"time"
@@ -13,12 +14,9 @@ var (
 
 func NewCrawlerClient(t time.Duration) *http.Client {
 	j, _ := cookiejar.New(&cookiejar.Options{})
-	return &http.Client{
-		Transport: nil,
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			return nil
-		},
-		Jar:     j,
-		Timeout: t,
-	}
+	// 未配置代理时使用默认client
+	client := proxy.NewShenLongHTTPClient()
+	client.Jar = j
+	client.Timeout = t
+	return client
 }

@@ -10,13 +10,13 @@ import (
 	"time"
 
 	"github.com/asynccnu/ccnubox-be/be-classlist/internal/classLog"
-
 	"github.com/asynccnu/ccnubox-be/be-classlist/internal/conf"
 	"github.com/asynccnu/ccnubox-be/be-classlist/internal/data/do"
 	"github.com/asynccnu/ccnubox-be/be-classlist/internal/errcode"
 	"github.com/asynccnu/ccnubox-be/be-classlist/internal/pkg/tool"
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/panjf2000/ants/v2"
+
 )
 
 type ClassUsecase struct {
@@ -461,7 +461,7 @@ func (cluc *ClassUsecase) getCourseFromCrawler(ctx context.Context, stuID string
 		stu = &GraduateStudent{}
 	}
 
-	return func() ([]*ClassInfo, []*StudentCourse, error) {
+	ci,sc,err := func() ([]*ClassInfo, []*StudentCourse, error) {
 		defer func(currentTime time.Time) {
 			logh.Infof("Craw class [%v,%v,%v] cost %v", stuID, year, semester, time.Since(currentTime))
 		}(time.Now())
@@ -473,6 +473,11 @@ func (cluc *ClassUsecase) getCourseFromCrawler(ctx context.Context, stuID string
 		}
 		return classinfos, scs, nil
 	}()
+	if err != nil {
+		crawSuccess = false
+		return nil, nil, err
+	}
+	return ci, sc, nil
 }
 
 func (cluc *ClassUsecase) IsClassOfficial(ctx context.Context, stuID, year, semester, classID string) bool {
